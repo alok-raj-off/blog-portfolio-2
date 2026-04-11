@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOID — Blog</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #c0392b;
+    --red-bright: #e74c3c;
+    --red-dark: #7b241c;
+    --red-glow: rgba(192,57,43,0.3);
+    --bg: #080808;
+    --bg2: #0f0f0f;
+    --bg3: #161616;
+    --bg4: #1e1e1e;
+    --surface: #1a1a1a;
+    --border: rgba(192,57,43,0.2);
+    --border-bright: rgba(192,57,43,0.5);
+    --text: #e8e8e8;
+    --text-muted: #888;
+    --text-dim: #555;
+    --code-bg: #0d0d0d;
+    --highlight: rgba(192,57,43,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  ::selection { background: var(--red-dark); color: #fff; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 18px;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--red); border-radius: 2px; }
+
+  /* === HEADER === */
+  header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(8,8,8,0.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 6px;
+    color: var(--text);
+    text-decoration: none;
+    position: relative;
+  }
+
+  .logo span {
+    color: var(--red);
+  }
+
+  .logo::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; left: 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, var(--red), transparent);
+  }
+
+  nav {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  nav a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  nav a:hover, nav a.active {
+    color: var(--text);
+    border-color: var(--border-bright);
+    background: rgba(192,57,43,0.08);
+  }
+
+  nav a.active {
+    color: var(--red-bright);
+  }
+
+  /* === HERO === */
+  .hero {
+    padding: 160px 40px 80px;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .hero-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--red);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .hero-tag::before {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: var(--red);
+  }
+
+  .hero h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(60px, 10vw, 120px);
+    line-height: 0.9;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+
+  .hero h1 em {
+    font-style: normal;
+    color: var(--red);
+    -webkit-text-stroke: 1px var(--red);
+  }
+
+  .hero-sub {
+    font-size: 18px;
+    color: var(--text-muted);
+    max-width: 500px;
+    font-style: italic;
+    font-weight: 300;
+  }
+
+  /* === SECTION TABS === */
+  .section-tabs {
+    position: sticky;
+    top: 64px;
+    z-index: 50;
+    background: rgba(8,8,8,0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+  }
+
+  .tabs-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    gap: 0;
+  }
+
+  .tab-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 18px 28px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tab-btn .count {
+    background: var(--bg4);
+    color: var(--text-muted);
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+
+  .tab-btn:hover { color: var(--text-muted); }
+
+  .tab-btn.active {
+    color: var(--red-bright);
+  }
+
+  .tab-btn.active .count {
+    background: var(--red-dark);
+    color: var(--red-bright);
+    border-color: var(--red);
+  }
+
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 2px;
+    background: var(--red);
+  }
+
+  /* === MAIN CONTENT === */
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 40px 100px;
+  }
+
+  /* === SECTION PANEL === */
+  .section-panel {
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .section-panel.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === SECTION HEADER === */
+  .panel-header {
+    margin-bottom: 50px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .panel-header h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 3px;
+    color: var(--text);
+  }
+
+  .panel-header .panel-desc {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-style: italic;
+    max-width: 300px;
+    text-align: right;
+  }
+
+  /* === POST GRID === */
+  .posts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 2px;
+  }
+
+  .post-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 32px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: block;
+  }
+
+  .post-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 0;
+    background: var(--red);
+    transition: height 0.3s;
+  }
+
+  .post-card:hover {
+    background: var(--bg3);
+    border-color: var(--border-bright);
+    transform: translateY(-2px);
+  }
+
+  .post-card:hover::before { height: 100%; }
+
+  .post-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .post-meta .tag {
+    color: var(--red);
+    padding: 2px 8px;
+    border: 1px solid var(--red-dark);
+    border-radius: 2px;
+    background: rgba(192,57,43,0.08);
+  }
+
+  .post-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 1px;
+    color: var(--text);
+    margin-bottom: 12px;
+    line-height: 1.1;
+    transition: color 0.2s;
+  }
+
+  .post-card:hover h3 { color: var(--red-bright); }
+
+  .post-card p {
+    font-size: 15px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .post-card .read-more {
+    margin-top: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--red);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .post-card .read-more::after {
+    content: '→';
+    transition: transform 0.2s;
+  }
+
+  .post-card:hover .read-more::after { transform: translateX(4px); }
+
+  /* Featured post */
+  .post-card.featured {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    padding: 48px;
+  }
+
+  .post-card.featured .post-content { }
+  .post-card.featured .post-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .post-visual-art {
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(135deg, var(--bg4), var(--bg3));
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    color: var(--red-dark);
+    letter-spacing: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .post-visual-art::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, var(--red-glow), transparent 70%);
+  }
+
+  /* === PROJECTS === */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .project-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 28px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .project-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(192,57,43,0.06), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  .project-card:hover::after { opacity: 1; }
+
+  .project-card:hover {
+    border-color: var(--border-bright);
+  }
+
+  .project-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 60px;
+    color: var(--bg4);
+    line-height: 1;
+    margin-bottom: 16px;
+    transition: color 0.3s;
+  }
+
+  .project-card:hover .project-num { color: var(--red-dark); }
+
+  .project-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .project-card p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .project-tags {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .project-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    padding: 3px 8px;
+    border: 1px solid var(--bg4);
+    border-radius: 2px;
+  }
+
+  /* === STUFF === */
+  .stuff-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+
+  .stuff-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 24px;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .stuff-card:hover {
+    background: var(--bg3);
+    border-color: var(--border-bright);
+  }
+
+  .stuff-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+  }
+
+  .stuff-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .stuff-card p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* === POST VIEW === */
+  #post-view {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: var(--bg);
+    overflow-y: auto;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .post-view-header {
+    position: sticky;
+    top: 0;
+    background: rgba(8,8,8,0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 10;
+  }
+
+  .back-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    background: none;
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .back-btn:hover {
+    color: var(--text);
+    border-color: var(--border-bright);
+    background: var(--bg3);
+  }
+
+  .post-view-content {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 60px 40px 120px;
+  }
+
+  .post-view-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .post-view-meta span { color: var(--red); }
+
+  .post-view-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(40px, 6vw, 72px);
+    letter-spacing: 2px;
+    line-height: 1;
+    color: var(--text);
+    margin-bottom: 32px;
+  }
+
+  /* === CONTENT RENDERER === */
+  .content-body { }
+
+  .content-body .ch1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin: 40px 0 16px;
+    line-height: 1;
+  }
+
+  .content-body .ch2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 1px;
+    color: var(--text);
+    margin: 32px 0 12px;
+    line-height: 1.1;
+  }
+
+  .content-body .ch3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 1px;
+    color: var(--text);
+    margin: 24px 0 10px;
+    line-height: 1.2;
+  }
+
+  .content-body .cp {
+    font-size: 18px;
+    color: var(--text-muted);
+    line-height: 1.8;
+    margin: 0 0 20px;
+  }
+
+  .content-body .cbold {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .content-body .ccode {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--red);
+    padding: 20px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #a8d8a8;
+    margin: 24px 0;
+    overflow-x: auto;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    border-radius: 0 4px 4px 0;
+    position: relative;
+  }
+
+  .content-body .ccode::before {
+    content: 'CODE';
+    position: absolute;
+    top: 8px; right: 12px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+  }
+
+  .content-body .clink {
+    color: var(--red-bright);
+    text-decoration: none;
+    border-bottom: 1px solid var(--red-dark);
+    transition: border-color 0.2s;
+  }
+
+  .content-body .clink:hover { border-color: var(--red-bright); }
+
+  .content-body .cimg {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin: 24px 0;
+    max-width: 100%;
+  }
+
+  .content-body .cimgs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 24px 0;
+  }
+
+  .content-body .chighlight {
+    background: var(--highlight);
+    border-left: 3px solid var(--red);
+    padding: 16px 20px;
+    margin: 20px 0;
+    font-style: italic;
+    color: var(--text);
+  }
+
+  .content-body .chr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 40px 0;
+  }
+
+  .content-body .csection {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 32px;
+    margin: 32px 0;
+    border-radius: 4px;
+    position: relative;
+  }
+
+  .content-body .csection::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(180deg, var(--red), transparent);
+  }
+
+  /* === EMPTY STATE === */
+  .empty-state {
+    text-align: center;
+    padding: 80px 40px;
+    color: var(--text-dim);
+  }
+
+  .empty-state .empty-icon {
+    font-size: 60px;
+    margin-bottom: 20px;
+    opacity: 0.3;
+  }
+
+  .empty-state h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  .empty-state p {
+    font-size: 14px;
+    font-style: italic;
+  }
+
+  /* === FOOTER === */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  footer .foot-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 4px;
+    color: var(--text-dim);
+  }
+
+  footer .foot-logo span { color: var(--red); }
+
+  footer p {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+  }
+
+  /* === LOADER === */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.5s;
+  }
+
+  .loading-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .loader-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    letter-spacing: 8px;
+    color: var(--red);
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    header { padding: 0 20px; }
+    .hero { padding: 120px 20px 60px; }
+    .section-tabs { padding: 0 20px; }
+    .main { padding: 40px 20px 80px; }
+    .post-card.featured { grid-template-columns: 1fr; }
+    .post-card.featured .post-visual { display: none; }
+    .post-view-header { padding: 12px 20px; }
+    .post-view-content { padding: 40px 20px 80px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ⚠️ Replace with your Firebase config
+ const firebaseConfig = {
+  apiKey: "AIzaSyAgmdnkZkNaWCd5A2sPpTlS9wOyEhcslwg",
+  authDomain: "asdf-3adbc.firebaseapp.com",
+  projectId: "asdf-3adbc",
+  storageBucket: "asdf-3adbc.firebasestorage.app",
+  messagingSenderId: "538338820358",
+  appId: "1:538338820358:web:a729a7a6332d42694dde87"
+};
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  window.__db = db;
+  window.__firestore = { collection, getDocs, query, orderBy };
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loader">
+  <div class="loader-text">VOID</div>
+</div>
+
+<!-- Header -->
+<header>
+  <a href="#" class="logo">VO<span>I</span>D</a>
+  <nav>
+    <a href="#" class="nav-link active" data-tab="blogs">Blogs</a>
+    <a href="#" class="nav-link" data-tab="projects">Projects</a>
+    <a href="#" class="nav-link" data-tab="stuff">Stuff</a>
+  </nav>
+</header>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-tag">Personal Documentation</div>
+  <h1>MY <em>VOID</em><br>JOURNAL</h1>
+  <p class="hero-sub">Where I document everything — thoughts, builds, random discoveries, and the occasional descent into madness.</p>
+</div>
+
+<!-- Tabs -->
+<div class="section-tabs">
+  <div class="tabs-inner">
+    <button class="tab-btn active" data-tab="blogs">
+      Blogs <span class="count" id="blogs-count">0</span>
+    </button>
+    <button class="tab-btn" data-tab="projects">
+      Projects <span class="count" id="projects-count">0</span>
+    </button>
+    <button class="tab-btn" data-tab="stuff">
+      Stuff <span class="count" id="stuff-count">0</span>
+    </button>
+  </div>
+</div>
+
+<!-- Main Content -->
+<main class="main">
+
+  <!-- Blogs Panel -->
+  <div class="section-panel active" id="panel-blogs">
+    <div class="panel-header">
+      <h2>BLOGS</h2>
+      <p class="panel-desc">Long-form thoughts and deep dives into whatever I'm obsessing over.</p>
+    </div>
+    <div class="posts-grid" id="blogs-grid">
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">📝</div>
+        <h3>NOTHING YET</h3>
+        <p>No blog posts published. Go write something from the admin panel.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Projects Panel -->
+  <div class="section-panel" id="panel-projects">
+    <div class="panel-header">
+      <h2>PROJECTS</h2>
+      <p class="panel-desc">Things I've built, broken, and rebuilt again.</p>
+    </div>
+    <div class="projects-grid" id="projects-grid">
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">🔧</div>
+        <h3>NOTHING YET</h3>
+        <p>No projects added yet.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stuff Panel -->
+  <div class="section-panel" id="panel-stuff">
+    <div class="panel-header">
+      <h2>STUFF</h2>
+      <p class="panel-desc">Random finds, bookmarks, tools, and miscellaneous entropy.</p>
+    </div>
+    <div class="stuff-grid" id="stuff-grid">
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">🎲</div>
+        <h3>NOTHING YET</h3>
+        <p>No stuff here yet.</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Post View Overlay -->
+<div id="post-view">
+  <div class="post-view-header">
+    <button class="back-btn" onclick="closePost()">← Back</button>
+    <span id="post-view-section" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;"></span>
+  </div>
+  <div class="post-view-content">
+    <div class="post-view-meta" id="post-view-meta"></div>
+    <div class="post-view-title" id="post-view-title"></div>
+    <div class="content-body" id="post-view-body"></div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-logo">VO<span>I</span>D</div>
+  <p>© 2025 — ALL RIGHTS RESERVED</p>
+</footer>
+
+<script>
+// ===== TAB SWITCHING =====
+const tabBtns = document.querySelectorAll('.tab-btn');
+const navLinks = document.querySelectorAll('.nav-link');
+const panels = document.querySelectorAll('.section-panel');
+
+function switchTab(tab) {
+  tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  navLinks.forEach(a => a.classList.toggle('active', a.dataset.tab === tab));
+  panels.forEach(p => p.classList.toggle('active', p.id === `panel-${tab}`));
+}
+
+tabBtns.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+navLinks.forEach(a => a.addEventListener('click', (e) => { e.preventDefault(); switchTab(a.dataset.tab); }));
+
+// ===== CONTENT PARSER =====
+function parseContent(raw) {
+  if (!raw) return '';
+  const lines = raw.split('\n');
+  let html = '';
+  let i = 0;
+
+  while (i < lines.length) {
+    let line = lines[i];
+
+    // Section block
+    if (line.trim() === '--section--') {
+      let inner = '';
+      i++;
+      while (i < lines.length && lines[i].trim() !== '--; section--' && lines[i].trim() !== '--;section--') {
+        inner += lines[i] + '\n';
+        i++;
+      }
+      html += `<div class="csection">${parseContent(inner)}</div>`;
+      i++;
+      continue;
+    }
+
+    // Horizontal rule -;h-
+    if (line.trim() === '-;h-') {
+      html += `<hr class="chr">`;
+      i++;
+      continue;
+    }
+
+    // Highlighted line --hig--
+    if (line.trim().startsWith('--hig--')) {
+      const text = line.trim().replace(/^--hig--/, '').trim();
+      html += `<div class="chighlight">${parseInline(text)}</div>`;
+      i++;
+      continue;
+    }
+
+    // Heading 1 -h- ... -;h-
+    if (line.trim().startsWith('-h-')) {
+      const text = line.replace(/-h-/, '').replace(/-;h-/, '').trim();
+      html += `<div class="ch1">${text}</div>`;
+      i++;
+      continue;
+    }
+
+    // Heading 2 -hh- ... -;hh-
+    if (line.trim().startsWith('-hh-')) {
+      const text = line.replace(/-hh-/, '').replace(/-;hh-/, '').trim();
+      html += `<div class="ch2">${text}</div>`;
+      i++;
+      continue;
+    }
+
+    // Heading 3 -hhh- ... -;hhh-
+    if (line.trim().startsWith('-hhh-')) {
+      const text = line.replace(/-hhh-/, '').replace(/-;hhh-/, '').trim();
+      html += `<div class="ch3">${text}</div>`;
+      i++;
+      continue;
+    }
+
+    // Paragraph -p- ... -;p-
+    if (line.trim().startsWith('-p-')) {
+      let paragraphLines = [line.replace(/-p-/, '')];
+      // collect until -;p- or end
+      while (i + 1 < lines.length) {
+        i++;
+        if (lines[i].includes('-;p-')) {
+          paragraphLines.push(lines[i].replace(/-;p-/, ''));
+          break;
+        }
+        paragraphLines.push(lines[i]);
+      }
+      const text = paragraphLines.join(' ').trim();
+      html += `<p class="cp">${parseInline(text)}</p>`;
+      i++;
+      continue;
+    }
+
+    // Code block -```- ... -```-
+    if (line.trim() === '-```-') {
+      let codeLines = [];
+      i++;
+      while (i < lines.length && lines[i].trim() !== '-```-') {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      const code = codeLines.join('\n').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      html += `<div class="ccode">${code}</div>`;
+      i++;
+      continue;
+    }
+
+    // Image linkimg[url,w,h]
+    const imgMatches = line.match(/linkimg\[([^\]]+)\]/g);
+    if (imgMatches) {
+      const imgContainer = document.createElement('div');
+      imgContainer.className = 'cimgs';
+      let imgHtml = '<div class="cimgs">';
+      imgMatches.forEach(m => {
+        const parts = m.replace('linkimg[','').replace(']','').split(',').map(s=>s.trim());
+        const url = parts[0];
+        const w = parts[1] || 'auto';
+        const h = parts[2] || 'auto';
+        imgHtml += `<img class="cimg" src="${url}" width="${w}" height="${h}" style="max-width:100%;height:auto;" loading="lazy">`;
+      });
+      imgHtml += '</div>';
+      html += imgHtml;
+      i++;
+      continue;
+    }
+
+    // Non-empty line as paragraph
+    if (line.trim()) {
+      html += `<p class="cp">${parseInline(line)}</p>`;
+    }
+
+    i++;
+  }
+
+  return html;
+}
+
+function parseInline(text) {
+  // Bold -b- ... -;b-
+  text = text.replace(/-b-(.*?)-;b-/g, '<span class="cbold">$1</span>');
+
+  // Link with text link[url,text]
+  text = text.replace(/link\[([^,\]]+),([^\]]+)\]/g, '<a class="clink" href="$1" target="_blank" rel="noopener">$2</a>');
+
+  // Link without text link[url]
+  text = text.replace(/link\[([^\]]+)\]/g, '<a class="clink" href="$1" target="_blank" rel="noopener">$1</a>');
+
+  return text;
+}
+
+// ===== POST VIEW =====
+function openPost(post, section) {
+  const view = document.getElementById('post-view');
+  document.getElementById('post-view-section').textContent = section;
+  document.getElementById('post-view-meta').innerHTML = `
+    <span>${post.tag || section.toUpperCase()}</span>
+    <span style="color:var(--text-dim)">—</span>
+    <span>${formatDate(post.createdAt)}</span>
+  `;
+  document.getElementById('post-view-title').textContent = post.title || 'Untitled';
+  document.getElementById('post-view-body').innerHTML = parseContent(post.content || '');
+  view.style.display = 'block';
+  view.scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+}
+
+function closePost() {
+  document.getElementById('post-view').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// ===== RENDER FUNCTIONS =====
+function formatDate(ts) {
+  if (!ts) return 'Unknown date';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function renderBlogs(posts) {
+  const grid = document.getElementById('blogs-grid');
+  document.getElementById('blogs-count').textContent = posts.length;
+  if (!posts.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📝</div><h3>NOTHING YET</h3><p>No blog posts published yet.</p></div>`;
+    return;
+  }
+  grid.innerHTML = '';
+  posts.forEach((post, idx) => {
+    const card = document.createElement('div');
+    card.className = `post-card${idx === 0 ? ' featured' : ''}`;
+    card.innerHTML = idx === 0 ? `
+      <div class="post-content">
+        <div class="post-meta"><span class="tag">${post.tag || 'BLOG'}</span> ${formatDate(post.createdAt)}</div>
+        <h3>${post.title || 'Untitled'}</h3>
+        <p>${post.excerpt || (post.content || '').replace(/-[a-z;-]+/g,'').substring(0, 180)}...</p>
+        <div class="read-more">Read Article</div>
+      </div>
+      <div class="post-visual"><div class="post-visual-art">VOID</div></div>
+    ` : `
+      <div class="post-meta"><span class="tag">${post.tag || 'BLOG'}</span> ${formatDate(post.createdAt)}</div>
+      <h3>${post.title || 'Untitled'}</h3>
+      <p>${post.excerpt || (post.content || '').replace(/-[a-z;-]+/g,'').substring(0, 120)}...</p>
+      <div class="read-more">Read</div>
+    `;
+    card.addEventListener('click', () => openPost(post, 'BLOGS'));
+    grid.appendChild(card);
+  });
+}
+
+function renderProjects(posts) {
+  const grid = document.getElementById('projects-grid');
+  document.getElementById('projects-count').textContent = posts.length;
+  if (!posts.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔧</div><h3>NOTHING YET</h3><p>No projects added yet.</p></div>`;
+    return;
+  }
+  grid.innerHTML = '';
+  posts.forEach((post, idx) => {
+    const card = document.createElement('div');
+    card.className = 'project-card';
+    card.innerHTML = `
+      <div class="project-num">0${idx+1}</div>
+      <h3>${post.title || 'Untitled'}</h3>
+      <p>${post.excerpt || (post.content || '').replace(/-[a-z;-]+/g,'').substring(0, 100)}...</p>
+      <div class="project-tags">
+        ${(post.tags || []).map(t => `<span class="project-tag">${t}</span>`).join('')}
+      </div>
+    `;
+    card.addEventListener('click', () => openPost(post, 'PROJECTS'));
+    // Mouse glow
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', ((e.clientX - r.left)/r.width*100)+'%');
+      card.style.setProperty('--my', ((e.clientY - r.top)/r.height*100)+'%');
+    });
+    grid.appendChild(card);
+  });
+}
+
+function renderStuff(posts) {
+  const grid = document.getElementById('stuff-grid');
+  document.getElementById('stuff-count').textContent = posts.length;
+  if (!posts.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🎲</div><h3>NOTHING YET</h3><p>No stuff here yet.</p></div>`;
+    return;
+  }
+  grid.innerHTML = '';
+  const icons = ['🔗','📦','⚡','🎯','🔮','📡','🧩','🛠️'];
+  posts.forEach((post, idx) => {
+    const card = document.createElement('div');
+    card.className = 'stuff-card';
+    card.innerHTML = `
+      <div class="stuff-icon">${post.icon || icons[idx % icons.length]}</div>
+      <h3>${post.title || 'Untitled'}</h3>
+      <p>${post.excerpt || (post.content || '').replace(/-[a-z;-]+/g,'').substring(0, 100)}</p>
+    `;
+    card.addEventListener('click', () => openPost(post, 'STUFF'));
+    grid.appendChild(card);
+  });
+}
+
+// ===== FIREBASE LOAD =====
+async function loadData() {
+  try {
+    const db = window.__db;
+    const { collection, getDocs, query, orderBy } = window.__firestore;
+
+    const [blogsSnap, projectsSnap, stuffSnap] = await Promise.all([
+      getDocs(query(collection(db, 'blogs'), orderBy('createdAt', 'desc'))),
+      getDocs(query(collection(db, 'projects'), orderBy('createdAt', 'desc'))),
+      getDocs(query(collection(db, 'stuff'), orderBy('createdAt', 'desc')))
+    ]);
+
+    const blogs = blogsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const projects = projectsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const stuff = stuffSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    renderBlogs(blogs);
+    renderProjects(projects);
+    renderStuff(stuff);
+  } catch (e) {
+    console.warn('Firebase not configured or error loading:', e.message);
+  } finally {
+    setTimeout(() => {
+      document.getElementById('loader').classList.add('hidden');
+    }, 600);
+  }
+}
+
+window.addEventListener('firebase-ready', loadData);
+
+// Fallback if firebase fails to init
+setTimeout(() => {
+  document.getElementById('loader').classList.add('hidden');
+}, 2000);
+</script>
+</body>
+</html>

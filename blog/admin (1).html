@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VOID — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #c0392b;
+    --red-bright: #e74c3c;
+    --red-dark: #7b241c;
+    --red-glow: rgba(192,57,43,0.3);
+    --bg: #080808;
+    --bg2: #0f0f0f;
+    --bg3: #161616;
+    --bg4: #1e1e1e;
+    --surface: #1a1a1a;
+    --border: rgba(192,57,43,0.2);
+    --border-bright: rgba(192,57,43,0.5);
+    --text: #e8e8e8;
+    --text-muted: #888;
+    --text-dim: #555;
+    --code-bg: #0d0d0d;
+    --highlight: rgba(192,57,43,0.15);
+    --green: #27ae60;
+    --green-dim: rgba(39,174,96,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  ::selection { background: var(--red-dark); color: #fff; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--red); border-radius: 2px; }
+
+  /* === LOGIN SCREEN === */
+  #login-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .login-box {
+    width: 380px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 48px 40px;
+    position: relative;
+  }
+
+  .login-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--red), transparent);
+  }
+
+  .login-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 8px;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .login-logo span { color: var(--red); }
+
+  .login-sub {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 36px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .form-group input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus {
+    border-color: var(--red);
+  }
+
+  .login-btn {
+    width: 100%;
+    margin-top: 24px;
+    background: var(--red);
+    border: none;
+    color: #fff;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 3px;
+    padding: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .login-btn:hover { background: var(--red-bright); }
+
+  .login-error {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--red-bright);
+    min-height: 16px;
+  }
+
+  /* === ADMIN LAYOUT === */
+  #admin-screen { display: none; height: 100vh; display: none; flex-direction: column; }
+  #admin-screen.visible { display: flex; }
+
+  /* Top bar */
+  .admin-topbar {
+    height: 56px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 20px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .admin-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 5px;
+    color: var(--text);
+    margin-right: 8px;
+  }
+
+  .admin-logo span { color: var(--red); }
+
+  .admin-badge {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--red);
+    border: 1px solid var(--red-dark);
+    padding: 2px 8px;
+    border-radius: 2px;
+    background: rgba(192,57,43,0.08);
+  }
+
+  .topbar-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    padding: 8px 20px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--red);
+    border-color: var(--red);
+    color: #fff;
+  }
+
+  .btn-primary:hover { background: var(--red-bright); border-color: var(--red-bright); }
+
+  .btn-secondary {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-muted);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--border-bright);
+    color: var(--text);
+    background: var(--bg3);
+  }
+
+  .btn-danger {
+    background: transparent;
+    border-color: rgba(192,57,43,0.3);
+    color: var(--red);
+  }
+
+  .btn-danger:hover { background: rgba(192,57,43,0.1); }
+
+  /* === MAIN LAYOUT === */
+  .admin-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 240px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 0 20px 10px;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    border-left: 2px solid transparent;
+    user-select: none;
+  }
+
+  .sidebar-item:hover {
+    color: var(--text);
+    background: var(--bg3);
+  }
+
+  .sidebar-item.active {
+    color: var(--red-bright);
+    border-left-color: var(--red);
+    background: rgba(192,57,43,0.06);
+  }
+
+  .sidebar-item .item-icon { font-size: 14px; width: 16px; }
+
+  .sidebar-item .item-count {
+    margin-left: auto;
+    background: var(--bg4);
+    color: var(--text-dim);
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .sidebar-item.active .item-count {
+    background: var(--red-dark);
+    color: var(--red-bright);
+    border-color: var(--red);
+  }
+
+  /* Content area */
+  .content-area {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Content panels */
+  .content-panel {
+    display: none;
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px;
+  }
+
+  .content-panel.active { display: flex; flex-direction: column; }
+
+  /* Panel header */
+  .panel-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-shrink: 0;
+  }
+
+  .panel-top h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 3px;
+    color: var(--text);
+  }
+
+  /* Posts list */
+  .posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .post-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.2s;
+  }
+
+  .post-item:hover {
+    border-color: var(--border-bright);
+    background: var(--bg3);
+  }
+
+  .post-item-info { flex: 1; min-width: 0; }
+
+  .post-item-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: var(--text);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .post-item-meta {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 12px;
+  }
+
+  .post-item-meta .tag {
+    color: var(--red);
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 1px 6px;
+    border: 1px solid var(--red-dark);
+    border-radius: 2px;
+    background: rgba(192,57,43,0.06);
+  }
+
+  .post-item-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .icon-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .icon-btn:hover { border-color: var(--border-bright); color: var(--text); background: var(--bg4); }
+  .icon-btn.del:hover { border-color: var(--red); color: var(--red); background: rgba(192,57,43,0.08); }
+
+  /* Empty state */
+  .empty-list {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    color: var(--text-dim);
+    padding: 60px;
+  }
+
+  .empty-list .e-icon { font-size: 48px; opacity: 0.3; }
+  .empty-list h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+  }
+  .empty-list p { font-size: 11px; font-style: italic; }
+
+  /* === EDITOR PANEL === */
+  #panel-editor {
+    background: var(--bg);
+  }
+
+  .editor-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    flex: 1;
+    min-height: 0;
+    border: 1px solid var(--border);
+  }
+
+  .editor-pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .editor-pane:first-child {
+    border-right: 1px solid var(--border);
+  }
+
+  .pane-header {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .pane-header .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+  }
+
+  .editor-meta-bar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  .meta-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .meta-field label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  .meta-field input, .meta-field select {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 7px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .meta-field input:focus, .meta-field select:focus { border-color: var(--red); }
+
+  .meta-field select option { background: var(--bg2); }
+
+  .editor-textarea {
+    flex: 1;
+    background: var(--bg);
+    border: none;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    padding: 20px;
+    outline: none;
+    resize: none;
+    overflow-y: auto;
+    tab-size: 2;
+  }
+
+  .editor-textarea::placeholder { color: var(--text-dim); }
+
+  /* Preview pane */
+  .preview-pane {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px;
+    background: var(--bg);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--text-muted);
+  }
+
+  .preview-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 24px;
+    line-height: 1;
+  }
+
+  /* Toolbar */
+  .toolbar {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 12px;
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    align-items: center;
+  }
+
+  .tool-btn {
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .tool-btn:hover {
+    border-color: var(--red);
+    color: var(--red-bright);
+    background: rgba(192,57,43,0.08);
+  }
+
+  .tool-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 4px;
+  }
+
+  /* === STATUS BAR === */
+  .status-bar {
+    height: 28px;
+    background: var(--red-dark);
+    border-top: 1px solid var(--red-dark);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 20px;
+    flex-shrink: 0;
+  }
+
+  .status-bar span {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .status-bar .status-main {
+    color: #fff;
+    font-weight: 500;
+  }
+
+  /* === TOAST === */
+  .toast {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 14px 20px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--text);
+    z-index: 9000;
+    animation: toastIn 0.3s ease;
+    border-left: 3px solid var(--green);
+    display: none;
+  }
+
+  .toast.error { border-left-color: var(--red); }
+  .toast.show { display: block; }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === CONFIRM DIALOG === */
+  .confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 5000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .confirm-overlay.show { display: flex; }
+
+  .confirm-box {
+    background: var(--bg2);
+    border: 1px solid var(--border-bright);
+    padding: 32px;
+    width: 340px;
+    position: relative;
+  }
+
+  .confirm-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--red);
+  }
+
+  .confirm-box h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .confirm-box p {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+  }
+
+  .confirm-actions { display: flex; gap: 10px; }
+
+  /* === CHEATSHEET === */
+  .cheatsheet {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 24px;
+    margin-top: 20px;
+    flex-shrink: 0;
+  }
+
+  .cheatsheet-title {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cheatsheet-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .cheatsheet-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px;
+  }
+
+  .cs-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+  }
+
+  .cs-code {
+    color: var(--red-bright);
+    font-size: 11px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .cs-desc {
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Stats panel */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-shrink: 0;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--red), transparent);
+  }
+
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .editor-layout { grid-template-columns: 1fr; }
+    .editor-pane:first-child { border-right: none; border-bottom: 1px solid var(--border); max-height: 50vh; }
+    .stats-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 640px) {
+    .sidebar { display: none; }
+    .content-panel { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import {
+    getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc,
+    doc, serverTimestamp, query, orderBy
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ⚠️ Replace with your Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyAgmdnkZkNaWCd5A2sPpTlS9wOyEhcslwg",
+  authDomain: "asdf-3adbc.firebaseapp.com",
+  projectId: "asdf-3adbc",
+  storageBucket: "asdf-3adbc.firebasestorage.app",
+  messagingSenderId: "538338820358",
+  appId: "1:538338820358:web:a729a7a6332d42694dde87"
+};
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  window.__auth = auth;
+  window.__db = db;
+  window.__firebase = { signInWithEmailAndPassword, signOut, onAuthStateChanged,
+    collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy };
+
+  onAuthStateChanged(auth, user => {
+    window.__currentUser = user;
+    window.dispatchEvent(new CustomEvent('auth-change', { detail: { user } }));
+  });
+</script>
+
+<!-- === LOGIN === -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">VO<span>I</span>D</div>
+    <div class="login-sub">Admin Panel</div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="admin@example.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="login-btn" onclick="doLogin()">ENTER</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- === ADMIN === -->
+<div id="admin-screen">
+
+  <!-- Top bar -->
+  <div class="admin-topbar">
+    <div class="admin-logo">VO<span>I</span>D</div>
+    <div class="admin-badge">ADMIN</div>
+    <div class="topbar-actions">
+      <span style="font-size:10px;color:var(--text-dim);letter-spacing:1px;" id="user-email-display"></span>
+      <button class="btn btn-secondary" onclick="newPost()">+ NEW POST</button>
+      <a href="blog.html" target="_blank" class="btn btn-secondary" style="text-decoration:none;color:var(--text-muted);">↗ VIEW BLOG</a>
+      <button class="btn btn-danger" onclick="doLogout()">LOGOUT</button>
+    </div>
+  </div>
+
+  <div class="admin-body">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Navigation</div>
+        <div class="sidebar-item active" data-panel="dashboard" onclick="switchPanel('dashboard')">
+          <span class="item-icon">⊞</span> Dashboard
+        </div>
+        <div class="sidebar-item" data-panel="editor" onclick="switchPanel('editor')">
+          <span class="item-icon">✎</span> Editor
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Collections</div>
+        <div class="sidebar-item" data-panel="blogs" onclick="switchPanel('blogs')">
+          <span class="item-icon">📝</span> Blogs
+          <span class="item-count" id="sb-blogs-count">0</span>
+        </div>
+        <div class="sidebar-item" data-panel="projects" onclick="switchPanel('projects')">
+          <span class="item-icon">🔧</span> Projects
+          <span class="item-count" id="sb-projects-count">0</span>
+        </div>
+        <div class="sidebar-item" data-panel="stuff" onclick="switchPanel('stuff')">
+          <span class="item-icon">🎲</span> Stuff
+          <span class="item-count" id="sb-stuff-count">0</span>
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Help</div>
+        <div class="sidebar-item" data-panel="syntax" onclick="switchPanel('syntax')">
+          <span class="item-icon">📖</span> Syntax Guide
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content-area">
+
+      <!-- Dashboard -->
+      <div class="content-panel active" id="panel-dashboard">
+        <div class="panel-top">
+          <h2>DASHBOARD</h2>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-num" id="stat-blogs">0</div>
+            <div class="stat-label">Blog Posts</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="stat-projects">0</div>
+            <div class="stat-label">Projects</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num" id="stat-stuff">0</div>
+            <div class="stat-label">Stuff Items</div>
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);padding:24px;margin-bottom:16px;">
+          <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--red);margin-bottom:16px;">QUICK ACTIONS</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="newPost('blogs')">+ NEW BLOG</button>
+            <button class="btn btn-secondary" onclick="newPost('projects')">+ NEW PROJECT</button>
+            <button class="btn btn-secondary" onclick="newPost('stuff')">+ NEW STUFF</button>
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);padding:24px;">
+          <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px;">RECENT POSTS</div>
+          <div id="recent-posts" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+      </div>
+
+      <!-- Editor -->
+      <div class="content-panel" id="panel-editor">
+        <div class="panel-top" style="flex-shrink:0;">
+          <h2 id="editor-mode-title">NEW POST</h2>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-secondary" onclick="switchPanel('blogs')">CANCEL</button>
+            <button class="btn btn-primary" onclick="savePost()">SAVE POST</button>
+          </div>
+        </div>
+
+        <!-- Meta bar -->
+        <div class="editor-meta-bar">
+          <div class="meta-field">
+            <label>Title</label>
+            <input type="text" id="post-title" placeholder="Post title...">
+          </div>
+          <div class="meta-field" style="flex:0 0 160px;">
+            <label>Section</label>
+            <select id="post-section">
+              <option value="blogs">Blogs</option>
+              <option value="projects">Projects</option>
+              <option value="stuff">Stuff</option>
+            </select>
+          </div>
+          <div class="meta-field" style="flex:0 0 160px;">
+            <label>Tag</label>
+            <input type="text" id="post-tag" placeholder="e.g. DEV, DESIGN...">
+          </div>
+          <div class="meta-field" style="flex:0 0 200px;">
+            <label>Tags (CSV)</label>
+            <input type="text" id="post-tags" placeholder="react, css, js">
+          </div>
+          <div class="meta-field" style="flex:0 0 120px;">
+            <label>Icon</label>
+            <input type="text" id="post-icon" placeholder="🔧">
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+          <button class="tool-btn" onclick="insert('-h-  -;h-', 4)">H1</button>
+          <button class="tool-btn" onclick="insert('-hh-  -;hh-', 5)">H2</button>
+          <button class="tool-btn" onclick="insert('-hhh-  -;hhh-', 6)">H3</button>
+          <div class="tool-sep"></div>
+          <button class="tool-btn" onclick="insert('-p-\n\n-;p-', 3)">¶ Para</button>
+          <button class="tool-btn" onclick="insert('-b- -;b-', 4)"><b>B</b> Bold</button>
+          <div class="tool-sep"></div>
+          <button class="tool-btn" onclick="insert('-```-\n\n-```-', 6)">{ } Code</button>
+          <div class="tool-sep"></div>
+          <button class="tool-btn" onclick="insert('link[https://url.com, Link Text]', 0)">🔗 Link</button>
+          <button class="tool-btn" onclick="insert('linkimg[https://url.com, 800, 400]', 0)">🖼 Img</button>
+          <div class="tool-sep"></div>
+          <button class="tool-btn" onclick="insert('--hig-- highlighted text', 8)">◈ Highlight</button>
+          <button class="tool-btn" onclick="insert('-;h-', 0)">— HR</button>
+          <div class="tool-sep"></div>
+          <button class="tool-btn" onclick="insert('--section--\n\n--;section--', 12)">⊞ Section</button>
+        </div>
+
+        <!-- Editor Layout -->
+        <div class="editor-layout" style="flex:1;min-height:0;">
+          <!-- Write pane -->
+          <div class="editor-pane" style="display:flex;flex-direction:column;">
+            <div class="pane-header"><div class="dot"></div> WRITE</div>
+            <textarea class="editor-textarea" id="post-content" placeholder="Start writing here...&#10;&#10;Use the toolbar above or type syntax manually.&#10;Press Ctrl+S to save." spellcheck="true" oninput="updatePreview()"></textarea>
+          </div>
+          <!-- Preview pane -->
+          <div class="editor-pane" style="display:flex;flex-direction:column;">
+            <div class="pane-header"><div class="dot" style="background:var(--green)"></div> PREVIEW</div>
+            <div class="preview-pane">
+              <div class="preview-title" id="preview-title">—</div>
+              <div id="preview-body" style="color:var(--text-dim);font-style:italic;font-size:14px;">Start typing to see preview...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Blogs List -->
+      <div class="content-panel" id="panel-blogs">
+        <div class="panel-top">
+          <h2>BLOGS</h2>
+          <button class="btn btn-primary" onclick="newPost('blogs')">+ NEW POST</button>
+        </div>
+        <div class="posts-list" id="list-blogs"></div>
+      </div>
+
+      <!-- Projects List -->
+      <div class="content-panel" id="panel-projects">
+        <div class="panel-top">
+          <h2>PROJECTS</h2>
+          <button class="btn btn-primary" onclick="newPost('projects')">+ NEW POST</button>
+        </div>
+        <div class="posts-list" id="list-projects"></div>
+      </div>
+
+      <!-- Stuff List -->
+      <div class="content-panel" id="panel-stuff">
+        <div class="panel-top">
+          <h2>STUFF</h2>
+          <button class="btn btn-primary" onclick="newPost('stuff')">+ NEW POST</button>
+        </div>
+        <div class="posts-list" id="list-stuff"></div>
+      </div>
+
+      <!-- Syntax Guide -->
+      <div class="content-panel" id="panel-syntax">
+        <div class="panel-top">
+          <h2>SYNTAX GUIDE</h2>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);padding:28px;">
+          <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--red);margin-bottom:20px;">VOID MARKUP LANGUAGE (VML)</div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
+            ${[
+              ['-h- text -;h-', 'Heading 1 (largest)'],
+              ['-hh- text -;hh-', 'Heading 2 (medium)'],
+              ['-hhh- text -;hhh-', 'Heading 3 (smallest)'],
+              ['-p- text -;p-', 'Paragraph block'],
+              ['-b- text -;b-', 'Bold / emphasis'],
+              ['-```- ... -```-', 'Code snippet block'],
+              ['link[url, text]', 'Hyperlink (text optional)'],
+              ['linkimg[url, w, h]', 'Inline image'],
+              ['--hig-- text', 'Full highlighted line'],
+              ['-;h-', 'Horizontal divider'],
+              ['--section-- ... --;section--', 'Content block/section'],
+            ].map(([code, desc]) => `
+              <div style="background:var(--bg);border:1px solid var(--border);padding:12px;display:flex;flex-direction:column;gap:6px;">
+                <code style="color:var(--red-bright);font-size:11px;">${code.replace(/</g,'&lt;')}</code>
+                <span style="color:var(--text-dim);font-size:10px;">${desc}</span>
+              </div>
+            `).join('')}
+          </div>
+
+          <div style="margin-top:28px;padding:20px;background:var(--bg);border:1px solid var(--border);border-left:3px solid var(--red);">
+            <div style="font-size:9px;letter-spacing:2px;color:var(--text-dim);margin-bottom:12px;">EXAMPLE</div>
+            <pre style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-muted);line-height:1.7;white-space:pre-wrap;">-h- My First Blog Post -;h-
+
+--section--
+-p- This is an intro paragraph. You can write -b- bold text -;b- inline. -;p-
+
+--hig-- This line will be fully highlighted as a callout.
+--;section--
+
+-hh- A Sub Heading -;hh-
+
+-```-
+const x = () => {
+  return "Hello, Void";
+}
+-```-
+
+link[https://github.com, Check my GitHub]
+linkimg[https://picsum.photos/800/400, 800, 400]</pre>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end content-area -->
+  </div><!-- end admin-body -->
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span class="status-main" id="status-text">READY</span>
+    <span id="status-words">0 words</span>
+    <span id="status-chars">0 chars</span>
+    <span style="margin-left:auto;" id="status-section">—</span>
+  </div>
+
+</div><!-- end admin-screen -->
+
+<!-- Confirm dialog -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3>CONFIRM DELETE</h3>
+    <p>This action cannot be undone. The post will be permanently removed.</p>
+    <div class="confirm-actions">
+      <button class="btn btn-danger" id="confirm-ok">DELETE</button>
+      <button class="btn btn-secondary" onclick="hideConfirm()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STATE =====
+let allData = { blogs: [], projects: [], stuff: [] };
+let editingId = null;
+let editingSection = null;
+let confirmCallback = null;
+
+// ===== AUTH =====
+async function doLogin() {
+  const email = document.getElementById('login-email').value;
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  try {
+    const { signInWithEmailAndPassword } = window.__firebase;
+    await signInWithEmailAndPassword(window.__auth, email, pass);
+  } catch (e) {
+    errEl.textContent = 'Invalid credentials. Try again.';
+  }
+}
+
+async function doLogout() {
+  const { signOut } = window.__firebase;
+  await signOut(window.__auth);
+}
+
+document.getElementById('login-email').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
+document.getElementById('login-pass').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
+
+window.addEventListener('auth-change', async (e) => {
+  const user = e.detail.user;
+  if (user) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-screen').classList.add('visible');
+    document.getElementById('user-email-display').textContent = user.email;
+    await loadAllData();
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('admin-screen').classList.remove('visible');
+  }
+});
+
+// ===== PANEL SWITCHING =====
+function switchPanel(panel) {
+  document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  const el = document.getElementById(`panel-${panel}`);
+  if (el) el.classList.add('active');
+  const si = document.querySelector(`[data-panel="${panel}"]`);
+  if (si) si.classList.add('active');
+  document.getElementById('status-section').textContent = panel.toUpperCase();
+}
+
+// ===== FIREBASE =====
+async function loadAllData() {
+  if (!window.__db) return;
+  const { collection, getDocs, query, orderBy } = window.__firebase;
+  const db = window.__db;
+
+  try {
+    const [b, p, s] = await Promise.all([
+      getDocs(query(collection(db, 'blogs'), orderBy('createdAt', 'desc'))),
+      getDocs(query(collection(db, 'projects'), orderBy('createdAt', 'desc'))),
+      getDocs(query(collection(db, 'stuff'), orderBy('createdAt', 'desc'))),
+    ]);
+
+    allData.blogs = b.docs.map(d => ({ id: d.id, ...d.data() }));
+    allData.projects = p.docs.map(d => ({ id: d.id, ...d.data() }));
+    allData.stuff = s.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    updateCounts();
+    renderList('blogs');
+    renderList('projects');
+    renderList('stuff');
+    renderDashboard();
+    setStatus('DATA LOADED');
+  } catch(e) {
+    console.warn('Firebase error:', e);
+    setStatus('FIREBASE NOT CONFIGURED', true);
+  }
+}
+
+function updateCounts() {
+  ['blogs','projects','stuff'].forEach(k => {
+    const n = allData[k].length;
+    const sb = document.getElementById(`sb-${k}-count`);
+    const st = document.getElementById(`stat-${k}`);
+    if (sb) sb.textContent = n;
+    if (st) st.textContent = n;
+  });
+}
+
+// ===== RENDER LIST =====
+function formatDate(ts) {
+  if (!ts) return '—';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function renderList(section) {
+  const el = document.getElementById(`list-${section}`);
+  const posts = allData[section];
+  if (!posts.length) {
+    el.innerHTML = `<div class="empty-list"><div class="e-icon">📭</div><h3>EMPTY</h3><p>No ${section} yet. Create a new one.</p></div>`;
+    return;
+  }
+  el.innerHTML = posts.map(p => `
+    <div class="post-item">
+      <div class="post-item-info">
+        <div class="post-item-title">${p.title || 'Untitled'}</div>
+        <div class="post-item-meta">
+          <span class="tag">${p.tag || section.toUpperCase()}</span>
+          <span>${formatDate(p.createdAt)}</span>
+          <span>${(p.content||'').length} chars</span>
+        </div>
+      </div>
+      <div class="post-item-actions">
+        <button class="icon-btn" onclick="editPost('${section}','${p.id}')">✎ EDIT</button>
+        <button class="icon-btn del" onclick="confirmDelete('${section}','${p.id}')">✕ DEL</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderDashboard() {
+  const all = [...allData.blogs, ...allData.projects, ...allData.stuff]
+    .sort((a, b) => {
+      const ta = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+      const tb = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+      return tb - ta;
+    }).slice(0, 6);
+
+  const el = document.getElementById('recent-posts');
+  if (!all.length) {
+    el.innerHTML = `<div style="color:var(--text-dim);font-size:11px;">No posts yet.</div>`;
+    return;
+  }
+  el.innerHTML = all.map(p => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="flex:1;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;">${p.title || 'Untitled'}</div>
+      <div style="font-size:9px;letter-spacing:1px;color:var(--red);border:1px solid var(--red-dark);padding:1px 6px;">${p._section || '—'}</div>
+      <div style="font-size:10px;color:var(--text-dim);">${formatDate(p.createdAt)}</div>
+    </div>
+  `).join('');
+}
+
+// ===== EDITOR =====
+function newPost(section = 'blogs') {
+  editingId = null;
+  editingSection = null;
+  document.getElementById('post-title').value = '';
+  document.getElementById('post-section').value = section;
+  document.getElementById('post-tag').value = '';
+  document.getElementById('post-tags').value = '';
+  document.getElementById('post-icon').value = '';
+  document.getElementById('post-content').value = '';
+  document.getElementById('editor-mode-title').textContent = 'NEW POST';
+  updatePreview();
+  switchPanel('editor');
+}
+
+function editPost(section, id) {
+  const post = allData[section].find(p => p.id === id);
+  if (!post) return;
+  editingId = id;
+  editingSection = section;
+  document.getElementById('post-title').value = post.title || '';
+  document.getElementById('post-section').value = section;
+  document.getElementById('post-tag').value = post.tag || '';
+  document.getElementById('post-tags').value = (post.tags || []).join(', ');
+  document.getElementById('post-icon').value = post.icon || '';
+  document.getElementById('post-content').value = post.content || '';
+  document.getElementById('editor-mode-title').textContent = 'EDIT POST';
+  updatePreview();
+  switchPanel('editor');
+}
+
+async function savePost() {
+  const title = document.getElementById('post-title').value.trim();
+  const section = document.getElementById('post-section').value;
+  const tag = document.getElementById('post-tag').value.trim().toUpperCase();
+  const tagsRaw = document.getElementById('post-tags').value;
+  const icon = document.getElementById('post-icon').value.trim();
+  const content = document.getElementById('post-content').value;
+
+  if (!title) { showToast('Title is required!', true); return; }
+
+  const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+  const excerpt = content.replace(/-[a-z;-]+/g,'').replace(/linkimg\[[^\]]*\]/g,'').replace(/link\[[^\]]*\]/g,'').trim().substring(0, 200);
+
+  const payload = { title, tag, tags, icon, content, excerpt, _section: section };
+
+  setStatus('SAVING...');
+
+  try {
+    const { collection, addDoc, updateDoc, doc, serverTimestamp } = window.__firebase;
+    const db = window.__db;
+
+    if (editingId && editingSection) {
+      // Update
+      await updateDoc(doc(db, editingSection, editingId), { ...payload, updatedAt: serverTimestamp() });
+      showToast('POST UPDATED ✓');
+    } else {
+      // Create
+      await addDoc(collection(db, section), { ...payload, createdAt: serverTimestamp() });
+      showToast('POST SAVED ✓');
+    }
+
+    await loadAllData();
+    switchPanel(section);
+  } catch(e) {
+    console.error(e);
+    showToast('Save failed: ' + e.message, true);
+    setStatus('ERROR', true);
+  }
+}
+
+// ===== DELETE =====
+function confirmDelete(section, id) {
+  confirmCallback = async () => {
+    try {
+      const { deleteDoc, doc } = window.__firebase;
+      await deleteDoc(doc(window.__db, section, id));
+      await loadAllData();
+      showToast('POST DELETED');
+    } catch(e) {
+      showToast('Delete failed', true);
+    }
+    hideConfirm();
+  };
+  document.getElementById('confirm-overlay').classList.add('show');
+  document.getElementById('confirm-ok').onclick = confirmCallback;
+}
+
+function hideConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('show');
+  confirmCallback = null;
+}
+
+// ===== TOOLBAR INSERT =====
+function insert(text, cursorOffset) {
+  const ta = document.getElementById('post-content');
+  const s = ta.selectionStart;
+  const e = ta.selectionEnd;
+  const before = ta.value.substring(0, s);
+  const after = ta.value.substring(e);
+  ta.value = before + text + after;
+  const pos = s + cursorOffset;
+  ta.setSelectionRange(pos, pos);
+  ta.focus();
+  updatePreview();
+}
+
+// ===== PREVIEW =====
+function updatePreview() {
+  const content = document.getElementById('post-content').value;
+  const title = document.getElementById('post-title').value || '—';
+  document.getElementById('preview-title').textContent = title;
+  document.getElementById('preview-body').innerHTML = parseContent(content);
+
+  // Status bar
+  const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+  document.getElementById('status-words').textContent = words + ' words';
+  document.getElementById('status-chars').textContent = content.length + ' chars';
+}
+
+document.getElementById('post-title').addEventListener('input', updatePreview);
+
+// Ctrl+S to save
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    if (document.getElementById('panel-editor').classList.contains('active')) {
+      savePost();
+    }
+  }
+});
+
+// ===== CONTENT PARSER (mirrored from blog.html) =====
+function parseContent(raw) {
+  if (!raw) return '<span style="color:var(--text-dim);font-style:italic;font-size:14px;">Start typing to see preview...</span>';
+  const lines = raw.split('\n');
+  let html = '';
+  let i = 0;
+
+  while (i < lines.length) {
+    let line = lines[i];
+
+    if (line.trim() === '--section--') {
+      let inner = '';
+      i++;
+      while (i < lines.length && lines[i].trim() !== '--; section--' && lines[i].trim() !== '--;section--') {
+        inner += lines[i] + '\n';
+        i++;
+      }
+      html += `<div style="background:rgba(192,57,43,0.04);border:1px solid rgba(192,57,43,0.2);border-left:3px solid var(--red);padding:20px;margin:20px 0;">${parseContent(inner)}</div>`;
+      i++;
+      continue;
+    }
+
+    if (line.trim() === '-;h-') {
+      html += `<hr style="border:none;border-top:1px solid rgba(192,57,43,0.2);margin:30px 0;">`;
+      i++;
+      continue;
+    }
+
+    if (line.trim().startsWith('--hig--')) {
+      const text = line.trim().replace(/^--hig--/, '').trim();
+      html += `<div style="background:rgba(192,57,43,0.1);border-left:3px solid var(--red,#c0392b);padding:14px 18px;margin:16px 0;font-style:italic;color:#e8e8e8;">${parseInline(text)}</div>`;
+      i++;
+      continue;
+    }
+
+    if (line.trim().startsWith('-hhh-')) {
+      const text = line.replace(/-hhh-/,'').replace(/-;hhh-/,'').trim();
+      html += `<div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#e8e8e8;margin:20px 0 8px;">${text}</div>`;
+      i++;
+      continue;
+    }
+
+    if (line.trim().startsWith('-hh-')) {
+      const text = line.replace(/-hh-/,'').replace(/-;hh-/,'').trim();
+      html += `<div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;color:#e8e8e8;margin:28px 0 10px;">${text}</div>`;
+      i++;
+      continue;
+    }
+
+    if (line.trim().startsWith('-h-')) {
+      const text = line.replace(/-h-/,'').replace(/-;h-/,'').trim();
+      html += `<div style="font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:2px;color:#e8e8e8;margin:36px 0 12px;line-height:1;">${text}</div>`;
+      i++;
+      continue;
+    }
+
+    if (line.trim().startsWith('-p-')) {
+      let paragraphLines = [line.replace(/-p-/,'')];
+      while (i + 1 < lines.length) {
+        i++;
+        if (lines[i].includes('-;p-')) {
+          paragraphLines.push(lines[i].replace(/-;p-/,''));
+          break;
+        }
+        paragraphLines.push(lines[i]);
+      }
+      const text = paragraphLines.join(' ').trim();
+      html += `<p style="font-size:17px;color:#888;line-height:1.8;margin:0 0 18px;">${parseInline(text)}</p>`;
+      i++;
+      continue;
+    }
+
+    if (line.trim() === '-```-') {
+      let codeLines = [];
+      i++;
+      while (i < lines.length && lines[i].trim() !== '-```-') {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      const code = codeLines.join('\n').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      html += `<div style="background:#0d0d0d;border:1px solid rgba(192,57,43,0.2);border-left:3px solid #c0392b;padding:18px 20px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#a8d8a8;margin:20px 0;overflow-x:auto;white-space:pre-wrap;line-height:1.7;">${code}</div>`;
+      i++;
+      continue;
+    }
+
+    const imgMatches = line.match(/linkimg\[([^\]]+)\]/g);
+    if (imgMatches) {
+      let imgHtml = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin:20px 0;">';
+      imgMatches.forEach(m => {
+        const parts = m.replace('linkimg[','').replace(']','').split(',').map(s=>s.trim());
+        imgHtml += `<img src="${parts[0]}" width="${parts[1]||'auto'}" height="${parts[2]||'auto'}" style="max-width:100%;height:auto;border:1px solid rgba(192,57,43,0.2);border-radius:4px;" loading="lazy">`;
+      });
+      imgHtml += '</div>';
+      html += imgHtml;
+      i++;
+      continue;
+    }
+
+    if (line.trim()) {
+      html += `<p style="font-size:17px;color:#888;line-height:1.8;margin:0 0 12px;">${parseInline(line)}</p>`;
+    }
+
+    i++;
+  }
+
+  return html || '<span style="color:var(--text-dim);font-style:italic;font-size:14px;">Start typing to see preview...</span>';
+}
+
+function parseInline(text) {
+  text = text.replace(/-b-(.*?)-;b-/g, '<strong style="color:#e8e8e8;font-weight:600;">$1</strong>');
+  text = text.replace(/link\[([^,\]]+),([^\]]+)\]/g, '<a href="$1" target="_blank" style="color:#e74c3c;border-bottom:1px solid rgba(192,57,43,0.4);">$2</a>');
+  text = text.replace(/link\[([^\]]+)\]/g, '<a href="$1" target="_blank" style="color:#e74c3c;border-bottom:1px solid rgba(192,57,43,0.4);">$1</a>');
+  return text;
+}
+
+// ===== HELPERS =====
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function setStatus(msg, isError = false) {
+  const el = document.getElementById('status-text');
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--red-bright)' : '#fff';
+}
+
+// Close confirm on overlay click
+document.getElementById('confirm-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('confirm-overlay')) hideConfirm();
+});
+</script>
+</body>
+</html>
