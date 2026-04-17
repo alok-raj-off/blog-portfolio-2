@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Join the Community</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // =============================
+  // 🔥 PASTE YOUR FIREBASE CONFIG HERE
+  // =============================
+const firebaseConfig = {
+  apiKey: "AIzaSyAdDSSAG0eenJ56MpdKXGnmz38DpMfxsAA",
+  authDomain: "join-91861.firebaseapp.com",
+  projectId: "join-91861",
+  storageBucket: "join-91861.firebasestorage.app",
+  messagingSenderId: "297476094757",
+  appId: "1:297476094757:web:0a83f23a24baf1d91af8cc"
+};
+  // ==============================
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  window._firebaseAuth = auth;
+  window._firebaseDb = db;
+  window._firebaseModules = { createUserWithEmailAndPassword, signInWithEmailAndPassword, collection, addDoc, getDocs, serverTimestamp };
+  window._firebaseReady = true;
+  document.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --space-dark: #020818;
+  --space-deep: #050d2e;
+  --space-mid: #0a1a4a;
+  --neon-cyan: #00d4ff;
+  --neon-purple: #a855f7;
+  --neon-pink: #f0abfc;
+  --star-white: #e2e8f8;
+  --text-dim: #94a3c8;
+  --card-bg: rgba(10, 26, 74, 0.7);
+  --card-border: rgba(0, 212, 255, 0.2);
+  --success: #22d3a0;
+  --error: #f87171;
+}
+
+body {
+  font-family: 'Exo 2', sans-serif;
+  background: var(--space-dark);
+  color: var(--star-white);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── STARFIELD ── */
+#starfield {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 20% 50%, rgba(168,85,247,0.06) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 20%, rgba(0,212,255,0.06) 0%, transparent 50%),
+              var(--space-dark);
+}
+.star { position: absolute; border-radius: 50%; background: white; animation: twinkle var(--d) ease-in-out infinite; }
+@keyframes twinkle { 0%,100%{opacity:var(--o);transform:scale(1)} 50%{opacity:.1;transform:scale(.5)} }
+
+/* ── NEBULA ORBS ── */
+.orb {
+  position: fixed; border-radius: 50%; filter: blur(80px); opacity: .18; pointer-events: none; z-index: 0;
+  animation: drift 20s ease-in-out infinite alternate;
+}
+.orb1 { width: 500px; height: 500px; background: var(--neon-purple); top: -100px; left: -100px; }
+.orb2 { width: 400px; height: 400px; background: var(--neon-cyan); bottom: -100px; right: -100px; animation-delay: -10s; }
+.orb3 { width: 300px; height: 300px; background: #ec4899; top: 40%; left: 60%; animation-delay: -5s; }
+@keyframes drift { from{transform:translate(0,0) scale(1)} to{transform:translate(30px,40px) scale(1.1)} }
+
+/* ── PAGES ── */
+/* ── PAGES ── */
+.page { 
+  display: none; 
+  position: absolute; /* Changed from relative */
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  z-index: 1; 
+  min-height: 100vh; 
+  padding-top: 60px; /* Space for the top nav */
+}
+
+.page.active { 
+  display: block; 
+  animation: fadeUp 0.5s ease-out; /* Adds a smooth transition */
+}
+
+/* ── JOIN PAGE ── */
+#joinPage { padding: 40px 16px 60px; display: flex; flex-direction: column; align-items: center; }
+
+.logo-area { text-align: center; margin-bottom: 40px; }
+.logo-icon {
+  width: 72px; height: 72px; margin: 0 auto 16px;
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan));
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 32px; animation: pulse-glow 3s ease-in-out infinite;
+  box-shadow: 0 0 30px rgba(168,85,247,0.4);
+}
+@keyframes pulse-glow { 0%,100%{box-shadow:0 0 30px rgba(168,85,247,.4)} 50%{box-shadow:0 0 60px rgba(0,212,255,.5)} }
+
+.community-name {
+  font-family: 'Orbitron', monospace; font-size: clamp(22px, 5vw, 36px);
+  font-weight: 900; letter-spacing: 2px;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.tagline { color: var(--text-dim); font-size: 14px; margin-top: 6px; letter-spacing: 1px; }
+
+/* ── FORM CARD ── */
+.form-card {
+  width: 100%; max-width: 520px;
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: 20px; padding: 32px 28px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 0 40px rgba(0,212,255,0.05), inset 0 0 40px rgba(168,85,247,0.03);
+  animation: fadeUp .6s ease both;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+
+.form-title {
+  font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700;
+  color: var(--neon-cyan); letter-spacing: 3px; text-transform: uppercase;
+  margin-bottom: 24px; text-align: center;
+}
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+
+label { font-size: 11px; font-weight: 600; color: var(--neon-cyan); letter-spacing: 1.5px; text-transform: uppercase; }
+
+input, select {
+  background: rgba(2, 8, 24, 0.8); border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 10px; padding: 11px 14px; color: var(--star-white);
+  font-family: 'Exo 2', sans-serif; font-size: 14px;
+  transition: border-color .2s, box-shadow .2s;
+  -webkit-appearance: none; appearance: none;
+  width: 100%;
+}
+input:focus, select:focus {
+  outline: none; border-color: var(--neon-cyan);
+  box-shadow: 0 0 0 3px rgba(0,212,255,0.12);
+}
+input::placeholder { color: rgba(148,163,200,0.4); }
+select option { background: var(--space-deep); }
+
+/* ── ROLE SELECTOR ── */
+.role-section { grid-column: 1 / -1; }
+.role-label { font-size: 11px; font-weight: 600; color: var(--neon-cyan); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; display: block; }
+.role-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+.role-card {
+  border: 1.5px solid rgba(0,212,255,0.18); border-radius: 12px;
+  padding: 14px 10px; cursor: pointer; text-align: center;
+  transition: all .25s; background: rgba(2,8,24,0.6);
+  position: relative; overflow: hidden;
+}
+.role-card::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(0,212,255,0.05), rgba(168,85,247,0.05));
+  opacity: 0; transition: opacity .25s;
+}
+.role-card:hover::before { opacity: 1; }
+.role-card:hover { border-color: rgba(0,212,255,0.45); transform: translateY(-2px); }
+.role-card.selected {
+  border-color: var(--neon-cyan);
+  background: rgba(0,212,255,0.08);
+  box-shadow: 0 0 20px rgba(0,212,255,0.15);
+}
+.role-card.selected::before { opacity: 1; }
+.role-icon { font-size: 24px; margin-bottom: 6px; display: block; }
+.role-name { font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700; color: var(--neon-cyan); letter-spacing: 1px; text-transform: uppercase; }
+.role-desc { font-size: 10px; color: var(--text-dim); margin-top: 3px; line-height: 1.4; }
+.role-check {
+  position: absolute; top: 7px; right: 7px; width: 16px; height: 16px;
+  border-radius: 50%; background: var(--neon-cyan);
+  display: none; align-items: center; justify-content: center;
+}
+.role-card.selected .role-check { display: flex; }
+.role-check::after { content: '✓'; font-size: 10px; color: #000; font-weight: 700; }
+
+/* ── JOIN BUTTON ── */
+.join-btn {
+  grid-column: 1 / -1; margin-top: 8px;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  border: none; border-radius: 12px; padding: 15px;
+  color: #000; font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700;
+  letter-spacing: 2px; cursor: pointer; width: 100%;
+  transition: all .3s; position: relative; overflow: hidden;
+}
+.join-btn::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+  opacity: 0; transition: opacity .3s;
+}
+.join-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,212,255,0.35); }
+.join-btn:hover::after { opacity: 1; }
+.join-btn:active { transform: translateY(0); }
+.join-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.err-msg { grid-column: 1 / -1; color: var(--error); font-size: 12px; text-align: center; display: none; padding: 8px; background: rgba(248,113,113,0.1); border-radius: 8px; border: 1px solid rgba(248,113,113,0.2); }
+.err-msg.show { display: block; }
+
+/* ── SUCCESS PAGE ── */
+#successPage { padding: 40px 16px; min-height: 100vh; }
+
+.success-container { max-width: 600px; margin: 0 auto; }
+
+.success-hero { text-align: center; padding: 50px 20px 30px; }
+.rocket-anim { font-size: 56px; animation: rocketLaunch 2s ease-in-out infinite; display: inline-block; }
+@keyframes rocketLaunch { 0%,100%{transform:translateY(0) rotate(-10deg)} 50%{transform:translateY(-15px) rotate(-10deg)} }
+
+.success-title {
+  font-family: 'Orbitron', monospace; font-size: clamp(20px, 5vw, 32px);
+  font-weight: 900; margin: 16px 0 8px;
+  background: linear-gradient(135deg, var(--success), var(--neon-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.success-sub { color: var(--text-dim); font-size: 14px; }
+
+.member-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(34,211,160,0.1); border: 1px solid rgba(34,211,160,0.3);
+  border-radius: 30px; padding: 8px 18px; margin-top: 16px;
+  font-size: 13px; color: var(--success);
+}
+
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 28px; }
+
+.action-card {
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: 16px; padding: 24px 20px; text-align: center;
+  cursor: pointer; transition: all .25s; backdrop-filter: blur(20px);
+}
+.action-card:hover { transform: translateY(-4px); border-color: rgba(0,212,255,0.45); box-shadow: 0 12px 40px rgba(0,212,255,0.1); }
+.action-card .ac-icon { font-size: 36px; margin-bottom: 12px; display: block; }
+.action-card h3 { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--neon-cyan); margin-bottom: 6px; }
+.action-card p { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+
+.wa-btn {
+  display: block; width: 100%; margin-top: 20px;
+  background: linear-gradient(135deg, #25d366, #128c7e);
+  border: none; border-radius: 14px; padding: 16px;
+  color: white; font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700;
+  letter-spacing: 1.5px; cursor: pointer; transition: all .3s;
+  text-decoration: none; text-align: center;
+}
+.wa-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(37,211,102,0.35); }
+
+.stats-strip {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-top: 20px;
+}
+.stat-box {
+  background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.15);
+  border-radius: 12px; padding: 14px; text-align: center;
+}
+.stat-num { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 700; color: var(--neon-cyan); }
+.stat-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+/* ── ADMIN PAGE ── */
+#adminPage { padding: 0; }
+
+.admin-login-wrap {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.admin-login-card {
+  width: 100%; max-width: 380px;
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: 20px; padding: 36px 30px; backdrop-filter: blur(20px);
+  animation: fadeUp .5s ease both;
+}
+.admin-logo { text-align: center; margin-bottom: 28px; }
+.admin-logo-icon { font-size: 40px; display: block; margin-bottom: 10px; }
+.admin-logo h2 { font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700; color: var(--neon-purple); letter-spacing: 2px; }
+
+.admin-field { margin-bottom: 16px; }
+.admin-field label { display: block; font-size: 11px; font-weight: 600; color: var(--neon-cyan); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+.admin-btn {
+  width: 100%; background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+  border: none; border-radius: 10px; padding: 13px; color: white;
+  font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700; letter-spacing: 2px;
+  cursor: pointer; margin-top: 8px; transition: all .3s;
+}
+.admin-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(168,85,247,0.35); }
+
+/* ── ADMIN DASHBOARD ── */
+#adminDash { display: none; }
+.admin-topbar {
+  background: rgba(10,26,74,0.9); border-bottom: 1px solid var(--card-border);
+  padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;
+  backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100;
+}
+.admin-topbar h1 { font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700; color: var(--neon-cyan); letter-spacing: 2px; }
+.logout-btn {
+  background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.3);
+  color: var(--error); border-radius: 8px; padding: 7px 14px;
+  font-size: 12px; cursor: pointer; transition: all .2s; font-family: 'Exo 2', sans-serif;
+}
+.logout-btn:hover { background: rgba(248,113,113,0.25); }
+
+.admin-body { padding: 24px; max-width: 1100px; margin: 0 auto; }
+
+.admin-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 28px; }
+.admin-stat-card {
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: 14px; padding: 20px; text-align: center; backdrop-filter: blur(10px);
+}
+.admin-stat-card .num { font-family: 'Orbitron', monospace; font-size: 28px; font-weight: 700; }
+.admin-stat-card .lbl { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; text-transform: uppercase; }
+.num.cyan { color: var(--neon-cyan); } .num.purple { color: var(--neon-purple); } .num.green { color: var(--success); }
+
+.search-bar { position: relative; margin-bottom: 18px; }
+.search-bar input { padding-left: 40px; width: 100%; border-radius: 12px; }
+.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 14px; pointer-events: none; }
+
+.table-wrap { overflow-x: auto; border-radius: 14px; border: 1px solid var(--card-border); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead { background: rgba(0,212,255,0.08); }
+th { padding: 13px 14px; text-align: left; font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700; color: var(--neon-cyan); letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; border-bottom: 1px solid var(--card-border); }
+td { padding: 13px 14px; border-bottom: 1px solid rgba(0,212,255,0.06); color: var(--star-white); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(0,212,255,0.03); }
+
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 10px; font-weight: 600; letter-spacing: .5px;
+}
+.badge-tech { background: rgba(0,212,255,0.15); color: var(--neon-cyan); }
+.badge-nontech { background: rgba(168,85,247,0.15); color: var(--neon-purple); }
+.badge-manage { background: rgba(240,171,252,0.15); color: var(--neon-pink); }
+.badge-core { background: rgba(0,212,255,0.15); color: var(--neon-cyan); }
+.badge-associate { background: rgba(34,211,160,0.15); color: var(--success); }
+.badge-volunteer { background: rgba(168,85,247,0.15); color: var(--neon-purple); }
+
+.export-btn {
+  background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3);
+  color: var(--neon-cyan); border-radius: 10px; padding: 9px 18px;
+  font-size: 12px; cursor: pointer; float: right; margin-bottom: 14px;
+  font-family: 'Exo 2', sans-serif; transition: all .2s;
+}
+.export-btn:hover { background: rgba(0,212,255,0.2); }
+
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+.empty-state .es-icon { font-size: 48px; display: block; margin-bottom: 14px; }
+
+/* ── NAV ── */
+.top-nav {
+  position: fixed; top: 0; right: 0; padding: 14px 18px; z-index: 200;
+  display: flex; gap: 10px;
+}
+.nav-btn {
+  background: rgba(10,26,74,0.8); border: 1px solid var(--card-border);
+  color: var(--text-dim); border-radius: 8px; padding: 7px 14px;
+  font-size: 11px; cursor: pointer; backdrop-filter: blur(10px);
+  font-family: 'Exo 2', sans-serif; transition: all .2s; font-weight: 600;
+  letter-spacing: .5px;
+}
+.nav-btn:hover { color: var(--neon-cyan); border-color: rgba(0,212,255,.4); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
+  background: rgba(10,26,74,0.95); border: 1px solid var(--neon-cyan);
+  color: var(--star-white); padding: 12px 24px; border-radius: 30px;
+  font-size: 13px; z-index: 999; transition: transform .4s cubic-bezier(.175,.885,.32,1.275);
+  backdrop-filter: blur(20px); white-space: nowrap;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── LOADING OVERLAY ── */
+#loader {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(2,8,24,0.8); display: none;
+  align-items: center; justify-content: center; backdrop-filter: blur(4px);
+}
+#loader.show { display: flex; }
+.loader-spin {
+  width: 50px; height: 50px; border: 3px solid rgba(0,212,255,0.2);
+  border-top-color: var(--neon-cyan); border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 480px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .form-group.full { grid-column: 1; }
+  .role-cards { grid-template-columns: 1fr; }
+  .role-card { display: flex; align-items: center; gap: 14px; text-align: left; }
+  .role-icon { font-size: 28px; margin-bottom: 0; flex-shrink: 0; }
+  .action-grid { grid-template-columns: 1fr; }
+  .stats-strip { grid-template-columns: repeat(3,1fr); }
+  .join-btn, .wa-btn { font-size: 11px; }
+}
+@media (max-width: 360px) {
+  .stats-strip { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="starfield"></div>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<div id="loader"><div class="loader-spin"></div></div>
+<div id="toast"></div>
+
+<nav class="top-nav">
+  <button class="nav-btn" onclick="showPage('joinPage')">⬡ Join</button>
+  <button class="nav-btn" onclick="showPage('adminPage')">⚙ Admin</button>
+</nav>
+
+<!-- ═══════════ JOIN PAGE ═══════════ -->
+<div id="joinPage" class="page active">
+  <div class="logo-area">
+    <div class="logo-icon">🚀</div>
+    <div class="community-name">NEXUS COMMUNITY</div>
+    <div class="tagline">◈ WHERE INNOVATORS CONVERGE ◈</div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-title">⬡ Launch Your Journey</div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="f-name" placeholder="Your name" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label>Roll Number</label>
+        <input type="text" id="f-roll" placeholder="e.g. CSE2021001">
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="f-email" placeholder="you@college.edu" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="f-phone" placeholder="+91 XXXXX XXXXX" autocomplete="tel">
+      </div>
+      <div class="form-group">
+        <label>Department</label>
+        <select id="f-dept">
+          <option value="">— Select dept —</option>
+          <option>CSE</option>
+          <option>IT</option>
+          <option>AI &amp; ML</option>
+          <option>Data Science</option>
+          <option>ECE</option>
+          <option>EE</option>
+          <option>ME</option>
+          <option>CE</option>
+          <option>BT</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Year</label>
+        <select id="f-year">
+          <option value="">— Select year —</option>
+          <option>1st Year</option>
+          <option>2nd Year</option>
+          <option>3rd Year</option>
+          <option>4th Year</option>
+        </select>
+      </div>
+
+      <!-- ROLE CARDS -->
+      <div class="form-group full role-section">
+        <span class="role-label">Choose Your Role</span>
+        <div class="role-cards">
+          <div class="role-card" data-role="Tech" onclick="selectRole(this)">
+            <span class="role-icon">💻</span>
+            <div class="role-name">BUILDERS</div>
+            <div class="role-desc">Those who already know how to code</div>
+            <div class="role-check"></div>
+          </div>
+          <div class="role-card" data-role="Non-Tech" onclick="selectRole(this)">
+            <span class="role-icon">🎨</span>
+            <div class="role-name">LEARNERS</div>
+            <div class="role-desc">Where we leran , develop and grow together</div>
+            <div class="role-check"></div>
+          </div>
+          <div class="role-card" data-role="Management" onclick="selectRole(this)">
+            <span class="role-icon">📊</span>
+            <div class="role-name">MANAGEMENT</div>
+            <div class="role-desc">Events, outreach & strategy</div>
+            <div class="role-check"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group full">
+        <label>Create Password</label>
+        <input type="password" id="f-pass" placeholder="Min 6 characters">
+      </div>
+
+      <div class="err-msg" id="form-err"></div>
+
+      <button class="join-btn" onclick="handleJoin()">🚀 &nbsp; JOIN THE COMMUNITY</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SUCCESS PAGE ═══════════ -->
+<div id="successPage" class="page">
+  <div class="success-container">
+    <div class="success-hero">
+      <span class="rocket-anim">🛸</span>
+      <h1 class="success-title">YOU'RE IN ORBIT!</h1>
+      <p class="success-sub">Welcome to the community, <span id="s-name" style="color:var(--neon-cyan);font-weight:600"></span></p>
+      <div class="member-badge">✦ Member #<span id="s-membernum">—</span> &nbsp;|&nbsp; <span id="s-role">—</span></div>
+    </div>
+
+    <div class="stats-strip">
+      <div class="stat-box"><div class="stat-num" id="s-dept">—</div><div class="stat-label">Department</div></div>
+      <div class="stat-box"><div class="stat-num" id="s-year">—</div><div class="stat-label">Year</div></div>
+      <div class="stat-box"><div class="stat-num" id="s-roll">—</div><div class="stat-label">Roll No.</div></div>
+    </div>
+
+    <div class="action-grid">
+      <div class="action-card" onclick="openDashboardHint()">
+        <span class="ac-icon">🌌</span>
+        <h3>Your Dashboard</h3>
+        <p>Track events, announcements, and community updates</p>
+      </div>
+      <div class="action-card" onclick="openAdminHint()">
+        <span class="ac-icon">📡</span>
+        <h3>Stay Updated</h3>
+        <p>Receive notifications about upcoming missions and activities</p>
+      </div>
+    </div>
+
+    <!-- 🔁 REPLACE with your actual WhatsApp invite link -->
+    <a class="wa-btn" href="https://chat.whatsapp.com/FztJ9aLiKek5D6tD8omDWN" target="_blank" rel="noopener">
+      💬 &nbsp; JOIN WHATSAPP COMMUNITY
+    </a>
+  </div>
+</div>
+
+<!-- ═══════════ ADMIN PAGE ═══════════ -->
+<div id="adminPage" class="page">
+  <!-- Login Form -->
+  <div id="adminLogin" class="admin-login-wrap">
+    <div class="admin-login-card">
+      <div class="admin-logo">
+        <span class="admin-logo-icon">🛰️</span>
+        <h2>MISSION CONTROL</h2>
+        <p style="font-size:12px;color:var(--text-dim);margin-top:4px">Admin Access Only</p>
+      </div>
+      <div class="admin-field">
+        <label>Username</label>
+        <input type="text" id="a-user" placeholder="admin" autocomplete="username">
+      </div>
+      <div class="admin-field">
+        <label>Password</label>
+        <input type="password" id="a-pass" placeholder="••••••" autocomplete="current-password">
+      </div>
+      <div class="err-msg" id="admin-err"></div>
+      <button class="admin-btn" onclick="adminLogin()">⚡ ACCESS DASHBOARD</button>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="adminDash">
+    <div class="admin-topbar">
+      <h1>🛰️ &nbsp; MISSION CONTROL</h1>
+      <button class="logout-btn" onclick="adminLogout()">↩ Logout</button>
+    </div>
+    <div class="admin-body">
+      <div class="admin-stats">
+        <div class="admin-stat-card"><div class="num cyan" id="a-total">0</div><div class="lbl">Total Members</div></div>
+        <div class="admin-stat-card"><div class="num purple" id="a-tech">0</div><div class="lbl">Tech Track</div></div>
+        <div class="admin-stat-card"><div class="num green" id="a-nontech">0</div><div class="lbl">Non-Tech Track</div></div>
+        <div class="admin-stat-card"><div class="num" style="color:var(--neon-pink)" id="a-mgmt">0</div><div class="lbl">Management</div></div>
+      </div>
+
+      <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+      <div style="clear:both"></div>
+
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="a-search" placeholder="Search by name, roll, department…" oninput="filterTable()">
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Name</th><th>Roll No.</th><th>Email</th>
+              <th>Phone</th><th>Dept</th><th>Year</th><th>Role</th><th>Joined</th>
+            </tr>
+          </thead>
+          <tbody id="members-tbody">
+            <tr><td colspan="9"><div class="empty-state"><span class="es-icon">🌌</span><p>Loading members…</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STAR FIELD ───
+const sf = document.getElementById('starfield');
+for (let i = 0; i < 180; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  const sz = Math.random() * 2 + .5;
+  s.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--o:${Math.random()*.8+.2};--d:${(Math.random()*4+2).toFixed(1)}s;animation-delay:${(Math.random()*5).toFixed(1)}s`;
+  sf.appendChild(s);
+}
+
+// ─── PAGE ROUTING ───
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ─── ROLE SELECTION ───
+let selectedRole = '';
+function selectRole(el) {
+  document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedRole = el.dataset.role;
+}
+
+// ─── TOAST ───
+function toast(msg, dur = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+// ─── LOADER ───
+function setLoader(on) {
+  document.getElementById('loader').classList.toggle('show', on);
+}
+
+// ─── FORM ERROR ───
+function showFormErr(msg) {
+  const el = document.getElementById('form-err');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ─── JOIN HANDLER ───
+async function handleJoin() {
+  const name = document.getElementById('f-name').value.trim();
+  const roll = document.getElementById('f-roll').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const dept = document.getElementById('f-dept').value;
+  const year = document.getElementById('f-year').value;
+  const pass = document.getElementById('f-pass').value;
+
+  if (!name || !roll || !email || !phone || !dept || !year || !selectedRole || !pass) {
+    showFormErr('⚠ Please fill all fields and choose a role.'); return;
+  }
+  if (pass.length < 6) { showFormErr('⚠ Password must be at least 6 characters.'); return; }
+  if (!window._firebaseReady) { showFormErr('⚠ Firebase not configured. Add your config.'); return; }
+
+  setLoader(true);
+  const btn = document.querySelector('.join-btn');
+  btn.disabled = true;
+
+  try {
+    const { createUserWithEmailAndPassword, collection, addDoc, getDocs, serverTimestamp } = window._firebaseModules;
+    const auth = window._firebaseAuth;
+    const db = window._firebaseDb;
+
+    await createUserWithEmailAndPassword(auth, email, pass);
+
+    const snap = await getDocs(collection(db, 'members'));
+    const memberNum = snap.size + 1;
+
+    await addDoc(collection(db, 'members'), {
+      name, rollNumber: roll, email, phone, department: dept, year, role: selectedRole,
+      memberNumber: memberNum, joinedAt: serverTimestamp()
+    });
+
+    // Update success page
+    document.getElementById('s-name').textContent = name;
+    document.getElementById('s-membernum').textContent = String(memberNum).padStart(3, '0');
+    document.getElementById('s-role').textContent = selectedRole;
+    document.getElementById('s-dept').textContent = dept;
+    document.getElementById('s-year').textContent = year;
+    document.getElementById('s-roll').textContent = roll;
+
+    showPage('successPage');
+    toast('🚀 Welcome aboard, ' + name + '!');
+
+  } catch (err) {
+    let msg = '⚠ Something went wrong. Try again.';
+    if (err.code === 'auth/email-already-in-use') msg = '⚠ This email is already registered.';
+    else if (err.code === 'auth/invalid-email') msg = '⚠ Please enter a valid email.';
+    else if (err.code === 'auth/configuration-not-found' || err.code === 'auth/api-key-not-valid') msg = '⚠ Firebase not configured yet. Add your API key in the code.';
+    showFormErr(msg);
+    console.error(err);
+  } finally {
+    setLoader(false);
+    btn.disabled = false;
+  }
+}
+
+// ─── SUCCESS ACTIONS ───
+function openDashboardHint() { toast('📡 Dashboard coming soon — stay tuned!'); }
+function openAdminHint() { toast('🛰️ Use Admin panel to manage members.'); }
+
+// ─── ADMIN LOGIN ───
+function adminLogin() {
+  const u = document.getElementById('a-user').value.trim();
+  const p = document.getElementById('a-pass').value;
+  const err = document.getElementById('admin-err');
+  if (u === 'admin' && p === 'admin') {
+    document.getElementById('adminLogin').style.display = 'none';
+    document.getElementById('adminDash').style.display = 'block';
+    loadMembers();
+  } else {
+    err.textContent = '⚠ Invalid credentials.';
+    err.classList.add('show');
+    setTimeout(() => err.classList.remove('show'), 3000);
+  }
+}
+
+function adminLogout() {
+  document.getElementById('adminLogin').style.display = 'flex';
+  document.getElementById('adminDash').style.display = 'none';
+  document.getElementById('a-user').value = '';
+  document.getElementById('a-pass').value = '';
+}
+
+// ─── LOAD MEMBERS ───
+let allMembers = [];
+
+async function loadMembers() {
+  if (!window._firebaseReady) {
+    document.getElementById('members-tbody').innerHTML =
+      '<tr><td colspan="9"><div class="empty-state"><span class="es-icon">⚠️</span><p>Firebase not configured. Add your Firebase config to see data.</p></div></td></tr>';
+    return;
+  }
+  setLoader(true);
+  try {
+    const { collection, getDocs } = window._firebaseModules;
+    const db = window._firebaseDb;
+    const snap = await getDocs(collection(db, 'members'));
+    allMembers = [];
+    snap.forEach(doc => allMembers.push({ id: doc.id, ...doc.data() }));
+    allMembers.sort((a, b) => (a.memberNumber || 0) - (b.memberNumber || 0));
+    renderTable(allMembers);
+    updateStats(allMembers);
+  } catch (e) {
+    console.error(e);
+    toast('⚠ Failed to load members.');
+  } finally {
+    setLoader(false);
+  }
+}
+
+function renderTable(data) {
+  const tbody = document.getElementById('members-tbody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><span class="es-icon">🌌</span><p>No members yet. Be the first to join!</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map((m, i) => {
+    const roleClass = m.role ? 'badge-' + m.role.toLowerCase().replace(/[^a-z]/g,'') : '';
+    const date = m.joinedAt?.toDate ? m.joinedAt.toDate().toLocaleDateString('en-IN') : '—';
+    return `<tr>
+      <td style="color:var(--text-dim);font-size:11px">${m.memberNumber ? String(m.memberNumber).padStart(3,'0') : i+1}</td>
+      <td style="font-weight:500">${m.name || '—'}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--neon-cyan)">${m.rollNumber || '—'}</td>
+      <td style="font-size:12px;color:var(--text-dim)">${m.email || '—'}</td>
+      <td style="font-size:12px">${m.phone || '—'}</td>
+      <td><span class="badge badge-tech" style="background:rgba(34,211,160,.12);color:var(--success)">${m.department || '—'}</span></td>
+      <td style="font-size:12px;color:var(--text-dim)">${m.year || '—'}</td>
+      <td><span class="badge ${roleClass}">${m.role || '—'}</span></td>
+      <td style="font-size:11px;color:var(--text-dim)">${date}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateStats(data) {
+  document.getElementById('a-total').textContent = data.length;
+  document.getElementById('a-tech').textContent = data.filter(m => m.role === 'Tech').length;
+  document.getElementById('a-nontech').textContent = data.filter(m => m.role === 'Non-Tech').length;
+  document.getElementById('a-mgmt').textContent = data.filter(m => m.role === 'Management').length;
+}
+
+function filterTable() {
+  const q = document.getElementById('a-search').value.toLowerCase();
+  const filtered = allMembers.filter(m =>
+    [m.name, m.rollNumber, m.department, m.role, m.email].some(v => v && v.toLowerCase().includes(q))
+  );
+  renderTable(filtered);
+}
+
+function exportCSV() {
+  if (!allMembers.length) { toast('⚠ No data to export.'); return; }
+  const headers = ['#', 'Name', 'Roll No', 'Email', 'Phone', 'Dept', 'Year', 'Role', 'Joined'];
+  const rows = allMembers.map((m, i) => [
+    m.memberNumber || i+1, m.name, m.rollNumber, m.email, m.phone, m.department, m.year, m.role,
+    m.joinedAt?.toDate ? m.joinedAt.toDate().toLocaleDateString() : ''
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${v || ''}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv,' + encodeURIComponent(csv);
+  a.download = 'nexus-community-members.csv';
+  a.click();
+  toast('✓ CSV exported!');
+}
+
+// Allow Enter key on admin login
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('adminPage').classList.contains('active')
+      && document.getElementById('adminLogin').style.display !== 'none') adminLogin();
+});
+function showPage(id) {
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.style.display = 'none'; // Explicitly hide
+  });
+  
+  // Show active page
+  const activePage = document.getElementById(id);
+  activePage.classList.add('active');
+  activePage.style.display = 'block';
+  
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
