@@ -12,14 +12,14 @@
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAdDSSAG0eenJ56MpdKXGnmz38DpMfxsAA",
-    authDomain: "join-91861.firebaseapp.com",
-    projectId: "join-91861",
-    storageBucket: "join-91861.firebasestorage.app",
-    messagingSenderId: "297476094757",
-    appId: "1:297476094757:web:0a83f23a24baf1d91af8cc"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyBnp1HlYiFuyfINm35fSKw9aHj8jKqPPF8",
+  authDomain: "sdfgsd-1d4c3.firebaseapp.com",
+  projectId: "sdfgsd-1d4c3",
+  storageBucket: "sdfgsd-1d4c3.firebasestorage.app",
+  messagingSenderId: "921905973553",
+  appId: "1:921905973553:web:c1389510a48283b0b38810"
+};
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
@@ -75,6 +75,8 @@ body {
 .orb2 { width: 400px; height: 400px; background: var(--neon-cyan); bottom: -100px; right: -100px; animation-delay: -10s; }
 .orb3 { width: 300px; height: 300px; background: #ec4899; top: 40%; left: 60%; animation-delay: -5s; }
 @keyframes drift { from{transform:translate(0,0) scale(1)} to{transform:translate(30px,40px) scale(1.1)} }
+
+
 
 .page { display: none; position: relative; z-index: 1; min-height: 100vh; }
 .page.active { display: block; }
@@ -731,8 +733,13 @@ for (let i = 0; i < 180; i++) {
 
 // ─── PAGE ROUTING ───
 function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.style.display = 'none';
+  });
+  const target = document.getElementById(id);
+  target.classList.add('active');
+  target.style.display = 'block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
