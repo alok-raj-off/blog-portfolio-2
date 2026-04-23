@@ -10,7 +10,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, collection, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, collection, doc, setDoc, addDoc, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBnp1HlYiFuyfINm35fSKw9aHj8jKqPPF8",
@@ -27,7 +27,14 @@ const firebaseConfig = {
 
   window._firebaseAuth = auth;
   window._firebaseDb = db;
-  window._firebaseModules = { createUserWithEmailAndPassword, signInWithEmailAndPassword, collection, addDoc, getDocs, serverTimestamp };
+  window._firebaseModules = { createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  collection, 
+  doc,    // MAKE SURE THIS IS HERE
+  setDoc, // MAKE SURE THIS IS HERE
+  addDoc, 
+  getDocs, 
+  serverTimestamp };
   window._firebaseReady = true;
   document.dispatchEvent(new Event('firebase-ready'));
 </script>
@@ -838,11 +845,13 @@ async function handleJoin() {
   btn.disabled = true;
 
   try {
-    const { createUserWithEmailAndPassword, collection, addDoc, getDocs, serverTimestamp } = window._firebaseModules;
+    const { createUserWithEmailAndPassword, collection, doc, setDoc, getDocs, serverTimestamp } = window._firebaseModules;
     const auth = window._firebaseAuth;
     const db = window._firebaseDb;
 
-    await createUserWithEmailAndPassword(auth, email, pass);
+    // 1. Create Auth User and capture the result to get the UID
+    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    const user = userCredential.user;
 
     const snap = await getDocs(collection(db, 'members'));
     const memberNum = snap.size + 1;
@@ -858,9 +867,17 @@ async function handleJoin() {
       extraData.learnerGoal = document.getElementById('f-learner-goal').value.trim();
     }
 
-    await addDoc(collection(db, 'members'), {
-      name, rollNumber: roll, email, phone, department: dept, year, role: selectedRole,
-      memberNumber: memberNum, joinedAt: serverTimestamp(),
+    // 2. USE setDoc WITH user.uid TO LINK AUTH AND FIRESTORE
+    await setDoc(doc(db, 'members', user.uid), {
+      name, 
+      rollNumber: roll, 
+      email, 
+      phone, 
+      department: dept, 
+      year, 
+      role: selectedRole,
+      memberNumber: memberNum, 
+      joinedAt: serverTimestamp(),
       ...extraData
     });
 
