@@ -233,6 +233,23 @@ nav{background:var(--sf);border-bottom:1px solid var(--bd);height:56px;display:f
 .sub-card a{color:var(--ac);font-size:12px;font-weight:600;text-decoration:none}
 .sub-card a:hover{text-decoration:underline}
 
+/* ── ASSIGNMENT CARDS ── */
+.ac-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.asgn-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px;position:relative;overflow:hidden;transition:.1s}
+.asgn-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.asgn-card.sheet::before{background:#7C3AED}.asgn-card.resource::before{background:#0369A1}.asgn-card.research::before{background:#B45309}
+.asgn-card:hover{border-color:var(--bd2);box-shadow:var(--sh)}
+.asgn-type-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;margin-bottom:8px}
+.asgn-type-pill.sheet{background:#EDE9FE;color:#5B21B6}
+.asgn-type-pill.resource{background:#E0F2FE;color:#0369A1}
+.asgn-type-pill.research{background:#FEF3C7;color:#92400E}
+.asgn-title{font-weight:700;font-size:14px;margin-bottom:5px;line-height:1.35}
+.asgn-desc{font-size:12px;color:var(--tx2);margin-bottom:10px;line-height:1.5}
+.asgn-resource-link{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--if);text-decoration:none;background:var(--il);padding:3px 8px;border-radius:5px;margin-bottom:10px}
+.asgn-resource-link:hover{text-decoration:underline}
+.asgn-done-badge{display:inline-flex;align-items:center;gap:4px;background:var(--acl);color:var(--ac);border:1px solid var(--acm);border-radius:5px;font-size:11px;font-weight:600;padding:3px 8px}
+
+
 /* ── TASK IMAGE ── */
 .tc-img{width:100%;height:140px;object-fit:cover;border-radius:6px;margin-bottom:10px;display:block}
 .task-img-preview{width:100%;max-height:180px;object-fit:cover;border-radius:8px;margin-top:8px;border:1.5px solid var(--bd2)}
@@ -479,7 +496,162 @@ function AdminLogin({onSuccess,onBack}){
 }
 
 /* ═══════════════════════════════════════════════
-   SUBMIT ASSIGNMENT MODAL
+   ASSIGNMENT SUBMIT MODAL
+═══════════════════════════════════════════════ */
+const WHAT_DONE_OPTIONS=[
+  'Read / studied the material',
+  'Solved the sheet / problems',
+  'Completed the research',
+  'Watched the resources',
+  'Took notes & summarised',
+  'Practised the concepts',
+  'Discussed with peers',
+  'Other',
+];
+
+function AssignmentSubmitModal({assignment,uid,onClose,onSuccess}){
+  const[whatDone,setWhatDone]=useState('');
+  const[desc,setDesc]=useState('');
+  const[busy,setBusy]=useState(false);
+  const[err,setErr]=useState('');
+
+  const typeInfo={sheet:{emoji:'📄',label:'Sheet'},resource:{emoji:'📚',label:'Resource'},research:{emoji:'🔬',label:'Research'}};
+  const info=typeInfo[assignment.type]||{emoji:'📝',label:'Assignment'};
+
+  const submit=async()=>{
+    if(!whatDone){setErr('Please select what you did.');return}
+    if(!desc.trim()){setErr('Please describe your work.');return}
+    setBusy(true);setErr('');
+    try{
+      await db.collection('assignmentSubmissions').doc(`${uid}_${assignment.id}`).set({
+        uid,assignmentId:assignment.id,assignmentTitle:assignment.title,
+        assignmentType:assignment.type,whatDone,description:desc.trim(),
+        submittedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      onSuccess();
+    }catch(e){setErr(e.message)}
+    finally{setBusy(false)}
+  };
+
+  return(
+    <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" style={{maxWidth:540}}>
+        {/* header */}
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4}}>
+          <span style={{fontSize:24}}>{info.emoji}</span>
+          <div>
+            <div className="modal-tit" style={{marginBottom:0}}>Submit Assignment</div>
+            <div style={{fontSize:12,color:'var(--tx3)',marginTop:2}}>{info.label} · {assignment.domain}</div>
+          </div>
+        </div>
+        <div style={{fontWeight:600,fontSize:15,marginBottom:18,color:'var(--tx)'}}>{assignment.title}</div>
+
+        {/* what did you do */}
+        <div className="modal-fld">
+          <label>What did you do? *</label>
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+            {WHAT_DONE_OPTIONS.map(opt=>(
+              <div key={opt} onClick={()=>setWhatDone(opt)}
+                style={{display:'flex',alignItems:'center',gap:9,padding:'9px 12px',borderRadius:8,
+                  border:`1.5px solid ${whatDone===opt?'var(--ac)':'var(--bd2)'}`,
+                  background:whatDone===opt?'var(--acl)':'var(--sf)',cursor:'pointer',transition:'.1s',userSelect:'none'}}>
+                <div style={{width:16,height:16,borderRadius:'50%',border:`2px solid ${whatDone===opt?'var(--ac)':'var(--bd2)'}`,
+                  background:whatDone===opt?'var(--ac)':'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  {whatDone===opt&&<div style={{width:6,height:6,borderRadius:'50%',background:'#fff'}}/>}
+                </div>
+                <span style={{fontSize:13,fontWeight:whatDone===opt?600:400,color:whatDone===opt?'var(--ac)':'var(--tx)'}}>{opt}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* describe your work */}
+        <div className="modal-fld" style={{marginTop:14}}>
+          <label>Describe your work *</label>
+          <textarea className="fta" style={{minHeight:90}}
+            placeholder="What exactly did you do? What did you learn or understand? Any challenges you faced?"
+            value={desc} onChange={e=>setDesc(e.target.value)}/>
+        </div>
+
+        {/* file note */}
+        <div style={{background:'#FEF3C7',border:'1px solid #F0C040',borderRadius:8,padding:'10px 14px',marginBottom:14,display:'flex',gap:10,alignItems:'flex-start'}}>
+          <span style={{fontSize:16,flexShrink:0,marginTop:1}}>📌</span>
+          <div style={{fontSize:12,color:'#78350F',lineHeight:1.6}}>
+            <strong>Have a file to share?</strong> Upload it in the <strong>Community</strong> section — not here. This form is just for your written reflection.
+          </div>
+        </div>
+
+        {err&&<div className="ebox">{err}</div>}
+        <div style={{display:'flex',gap:8}}>
+          <button className="bs bacc" onClick={submit} disabled={busy||!whatDone||!desc.trim()}>{busy?'Submitting…':'Submit'}</button>
+          <button className="bs bgh" onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   STUDENT ASSIGNMENTS TAB
+═══════════════════════════════════════════════ */
+function SAssignments({assignments,submittedIds,onSubmit}){
+  const[filter,setFilter]=useState('all');
+  const typeInfo={sheet:{emoji:'📄',label:'Sheet'},resource:{emoji:'📚',label:'Resource'},research:{emoji:'🔬',label:'Research'}};
+
+  const types=['all','sheet','resource','research'];
+  const shown=filter==='all'?assignments:assignments.filter(a=>a.type===filter);
+  const pending=assignments.filter(a=>!submittedIds.has(a.id)).length;
+
+  return(<>
+    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4,flexWrap:'wrap',gap:8}}>
+      <div>
+        <div className="ptit">📝 Assignments</div>
+        <div className="psub">{pending>0?`${pending} pending · `:'All caught up · '}{assignments.length} total assignment{assignments.length!==1?'s':''}</div>
+      </div>
+    </div>
+
+    {/* type filter */}
+    <div style={{display:'flex',gap:7,marginBottom:18,flexWrap:'wrap'}}>
+      {types.map(t=>(
+        <button key={t} className={`bs ${filter===t?'bacc':'bgh'}`} onClick={()=>setFilter(t)}>
+          {t==='all'?'All':`${typeInfo[t]?.emoji||'📝'} ${typeInfo[t]?.label||t}`}
+        </button>
+      ))}
+    </div>
+
+    {shown.length===0&&<div className="empty">{assignments.length===0?'No assignments yet — check back soon!':'No assignments of this type.'}</div>}
+
+    <div className="ac-wrap">
+      {shown.map(a=>{
+        const done=submittedIds.has(a.id);
+        const info=typeInfo[a.type]||{emoji:'📝',label:'Assignment'};
+        return(
+          <div key={a.id} className={`asgn-card ${a.type||'sheet'}`}>
+            <div className={`asgn-type-pill ${a.type||'sheet'}`}>{info.emoji} {info.label}</div>
+            <div className="asgn-title">{a.title}</div>
+            {a.description&&<div className="asgn-desc">{a.description}</div>}
+            {a.resourceUrl&&(
+              <a href={a.resourceUrl} target="_blank" rel="noreferrer" className="asgn-resource-link">
+                🔗 Open resource ↗
+              </a>
+            )}
+            <div style={{display:'flex',alignItems:'center',gap:7,flexWrap:'wrap',marginTop:4}}>
+              <span className="badge bp">{a.domain}</span>
+              {a.dueDate&&<span className="badge bgr">📅 {a.dueDate}</span>}
+              {done
+                ?<span className="asgn-done-badge">✅ Submitted</span>
+                :<button className="bs bacc" style={{fontSize:12,padding:'4px 11px',marginLeft:'auto'}} onClick={()=>onSubmit(a)}>Submit</button>
+              }
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </>);
+}
+
+/* ═══════════════════════════════════════════════
+   SUBMIT ASSIGNMENT MODAL (tasks)
 ═══════════════════════════════════════════════ */
 function SubmitModal({task,uid,onClose,onSuccess}){
   const[github,setGithub]=useState('');
@@ -566,12 +738,15 @@ function SubmitModal({task,uid,onClose,onSuccess}){
 function StudentDash({user,onSignOut}){
   const[tab,setTab]=useState('home');
   const[tasks,setTasks]=useState([]);
+  const[assignments,setAssignments]=useState([]);
   const[roadmaps,setRoadmaps]=useState([]);
   const[submissions,setSubmissions]=useState([]);
+  const[asnSubmissions,setAsnSubmissions]=useState([]);
   const[userData,setUserData]=useState({points:0});
   const[allStudents,setAllStudents]=useState([]);
   const[loading,setLoading]=useState(true);
   const[submitTask,setSubmitTask]=useState(null);
+  const[submitAsn,setSubmitAsn]=useState(null);
   const[notif,showNotif]=useNotif();
 
   useEffect(()=>{
@@ -590,27 +765,42 @@ function StudentDash({user,onSignOut}){
     const u5=db.collection('users').onSnapshot(s=>{
       setAllStudents(s.docs.map(d=>({id:d.id,...d.data()})).filter(d=>d.role==='student'||(!d.role&&d.email)));
     },()=>{});
-    return()=>{u1();u2();u3();u4();u5()};
+    const u6=db.collection('assignments').orderBy('createdAt','desc').onSnapshot(s=>{
+      setAssignments(s.docs.map(d=>({id:d.id,...d.data()})));
+    },()=>{});
+    const u7=db.collection('assignmentSubmissions').where('uid','==',user.uid).onSnapshot(s=>{
+      setAsnSubmissions(s.docs.map(d=>({id:d.id,...d.data()})));
+    },()=>{});
+    return()=>{u1();u2();u3();u4();u5();u6();u7()};
   },[user.uid]);
 
-  const myF=user.fields||[];
-  const myT=myF.length?tasks.filter(t=>myF.includes(t.domain)||t.domain==='General'):tasks;
+  const myF=userData.fields||user.fields||[];
+  const myT=tasks.filter(t=>{
+    if(t.assignedUids&&t.assignedUids.length>0) return t.assignedUids.includes(user.uid);
+    return myF.length?myF.includes(t.domain)||t.domain==='General':true;
+  });
+  const myA=assignments.filter(a=>{
+    if(a.assignedUids&&a.assignedUids.length>0) return a.assignedUids.includes(user.uid);
+    return myF.length?myF.includes(a.domain)||a.domain==='General':true;
+  });
   const myR=myF.length?roadmaps.filter(r=>myF.includes(r.domain)):roadmaps;
   const submittedIds=new Set(submissions.map(s=>s.taskId));
+  const submittedAsnIds=new Set(asnSubmissions.map(s=>s.assignmentId));
   const hr=new Date().getHours();
   const greet=hr<12?'Good morning':hr<18?'Good afternoon':'Good evening';
   const totalPts=userData.points||0;
 
-  const handleSubmitSuccess=pts=>{
-    setSubmitTask(null);
-    showNotif(`🏆 Submitted! +${pts} points earned`);
-  };
+  const handleSubmitSuccess=pts=>{setSubmitTask(null);showNotif(`🏆 Submitted! +${pts} points earned`)};
+  const handleAsnSubmitSuccess=()=>{setSubmitAsn(null);showNotif('✅ Assignment submitted!')};
 
   return(<>
     <nav>
       <div className="brand">Edu<em>Track</em></div>
       <button className={`nk${tab==='home'?' on':''}`} onClick={()=>setTab('home')}>Home</button>
       <button className={`nk${tab==='tasks'?' on':''}`} onClick={()=>setTab('tasks')}>Tasks</button>
+      <button className={`nk${tab==='assignments'?' on':''}`} onClick={()=>setTab('assignments')}>
+        📝 Assignments {myA.filter(a=>!submittedAsnIds.has(a.id)).length>0&&<span style={{background:'var(--rr)',color:'#fff',borderRadius:10,fontSize:10,fontWeight:800,padding:'1px 5px',marginLeft:3}}>{myA.filter(a=>!submittedAsnIds.has(a.id)).length}</span>}
+      </button>
       <button className={`nk${tab==='roadmap'?' on':''}`} onClick={()=>setTab('roadmap')}>Roadmap</button>
       <button className={`nk${tab==='rank'?' on':''}`} onClick={()=>setTab('rank')}>🏅 Rank</button>
       <div className="ml"/>
@@ -623,11 +813,13 @@ function StudentDash({user,onSignOut}){
       {loading?<div className="empty">Loading…</div>:<>
         {tab==='home'&&<SHome user={user} tasks={myT} roadmaps={myR} greet={greet} points={totalPts} submittedIds={submittedIds} onSubmit={setSubmitTask} allStudents={allStudents}/>}
         {tab==='tasks'&&<STasks tasks={myT} submittedIds={submittedIds} onSubmit={setSubmitTask}/>}
+        {tab==='assignments'&&<SAssignments assignments={myA} submittedIds={submittedAsnIds} onSubmit={setSubmitAsn}/>}
         {tab==='roadmap'&&<SRoadmap roadmaps={myR} uid={user.uid}/>}
         {tab==='rank'&&<SRank points={totalPts}/>}
       </>}
     </div>
     {submitTask&&<SubmitModal task={submitTask} uid={user.uid} onClose={()=>setSubmitTask(null)} onSuccess={handleSubmitSuccess}/>}
+    {submitAsn&&<AssignmentSubmitModal assignment={submitAsn} uid={user.uid} onClose={()=>setSubmitAsn(null)} onSuccess={handleAsnSubmitSuccess}/>}
     <Notif msg={notif}/>
   </>);
 }
@@ -1080,6 +1272,8 @@ function SRoadmap({roadmaps,uid}){
 function AdminPanel({onSignOut}){
   const[tab,setTab]=useState('overview');
   const[tasks,setTasks]=useState([]);
+  const[assignments,setAssignments]=useState([]);
+  const[asnSubmissions,setAsnSubmissions]=useState([]);
   const[roadmaps,setRoadmaps]=useState([]);
   const[students,setStudents]=useState([]);
   const[submissions,setSubmissions]=useState([]);
@@ -1090,15 +1284,19 @@ function AdminPanel({onSignOut}){
     const u2=db.collection('roadmaps').orderBy('createdAt','desc').onSnapshot(s=>{setRoadmaps(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
     const u3=db.collection('users').where('role','==','student').onSnapshot(s=>{setStudents(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
     const u4=db.collection('submissions').orderBy('submittedAt','desc').onSnapshot(s=>{setSubmissions(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
-    return()=>{u1();u2();u3();u4()};
+    const u5=db.collection('assignments').orderBy('createdAt','desc').onSnapshot(s=>{setAssignments(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    const u6=db.collection('assignmentSubmissions').orderBy('submittedAt','desc').onSnapshot(s=>{setAsnSubmissions(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    return()=>{u1();u2();u3();u4();u5();u6()};
   },[]);
 
   const addTask=async f=>{await db.collection('tasks').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Task published')};
   const delTask=async id=>{await db.collection('tasks').doc(id).delete();showNotif('🗑️ Task deleted')};
   const addRM=async f=>{await db.collection('roadmaps').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Roadmap published')};
   const delRM=async id=>{await db.collection('roadmaps').doc(id).delete();showNotif('🗑️ Roadmap deleted')};
+  const addAsn=async f=>{await db.collection('assignments').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Assignment published')};
+  const delAsn=async id=>{await db.collection('assignments').doc(id).delete();showNotif('🗑️ Assignment deleted')};
 
-  const TABS=[['overview','📊','Overview'],['tasks','📋','Tasks'],['roadmaps','🗺️','Roadmaps'],['students','👥','Students'],['submissions','📥','Submissions'],['points','🏆','Points']];
+  const TABS=[['overview','📊','Overview'],['tasks','📋','Tasks'],['assignments','📝','Assignments'],['roadmaps','🗺️','Roadmaps'],['students','👥','Students'],['submissions','📥','Submissions'],['asn-submissions','📨','Asn. Responses'],['points','🏆','Points']];
 
   return(<>
     <nav>
@@ -1117,14 +1315,241 @@ function AdminPanel({onSignOut}){
       </div>
       <div className="adm">
         {tab==='overview'&&<AOv tasks={tasks} roadmaps={roadmaps} students={students} submissions={submissions}/>}
-        {tab==='tasks'&&<ATasks tasks={tasks} onAdd={addTask} onDel={delTask}/>}
+        {tab==='tasks'&&<ATasks tasks={tasks} onAdd={addTask} onDel={delTask} students={students}/>}
+        {tab==='assignments'&&<AAssignments assignments={assignments} onAdd={addAsn} onDel={delAsn} students={students}/>}
         {tab==='roadmaps'&&<ARMs roadmaps={roadmaps} onAdd={addRM} onDel={delRM}/>}
         {tab==='students'&&<AStudents students={students}/>}
         {tab==='submissions'&&<ASubmissions submissions={submissions} students={students}/>}
+        {tab==='asn-submissions'&&<AAsnSubmissions submissions={asnSubmissions} students={students}/>}
         {tab==='points'&&<APoints students={students} showNotif={showNotif}/>}
       </div>
     </div>
     <Notif msg={notif}/>
+  </>);
+}
+
+/* ─── ADMIN: ASSIGNMENT RESPONSES ─────────────────────────── */
+function AAsnSubmissions({submissions,students}){
+  const nameFrom=s=>s?.name||(s?.email?s.email.split('@')[0]:'Unknown');
+  const typeInfo={sheet:{emoji:'📄',label:'Sheet'},resource:{emoji:'📚',label:'Resource'},research:{emoji:'🔬',label:'Research'}};
+  return(<>
+    <div className="ptit">📨 Assignment Responses</div>
+    <div className="psub">{submissions.length} response{submissions.length!==1?'s':''} received</div>
+    {submissions.length===0&&<div className="empty">No assignment responses yet.</div>}
+    {submissions.map(s=>{
+      const stu=students.find(x=>x.id===s.uid);
+      const info=typeInfo[s.assignmentType]||{emoji:'📝',label:'Assignment'};
+      return(
+        <div key={s.id} className="sub-card">
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8,flexWrap:'wrap'}}>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:700,fontSize:14}}>{nameFrom(stu)}</div>
+              <div style={{fontSize:11,color:'var(--tx3)'}}>{stu?.email||s.uid}</div>
+            </div>
+            <span className={`asgn-type-pill ${s.assignmentType||'sheet'}`}>{info.emoji} {info.label}</span>
+            <div style={{fontSize:11,color:'var(--tx3)'}}>{s.submittedAt?.toDate?.()?.toLocaleDateString?.()||'—'}</div>
+          </div>
+          <div style={{fontWeight:600,fontSize:13,marginBottom:6,color:'var(--tx)'}}>{s.assignmentTitle}</div>
+          <div style={{fontSize:12,background:'var(--acl)',border:'1px solid var(--acm)',borderRadius:7,padding:'6px 10px',marginBottom:6,color:'var(--ac)',fontWeight:600}}>
+            ✅ {s.whatDone}
+          </div>
+          {s.description&&<div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.6,background:'var(--sf2)',borderRadius:7,padding:'8px 11px'}}>{s.description}</div>}
+        </div>
+      );
+    })}
+  </>);
+}
+
+/* ─── ADMIN: CREATE ASSIGNMENTS ───────────────────────────── */
+function AAssignments({assignments,onAdd,onDel,students}){
+  const TYPES=[['sheet','📄','Sheet / Problem Set'],['resource','📚','Resource / Study Material'],['research','🔬','Research Topic']];
+  const blank={title:'',description:'',type:'sheet',domain:'AI/ML',dueDate:'',resourceUrl:'',assignedUids:[]};
+  const[show,setShow]=useState(false);
+  const[form,setForm]=useState(blank);
+  const[saving,setSaving]=useState(false);
+  const[err,setErr]=useState('');
+  const[assignMode,setAssignMode]=useState('all');
+  const[stuSearch,setStuSearch]=useState('');
+  const[filterType,setFilterType]=useState('all');
+  const set=k=>v=>setForm(p=>({...p,[k]:v}));
+
+  const nameFrom=s=>s.name||(s.email?s.email.split('@')[0]:'Unknown');
+  const filteredStu=students.filter(s=>{
+    const q=stuSearch.toLowerCase();
+    return !q||(s.email||'').toLowerCase().includes(q)||(s.name||'').toLowerCase().includes(q);
+  });
+  const toggleUid=uid=>setForm(p=>({...p,assignedUids:p.assignedUids.includes(uid)?p.assignedUids.filter(u=>u!==uid):[...p.assignedUids,uid]}));
+
+  const submit=async()=>{
+    if(!form.title.trim()){setErr('Title is required.');return}
+    if(assignMode==='specific'&&form.assignedUids.length===0){setErr('Select at least one student.');return}
+    setSaving(true);setErr('');
+    const payload={...form,assignedUids:assignMode==='all'?[]:form.assignedUids};
+    try{await onAdd(payload);setForm(blank);setAssignMode('all');setStuSearch('');setShow(false)}
+    catch(e){setErr(e.message)}
+    finally{setSaving(false)}
+  };
+
+  const typeInfo={sheet:{emoji:'📄',label:'Sheet'},resource:{emoji:'📚',label:'Resource'},research:{emoji:'🔬',label:'Research'}};
+  const shown=filterType==='all'?assignments:assignments.filter(a=>a.type===filterType);
+
+  return(<>
+    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
+      <div><div className="ptit">📝 Assignments</div><div className="psub">Learning tasks — sheets, resources, research topics</div></div>
+      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'✕ Cancel':'+ New assignment'}</button>
+    </div>
+
+    {show&&<div className="card" style={{marginBottom:20}}>
+      <div className="slbl">Create assignment</div>
+
+      {/* type selector */}
+      <div style={{marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--tx2)',textTransform:'uppercase',letterSpacing:.4,marginBottom:8}}>Type *</div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          {TYPES.map(([val,ico,lbl])=>(
+            <div key={val} onClick={()=>set('type')(val)}
+              style={{display:'flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:9,cursor:'pointer',userSelect:'none',
+                border:`1.5px solid ${form.type===val?'var(--ac)':'var(--bd2)'}`,
+                background:form.type===val?'var(--acl)':'var(--sf)',transition:'.12s'}}>
+              <span style={{fontSize:16}}>{ico}</span>
+              <span style={{fontSize:13,fontWeight:form.type===val?700:500,color:form.type===val?'var(--ac)':'var(--tx)'}}>{lbl}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Title *</label>
+          <input className="fi" placeholder="Assignment title" value={form.title} onChange={e=>set('title')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Domain</label>
+          <select className="fi" value={form.domain} onChange={e=>set('domain')(e.target.value)}>
+            {DOMAINS.map(d=><option key={d}>{d}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Instructions / Description</label>
+          <textarea className="fta" placeholder="What should students do? What to study, what questions to solve, what topic to research…" value={form.description} onChange={e=>set('description')(e.target.value)}/>
+        </div>
+      </div>
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>🔗 Resource URL <span style={{fontWeight:400,textTransform:'none',fontSize:10,color:'var(--tx3)'}}>optional</span></label>
+          <input className="fi" placeholder="https://docs.google.com/… or any link" value={form.resourceUrl||''} onChange={e=>set('resourceUrl')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Due date</label>
+          <input type="date" className="fi" value={form.dueDate} onChange={e=>set('dueDate')(e.target.value)}/>
+        </div>
+      </div>
+
+      {/* assign to */}
+      <div style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:10,padding:'14px 16px',marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--tx2)',textTransform:'uppercase',letterSpacing:.4,marginBottom:10}}>👥 Assign To</div>
+        <div style={{display:'flex',gap:8,marginBottom:assignMode==='specific'?14:0}}>
+          {[['all','🌐 Everyone'],['specific','🎯 Specific students']].map(([m,lbl])=>(
+            <button key={m} onClick={()=>{setAssignMode(m);if(m==='all')setForm(p=>({...p,assignedUids:[]}));}}
+              style={{padding:'7px 16px',borderRadius:8,border:`1.5px solid ${assignMode===m?'var(--ac)':'var(--bd2)'}`,
+                background:assignMode===m?'var(--acl)':'var(--sf)',color:assignMode===m?'var(--ac)':'var(--tx2)',
+                fontWeight:700,fontSize:13,cursor:'pointer',transition:'.15s'}}>{lbl}</button>
+          ))}
+        </div>
+        {assignMode==='specific'&&(
+          <div>
+            {students.length===0?<div style={{fontSize:13,color:'var(--tx3)',fontStyle:'italic'}}>No students registered yet.</div>:<>
+              <input className="fi" placeholder="🔍 Search by name or email…" value={stuSearch} onChange={e=>setStuSearch(e.target.value)} style={{marginBottom:10,fontSize:13}}/>
+              {form.assignedUids.length>0&&(
+                <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:10}}>
+                  {form.assignedUids.map(uid=>{
+                    const s=students.find(x=>x.id===uid);if(!s)return null;
+                    const r=getRank(s.points||0);
+                    return<div key={uid} style={{display:'flex',alignItems:'center',gap:5,background:r.bg||'var(--acl)',border:`1.5px solid ${r.border||'var(--acm)'}`,borderRadius:20,padding:'3px 10px 3px 8px',fontSize:12,fontWeight:600,color:r.color||'var(--ac)'}}>
+                      {r.emoji} {nameFrom(s)}<span onClick={()=>toggleUid(uid)} style={{cursor:'pointer',marginLeft:3,opacity:.6,fontWeight:900,fontSize:14,lineHeight:1}}>×</span>
+                    </div>;
+                  })}
+                </div>
+              )}
+              <div style={{maxHeight:200,overflowY:'auto',display:'flex',flexDirection:'column',gap:6}}>
+                {filteredStu.map(s=>{
+                  const sel=form.assignedUids.includes(s.id);const r=getRank(s.points||0);const name=nameFrom(s);
+                  return<div key={s.id} onClick={()=>toggleUid(s.id)}
+                    style={{display:'flex',alignItems:'center',gap:11,padding:'9px 12px',borderRadius:9,
+                      border:`1.5px solid ${sel?r.border||'var(--acm)':'var(--bd)'}`,
+                      background:sel?r.bg||'var(--acl)':'var(--sf)',cursor:'pointer',transition:'.12s',userSelect:'none'}}>
+                    <div style={{width:18,height:18,borderRadius:5,border:`2px solid ${sel?r.color||'var(--ac)':'var(--bd2)'}`,
+                      background:sel?r.color||'var(--ac)':'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#fff'}}>{sel&&'✓'}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:sel?r.color||'var(--ac)':'var(--tx)'}}>{name}</div>
+                      <div style={{fontSize:11,color:'var(--tx3)'}}>{s.email||'—'}</div>
+                    </div>
+                    <div style={{flexShrink:0,textAlign:'right'}}>
+                      <div style={{fontSize:11,fontWeight:700,color:r.color}}>{r.emoji} {r.name}</div>
+                      <div style={{fontSize:11,color:'var(--tx3)'}}>🏆 {s.points||0} pts</div>
+                    </div>
+                  </div>;
+                })}
+              </div>
+              <div style={{fontSize:11,color:'var(--tx3)',marginTop:8}}>{form.assignedUids.length} student{form.assignedUids.length!==1?'s':''} selected</div>
+            </>}
+          </div>
+        )}
+      </div>
+
+      {err&&<div className="ebox" style={{marginBottom:10}}>{err}</div>}
+      <div style={{display:'flex',gap:8}}>
+        <button className="bs bacc" onClick={submit} disabled={saving}>{saving?'Publishing…':'Publish assignment'}</button>
+        <button className="bs bgh" onClick={()=>{setShow(false);setErr('');setForm(blank);setAssignMode('all');setStuSearch('')}}>Cancel</button>
+      </div>
+    </div>}
+
+    {/* filter */}
+    <div style={{display:'flex',gap:7,marginBottom:14,flexWrap:'wrap'}}>
+      {['all','sheet','resource','research'].map(t=>(
+        <button key={t} className={`bs ${filterType===t?'bacc':'bgh'}`} onClick={()=>setFilterType(t)}>
+          {t==='all'?'All types':`${typeInfo[t]?.emoji||'📝'} ${typeInfo[t]?.label||t}`}
+        </button>
+      ))}
+    </div>
+
+    {shown.length===0
+      ?<div className="empty">{assignments.length===0?'No assignments yet. Create one above!':'No assignments of this type.'}</div>
+      :shown.map(a=>{
+        const info=typeInfo[a.type]||{emoji:'📝',label:'Assignment'};
+        const isSpecific=a.assignedUids&&a.assignedUids.length>0;
+        const nameFrom2=s=>s?.name||(s?.email?s.email.split('@')[0]:'?');
+        const assignedNames=isSpecific?a.assignedUids.map(uid=>{const s=students.find(x=>x.id===uid);return s?nameFrom2(s):null}).filter(Boolean):[];
+        return(
+          <div key={a.id} className="li">
+            <div style={{flex:1}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3,flexWrap:'wrap'}}>
+                <span className={`asgn-type-pill ${a.type||'sheet'}`}>{info.emoji} {info.label}</span>
+                <div className="lit">{a.title}</div>
+                {isSpecific
+                  ?<span style={{fontSize:10,fontWeight:700,background:'#EEF2FF',color:'#4338CA',border:'1px solid #C7D2FE',padding:'2px 7px',borderRadius:8}}>🎯 {a.assignedUids.length} student{a.assignedUids.length!==1?'s':''}</span>
+                  :<span style={{fontSize:10,fontWeight:700,background:'var(--acl)',color:'var(--ac)',border:'1px solid var(--acm)',padding:'2px 7px',borderRadius:8}}>🌐 Everyone</span>
+                }
+              </div>
+              <div className="lis" style={{marginBottom:6}}>{(a.description||'').slice(0,90)}{(a.description||'').length>90?'…':''}</div>
+              {isSpecific&&assignedNames.length>0&&(
+                <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+                  {assignedNames.slice(0,4).map(n=><span key={n} style={{fontSize:10,background:'var(--sf2)',border:'1px solid var(--bd)',padding:'1px 7px',borderRadius:10,color:'var(--tx2)',fontWeight:600}}>{n}</span>)}
+                  {assignedNames.length>4&&<span style={{fontSize:10,color:'var(--tx3)',alignSelf:'center'}}>+{assignedNames.length-4} more</span>}
+                </div>
+              )}
+              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                <span className="badge bp">{a.domain}</span>
+                {a.dueDate&&<span className="badge bgr">📅 {a.dueDate}</span>}
+                {a.resourceUrl&&<span className="badge bb">🔗 Has resource link</span>}
+              </div>
+            </div>
+            <div className="la"><button className="bs bdg" onClick={()=>onDel(a.id)}>Delete</button></div>
+          </div>
+        );
+      })}
   </>);
 }
 
@@ -1167,20 +1592,37 @@ function AOv({tasks,roadmaps,students,submissions}){
   </>);
 }
 
-function ATasks({tasks,onAdd,onDel}){
-  const blank={title:'',description:'',priority:'medium',domain:'AI/ML',dueDate:'',points:DEFAULT_TASK_POINTS,imageUrl:''};
+function ATasks({tasks,onAdd,onDel,students}){
+  const blank={title:'',description:'',priority:'medium',domain:'AI/ML',dueDate:'',points:DEFAULT_TASK_POINTS,imageUrl:'',assignedUids:[]};
   const[show,setShow]=useState(false);
   const[form,setForm]=useState(blank);
   const[saving,setSaving]=useState(false);
   const[err,setErr]=useState('');
   const[fd,setFd]=useState('all');
+  const[assignMode,setAssignMode]=useState('all'); // 'all' | 'specific'
+  const[stuSearch,setStuSearch]=useState('');
   const set=k=>v=>setForm(p=>({...p,[k]:v}));
+
+  const nameFrom=s=>s.name||(s.email?s.email.split('@')[0]:'Unknown');
+
+  const filteredStu=students.filter(s=>{
+    const q=stuSearch.toLowerCase();
+    return !q||(s.email||'').toLowerCase().includes(q)||(s.name||'').toLowerCase().includes(q);
+  });
+
+  const toggleUid=uid=>setForm(p=>({
+    ...p,
+    assignedUids: p.assignedUids.includes(uid)
+      ?p.assignedUids.filter(u=>u!==uid)
+      :[...p.assignedUids,uid]
+  }));
 
   const submit=async()=>{
     if(!form.title.trim()){setErr('Task title is required.');return}
+    if(assignMode==='specific'&&form.assignedUids.length===0){setErr('Select at least one student, or switch to "Everyone".');return}
     setSaving(true);setErr('');
-    // store points in TASK_POINTS object at runtime (session only — for persistent, use form.points in firestore)
-    try{await onAdd(form);setForm(blank);setShow(false)}
+    const payload={...form, assignedUids: assignMode==='all'?[]:form.assignedUids};
+    try{await onAdd(payload);setForm(blank);setAssignMode('all');setStuSearch('');setShow(false)}
     catch(e){setErr(e.message)}
     finally{setSaving(false)}
   };
@@ -1190,7 +1632,7 @@ function ATasks({tasks,onAdd,onDel}){
 
   return(<>
     <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
-      <div><div className="ptit">Tasks</div><div className="psub">Assign tasks to student domains</div></div>
+      <div><div className="ptit">Tasks</div><div className="psub">Assign tasks by domain or to specific students</div></div>
       <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'✕ Cancel':'+ New task'}</button>
     </div>
 
@@ -1237,10 +1679,95 @@ function ATasks({tasks,onAdd,onDel}){
           <input type="number" className="fi" min="0" max="1000" placeholder="20" value={form.points} onChange={e=>set('points')(Number(e.target.value))}/>
         </div>
       </div>
+
+      {/* ── ASSIGN TO SECTION ── */}
+      <div style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:10,padding:'14px 16px',marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--tx2)',textTransform:'uppercase',letterSpacing:.4,marginBottom:10}}>👥 Assign To</div>
+        <div style={{display:'flex',gap:8,marginBottom:assignMode==='specific'?14:0}}>
+          {[['all','🌐 Everyone'],['specific','🎯 Specific students']].map(([m,lbl])=>(
+            <button key={m}
+              onClick={()=>{setAssignMode(m);if(m==='all')setForm(p=>({...p,assignedUids:[]}));}}
+              style={{padding:'7px 16px',borderRadius:8,border:`1.5px solid ${assignMode===m?'var(--ac)':'var(--bd2)'}`,
+                background:assignMode===m?'var(--acl)':'var(--sf)',color:assignMode===m?'var(--ac)':'var(--tx2)',
+                fontWeight:700,fontSize:13,cursor:'pointer',transition:'.15s'}}>
+              {lbl}
+            </button>
+          ))}
+        </div>
+
+        {assignMode==='specific'&&(
+          <div>
+            {students.length===0
+              ?<div style={{fontSize:13,color:'var(--tx3)',fontStyle:'italic'}}>No students registered yet.</div>
+              :<>
+                <input className="fi" placeholder="🔍 Search by name or email…" value={stuSearch}
+                  onChange={e=>setStuSearch(e.target.value)}
+                  style={{marginBottom:10,fontSize:13}}/>
+
+                {/* selected chips */}
+                {form.assignedUids.length>0&&(
+                  <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:10}}>
+                    {form.assignedUids.map(uid=>{
+                      const s=students.find(x=>x.id===uid);
+                      if(!s)return null;
+                      const r=getRank(s.points||0);
+                      return(
+                        <div key={uid} style={{display:'flex',alignItems:'center',gap:5,background:r.bg||'var(--acl)',border:`1.5px solid ${r.border||'var(--acm)'}`,borderRadius:20,padding:'3px 10px 3px 8px',fontSize:12,fontWeight:600,color:r.color||'var(--ac)'}}>
+                          {r.emoji} {nameFrom(s)}
+                          <span onClick={()=>toggleUid(uid)} style={{cursor:'pointer',marginLeft:3,opacity:.6,fontWeight:900,fontSize:14,lineHeight:1}}>×</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* student list */}
+                <div style={{maxHeight:220,overflowY:'auto',display:'flex',flexDirection:'column',gap:6}}>
+                  {filteredStu.length===0&&<div style={{fontSize:13,color:'var(--tx3)'}}>No students match your search.</div>}
+                  {filteredStu.map(s=>{
+                    const sel=form.assignedUids.includes(s.id);
+                    const r=getRank(s.points||0);
+                    const name=nameFrom(s);
+                    return(
+                      <div key={s.id} onClick={()=>toggleUid(s.id)}
+                        style={{display:'flex',alignItems:'center',gap:11,padding:'9px 12px',borderRadius:9,
+                          border:`1.5px solid ${sel?r.border||'var(--acm)':'var(--bd)'}`,
+                          background:sel?r.bg||'var(--acl)':'var(--sf)',cursor:'pointer',transition:'.12s',userSelect:'none'}}>
+                        {/* checkbox */}
+                        <div style={{width:18,height:18,borderRadius:5,border:`2px solid ${sel?r.color||'var(--ac)':'var(--bd2)'}`,
+                          background:sel?r.color||'var(--ac)':'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#fff'}}>
+                          {sel&&'✓'}
+                        </div>
+                        {/* avatar */}
+                        <div style={{width:32,height:32,borderRadius:'50%',background:sel?'rgba(255,255,255,.12)':'var(--sf2)',
+                          border:`1.5px solid ${sel?r.color||'var(--acm)':'var(--bd2)'}`,
+                          display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,
+                          color:sel?r.color||'var(--ac)':'var(--tx2)',flexShrink:0}}>
+                          {name.slice(0,2).toUpperCase()}
+                        </div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:13,fontWeight:700,color:sel?r.color||'var(--ac)':'var(--tx)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{name}</div>
+                          <div style={{fontSize:11,color:'var(--tx3)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{s.email||'—'}</div>
+                        </div>
+                        <div style={{flexShrink:0,textAlign:'right'}}>
+                          <div style={{fontSize:11,fontWeight:700,color:r.color}}>{r.emoji} {r.name}</div>
+                          <div style={{fontSize:11,color:'var(--tx3)',marginTop:1}}>🏆 {s.points||0} pts</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{fontSize:11,color:'var(--tx3)',marginTop:8}}>{form.assignedUids.length} student{form.assignedUids.length!==1?'s':''} selected</div>
+              </>
+            }
+          </div>
+        )}
+      </div>
+
       {err&&<div className="ebox" style={{marginBottom:10}}>{err}</div>}
       <div style={{display:'flex',gap:8}}>
         <button className="bs bacc" onClick={submit} disabled={saving}>{saving?'Publishing…':'Publish task'}</button>
-        <button className="bs bgh" onClick={()=>{setShow(false);setErr('');setForm(blank)}}>Cancel</button>
+        <button className="bs bgh" onClick={()=>{setShow(false);setErr('');setForm(blank);setAssignMode('all');setStuSearch('')}}>Cancel</button>
       </div>
     </div>}
 
@@ -1250,20 +1777,39 @@ function ATasks({tasks,onAdd,onDel}){
 
     {shown.length===0
       ?<div className="empty">{tasks.length===0?'No tasks yet. Create one above!':'No tasks for this domain.'}</div>
-      :shown.map(t=>(
-      <div key={t.id} className="li">
-        <div style={{flex:1}}>
-          <div className="lit">{t.title}</div>
-          <div className="lis" style={{marginBottom:8}}>{(t.description||'').slice(0,90)}{(t.description||'').length>90?'…':''}</div>
-          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-            <PBadge p={t.priority}/><span className="badge bp">{t.domain}</span>
-            {t.dueDate&&<span className="badge bgr">📅 {t.dueDate}</span>}
-            <span className="badge" style={{background:'#FFF3CD',color:'#7A5800',border:'1px solid #F0C040'}}>🏆 {t.points??DEFAULT_TASK_POINTS} pts</span>
+      :shown.map(t=>{
+        const isSpecific=t.assignedUids&&t.assignedUids.length>0;
+        const assignedNames=isSpecific
+          ?t.assignedUids.map(uid=>{const s=students.find(x=>x.id===uid);return s?nameFrom(s):null}).filter(Boolean)
+          :[];
+        return(
+        <div key={t.id} className="li">
+          <div style={{flex:1}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
+              <div className="lit">{t.title}</div>
+              {isSpecific
+                ?<span style={{fontSize:10,fontWeight:700,background:'#EEF2FF',color:'#4338CA',border:'1px solid #C7D2FE',padding:'2px 7px',borderRadius:8,flexShrink:0}}>🎯 {t.assignedUids.length} student{t.assignedUids.length!==1?'s':''}</span>
+                :<span style={{fontSize:10,fontWeight:700,background:'var(--acl)',color:'var(--ac)',border:'1px solid var(--acm)',padding:'2px 7px',borderRadius:8,flexShrink:0}}>🌐 Everyone</span>
+              }
+            </div>
+            <div className="lis" style={{marginBottom:6}}>{(t.description||'').slice(0,90)}{(t.description||'').length>90?'…':''}</div>
+            {isSpecific&&assignedNames.length>0&&(
+              <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+                {assignedNames.slice(0,4).map(n=>(
+                  <span key={n} style={{fontSize:10,background:'var(--sf2)',border:'1px solid var(--bd)',padding:'1px 7px',borderRadius:10,color:'var(--tx2)',fontWeight:600}}>{n}</span>
+                ))}
+                {assignedNames.length>4&&<span style={{fontSize:10,color:'var(--tx3)',alignSelf:'center'}}>+{assignedNames.length-4} more</span>}
+              </div>
+            )}
+            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+              <PBadge p={t.priority}/><span className="badge bp">{t.domain}</span>
+              {t.dueDate&&<span className="badge bgr">📅 {t.dueDate}</span>}
+              <span className="badge" style={{background:'#FFF3CD',color:'#7A5800',border:'1px solid #F0C040'}}>🏆 {t.points??DEFAULT_TASK_POINTS} pts</span>
+            </div>
           </div>
+          <div className="la"><button className="bs bdg" onClick={()=>onDel(t.id)}>Delete</button></div>
         </div>
-        <div className="la"><button className="bs bdg" onClick={()=>onDel(t.id)}>Delete</button></div>
-      </div>
-    ))}
+      );})}
   </>);
 }
 
