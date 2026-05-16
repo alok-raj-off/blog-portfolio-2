@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduTrack</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   FIREBASE CONFIG — replace with your real project values
+   console.firebase.google.com → Project Settings → Web App
+   Required: Enable Email/Password Auth + Firestore Database
+═══════════════════════════════════════════════════════════════ */
+const firebaseConfig = {
+apiKey: "AIzaSyDjLuWLhH6sT13VoP690BYRKzxKjb9HGeQ",
+
+  authDomain: "sskill-e944f.firebaseapp.com",
+
+  databaseURL: "https://sskill-e944f-default-rtdb.firebaseio.com",
+
+  projectId: "sskill-e944f",
+
+  storageBucket: "sskill-e944f.firebasestorage.app",
+
+  messagingSenderId: "650928874757",
+
+  appId: "1:650928874757:web:be0663b30a91edbdb6436c",
+
+  measurementId: "G-YGRC5ZHBMQ"
+
+
+};
+/* ════════════════════════════════════════════════════════════ */
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+/* Admin credentials — change password here if needed */
+const ADMIN_EMAIL = "hceadmin@edutrack.internal";
+const ADMIN_USER  = "hceadmin";
+const ADMIN_PASS  = "hceadminaksk";
+
+/* ─── POINT VALUES PER TASK ───────────────────────────────────
+   Add task titles (exact match) and their point value here.
+   Admin can also award manual bonus points per student.
+────────────────────────────────────────────────────────────── */
+const TASK_POINTS = {
+  /* Example — replace with your real task titles & points:
+  "Build a Portfolio Website": 50,
+  "Intro to Python Assignment": 30,
+  */
+};
+const DEFAULT_TASK_POINTS = 20; // fallback if task not listed above
+
+/* ─── RANK SYSTEM ─────────────────────────────────────────────
+   Matches the Community Ranks image: Probationer → Explorer →
+   Guardian → Champion → Legend
+────────────────────────────────────────────────────────────── */
+const RANKS = [
+  { name:'Probationer', min:0,   max:149,  emoji:'🛡️',  color:'#CD7F32', glow:'rgba(205,127,50,0.35)',  bg:'linear-gradient(135deg,#3a1f00,#1a0e00)', border:'#CD7F32' },
+  { name:'Explorer',    min:150, max:299,  emoji:'🧭',  color:'#48C98A', glow:'rgba(72,201,138,0.35)',  bg:'linear-gradient(135deg,#003a1f,#001a0e)', border:'#48C98A' },
+  { name:'Guardian',   min:300, max:699,  emoji:'⚔️',  color:'#60AAFF', glow:'rgba(96,170,255,0.35)',  bg:'linear-gradient(135deg,#001836,#000d1f)', border:'#60AAFF' },
+  { name:'Champion',   min:700, max:999, emoji:'🦅',  color:'#C080FF', glow:'rgba(192,128,255,0.35)', bg:'linear-gradient(135deg,#1a0033,#0d001a)', border:'#C080FF' },
+  { name:'Legend',     min:1000,max:Infinity,emoji:'👑',color:'#FFB830',glow:'rgba(255,184,48,0.45)',  bg:'linear-gradient(135deg,#2a1800,#150c00)', border:'#FFB830' },
+];
+function getRank(pts){ return RANKS.find(r=>pts>=r.min&&pts<=r.max)||RANKS[0]; }
+function getNextRank(pts){ const i=RANKS.findIndex(r=>pts>=r.min&&pts<=r.max); return i<RANKS.length-1?RANKS[i+1]:null; }
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#F8F7F4;--sf:#FFFFFF;--sf2:#F2F0EC;--sf3:#E8E5DF;
+  --tx:#17160E;--tx2:#615E57;--tx3:#A09D96;
+  --ac:#1A5C39;--ach:#13492D;--acl:#E4F2EB;--acm:#48A872;
+  --bd:#E2DFD9;--bd2:#C8C4BC;
+  --rr:#B32B2B;--rl:#FCEAEA;
+  --wr:#9B6710;--wl:#FEF2D9;
+  --if:#135298;--il:#E5EFF9;
+  --pu:#5230C0;--pl:#EDEAFB;
+  --r:10px;--rl2:16px;--rx:22px;
+  --sh:0 1px 2px rgba(0,0,0,.05),0 3px 12px rgba(0,0,0,.07);
+  --fn:'DM Sans',sans-serif;
+}
+body{font-family:var(--fn);background:var(--bg);color:var(--tx);min-height:100vh;font-size:15px;line-height:1.6}
+button,input,select,textarea{font-family:var(--fn)}button{cursor:pointer}
+/* NAV */
+nav{background:var(--sf);border-bottom:1px solid var(--bd);height:56px;display:flex;align-items:center;padding:0 24px;gap:3px;position:sticky;top:0;z-index:300}
+.brand{font-weight:800;font-size:17px;letter-spacing:-.5px;color:var(--tx);display:flex;align-items:center;gap:5px;margin-right:12px}
+.brand em{color:var(--ac);font-style:normal}
+.bpill{font-size:10px;font-weight:700;background:var(--acl);color:var(--ac);padding:2px 7px;border-radius:20px}
+.nk{padding:6px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--tx2);background:none;border:none;transition:.1s}
+.nk:hover,.nk.on{background:var(--sf2);color:var(--tx);font-weight:600}
+.ml{margin-left:auto}
+.av{width:32px;height:32px;border-radius:50%;background:var(--acl);border:1.5px solid var(--acm);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ac);flex-shrink:0}
+.nout{padding:6px 13px;border-radius:8px;font-size:13px;font-weight:500;border:1.5px solid var(--bd2);background:var(--sf);color:var(--tx2);transition:.1s;margin-left:8px}
+.nout:hover{background:var(--sf2)}
+/* LAYOUT */
+.main{max-width:1200px;margin:0 auto;padding:28px 22px}
+.ptit{font-size:20px;font-weight:700;letter-spacing:-.4px;margin-bottom:3px}
+.psub{color:var(--tx2);font-size:13px;margin-bottom:24px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl2);padding:20px 22px;box-shadow:var(--sh)}
+.stat{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl2);padding:15px 17px}
+.sl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--tx3);margin-bottom:5px}
+.sv{font-size:23px;font-weight:700;letter-spacing:-.5px}
+.ss{font-size:11px;color:var(--tx3);margin-top:2px}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;white-space:nowrap}
+.bg{background:var(--acl);color:var(--ac)}.br{background:var(--rl);color:var(--rr)}.ba{background:var(--wl);color:var(--wr)}.bb{background:var(--il);color:var(--if)}.bgr{background:var(--sf2);color:var(--tx2)}.bp{background:var(--pl);color:var(--pu)}
+/* TASK CARDS */
+.tc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;transition:.1s}
+.tc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.tc.urgent::before{background:var(--rr)}.tc.medium::before{background:var(--wr)}.tc.low::before{background:var(--if)}
+.tc:hover{border-color:var(--bd2);box-shadow:var(--sh)}
+.tct{font-weight:600;font-size:13px;margin-bottom:4px;line-height:1.4}
+.tcd{font-size:12px;color:var(--tx2);margin-bottom:9px;line-height:1.5}
+.tcm{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+/* ROADMAP */
+.rm{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl2);overflow:hidden;margin-bottom:12px}
+.rmh{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.rmh:hover{background:var(--sf2)}
+.rmht{font-weight:600;font-size:14px}
+.rmb{padding:15px 20px}
+.ri{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--bd2);margin-top:6px;flex-shrink:0}
+.dot.done{background:var(--ac)}.dot.active{background:var(--ac);box-shadow:0 0 0 3px var(--acl)}.dot.upcoming{background:var(--bd2)}
+.pbar{height:4px;background:var(--sf3);border-radius:2px;overflow:hidden;width:70px}
+.pfill{height:100%;background:var(--ac);border-radius:2px}
+/* AUTH */
+.aw{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px}
+.abox{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rx);padding:36px 40px;width:100%;max-width:420px;box-shadow:var(--sh)}
+.alogo{font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:24px}
+.alogo em{color:var(--ac);font-style:normal}
+.atit{font-size:20px;font-weight:700;letter-spacing:-.4px;margin-bottom:5px}
+.asub{font-size:13px;color:var(--tx2);margin-bottom:24px}
+.fld{margin-bottom:13px}
+.fld label{display:block;font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.fi{width:100%;padding:9px 11px;border:1.5px solid var(--bd2);border-radius:var(--r);font-size:14px;color:var(--tx);background:var(--sf);outline:none;transition:.1s}
+.fi:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acl)}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:5px}
+.chip{padding:6px 12px;border-radius:8px;border:1.5px solid var(--bd2);font-size:13px;font-weight:500;background:var(--sf);color:var(--tx2);transition:.1s}
+.chip:hover{background:var(--sf2)}.chip.on{border-color:var(--ac);background:var(--acl);color:var(--ac);font-weight:600}.chip.dash{border-style:dashed;color:var(--tx3)}
+.abtn{width:100%;padding:10px;border-radius:var(--r);font-size:14px;font-weight:700;border:none;background:var(--ac);color:#fff;transition:.1s;margin-top:6px}
+.abtn:hover{background:var(--ach)}.abtn:disabled{opacity:.55;cursor:not-allowed}
+.asw{text-align:center;margin-top:15px;font-size:13px;color:var(--tx2)}
+.asw button{background:none;border:none;color:var(--ac);font-weight:600;font-size:13px}
+.ebox{background:var(--rl);color:var(--rr);padding:9px 12px;border-radius:8px;font-size:13px;margin-bottom:12px}
+.fbwarn{background:#FFF8E6;border:1px solid #E8C84A;color:#7A5A00;padding:11px 14px;border-radius:var(--r);font-size:12px;margin-bottom:16px;line-height:1.7}
+.fbwarn code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-size:11px}
+/* ADMIN */
+.adw{display:flex;min-height:calc(100vh - 56px)}
+.ads{width:210px;background:#0D0F16;border-right:1px solid #1A1D25;padding:14px 10px;flex-shrink:0}
+.adm{flex:1;padding:28px 26px;overflow-y:auto}
+.si{display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:8px;font-size:13px;font-weight:500;color:#767676;background:none;border:none;width:100%;text-align:left;transition:.1s;margin-bottom:2px}
+.si:hover{background:#181B23;color:#C8C8C8}.si.on{background:#1A5C39;color:#48A872;font-weight:700}
+.sico{font-size:14px;width:16px;text-align:center}
+.ads-lbl{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#383B45;padding:14px 12px 6px}
+/* FORM */
+.fta{width:100%;padding:9px 11px;border:1.5px solid var(--bd2);border-radius:var(--r);font-size:14px;color:var(--tx);background:var(--sf);outline:none;resize:vertical;min-height:72px;transition:.1s;font-family:var(--fn)}
+.fta:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acl)}
+.fgr{display:grid;gap:11px;margin-bottom:13px}
+.bs{padding:7px 13px;border-radius:8px;font-size:13px;font-weight:600;border:none;transition:.1s}
+.bacc{background:var(--ac);color:#fff}.bacc:hover{background:var(--ach)}.bacc:disabled{opacity:.55;cursor:not-allowed}
+.bgh{background:var(--sf2);color:var(--tx2);border:1px solid var(--bd)}.bgh:hover{background:var(--sf3);color:var(--tx)}
+.bdg{background:var(--rl);color:var(--rr)}.bdg:hover{background:#F8D2D2}
+/* LIST */
+.li{display:flex;align-items:flex-start;gap:11px;padding:13px 15px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:8px}
+.lit{font-size:14px;font-weight:600}.lis{font-size:12px;color:var(--tx3);margin-top:1px}
+.la{display:flex;gap:6px;flex-shrink:0;margin-left:auto;align-items:center}
+/* HERO */
+.hero{background:linear-gradient(125deg,var(--acl) 0%,var(--bg) 100%);border:1px solid var(--bd);border-radius:var(--rx);padding:26px 28px;margin-bottom:20px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-30px;top:-30px;width:160px;height:160px;border-radius:50%;background:rgba(72,168,114,.1)}
+.htag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--ac);margin-bottom:5px}
+.hh{font-size:21px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.hs{color:var(--tx2);font-size:13px}
+/* MISC */
+.empty{text-align:center;padding:38px;color:var(--tx3);font-size:13px}
+.spin{display:flex;align-items:center;justify-content:center;height:100vh;font-size:14px;color:var(--tx3)}
+.notif{position:fixed;bottom:22px;right:22px;background:var(--tx);color:#fff;padding:11px 16px;border-radius:var(--r);font-size:13px;box-shadow:var(--sh);z-index:9999;animation:nsl .25s ease}
+@keyframes nsl{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.divl{height:1px;background:var(--bd);margin:16px 0}
+.slbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--tx3);margin-bottom:12px}
+
+/* ── STATUS SELECTOR (roadmap items) ── */
+.status-sel{display:inline-flex;border:1.5px solid var(--bd2);border-radius:7px;overflow:hidden;font-size:11px;font-weight:600;flex-shrink:0}
+.status-sel button{padding:3px 8px;border:none;background:var(--sf2);color:var(--tx3);transition:.1s;white-space:nowrap}
+.status-sel button:not(:last-child){border-right:1px solid var(--bd2)}
+.status-sel button.act-ns{background:#E8E5DF;color:var(--tx2)}
+.status-sel button.act-ip{background:var(--wl);color:var(--wr)}
+.status-sel button.act-dn{background:var(--acl);color:var(--ac)}
+
+/* ── POINTS BADGE ── */
+.pts-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#FFF3CD,#FFE082);border:1.5px solid #F0C040;border-radius:20px;padding:4px 12px;font-size:13px;font-weight:700;color:#7A5800}
+.pts-badge .pts-ico{font-size:15px}
+.pts-stat{background:linear-gradient(135deg,#FFFBEA,#FFF3CD);border:1.5px solid #F0C040;border-radius:var(--rl2);padding:15px 17px}
+.pts-stat .sv{color:#9B6710}
+
+/* ── MODAL OVERLAY ── */
+.modal-bg{position:fixed;inset:0;background:rgba(23,22,14,.45);z-index:800;display:flex;align-items:center;justify-content:center;padding:20px;animation:fdin .15s ease}
+@keyframes fdin{from{opacity:0}to{opacity:1}}
+.modal{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rx);padding:28px 30px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.18);animation:mup .2s ease}
+@keyframes mup{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-tit{font-size:17px;font-weight:700;letter-spacing:-.3px;margin-bottom:4px}
+.modal-sub{font-size:13px;color:var(--tx2);margin-bottom:20px}
+.modal-fld{margin-bottom:12px}
+.modal-fld label{display:block;font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.ai-toggle{display:flex;align-items:center;gap:10px;padding:10px 13px;border:1.5px solid var(--bd2);border-radius:var(--r);cursor:pointer;transition:.1s;user-select:none}
+.ai-toggle:hover{border-color:var(--ac);background:var(--acl)}
+.ai-toggle.on{border-color:var(--ac);background:var(--acl)}
+.ai-toggle input{accent-color:var(--ac);width:16px;height:16px}
+.ai-toggle-lbl{font-size:13px;font-weight:500;flex:1}
+.ai-toggle-lbl small{display:block;font-size:11px;color:var(--tx3);font-weight:400}
+
+/* ── SUBMISSION BADGE ── */
+.sub-done{display:inline-flex;align-items:center;gap:4px;background:var(--acl);color:var(--ac);border:1px solid var(--acm);border-radius:5px;font-size:11px;font-weight:600;padding:2px 7px}
+
+/* ── ADMIN POINTS PANEL ── */
+.pts-row{display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:8px}
+.pts-row .pts-val{font-size:18px;font-weight:700;color:#9B6710;min-width:40px;text-align:right}
+.pts-inp{width:70px;padding:5px 8px;border:1.5px solid var(--bd2);border-radius:7px;font-size:13px;font-weight:600;text-align:center;outline:none}
+.pts-inp:focus{border-color:var(--ac)}
+
+/* ── SUBMISSIONS VIEW (admin) ── */
+.sub-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;margin-bottom:10px}
+.sub-card a{color:var(--ac);font-size:12px;font-weight:600;text-decoration:none}
+.sub-card a:hover{text-decoration:underline}
+
+/* ── TASK IMAGE ── */
+.tc-img{width:100%;height:140px;object-fit:cover;border-radius:6px;margin-bottom:10px;display:block}
+.task-img-preview{width:100%;max-height:180px;object-fit:cover;border-radius:8px;margin-top:8px;border:1.5px solid var(--bd2)}
+
+/* ── RANK BADGE (nav) ── */
+.rank-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px solid;transition:.2s}
+
+/* ── RANK PAGE ── */
+.rank-page{padding:28px 22px;max-width:1060px;margin:0 auto}
+.rank-track{display:flex;align-items:center;gap:0;margin:28px 0;overflow-x:auto;padding:10px 4px}
+.rank-card{display:flex;flex-direction:column;align-items:center;padding:22px 18px 16px;border-radius:16px;border:2px solid;min-width:140px;flex:1;position:relative;transition:.3s;cursor:default}
+.rank-card.current{transform:scale(1.08);z-index:2}
+.rank-card .rank-emoji{font-size:36px;margin-bottom:10px;filter:drop-shadow(0 0 8px currentColor)}
+.rank-card .rank-name{font-weight:800;font-size:14px;letter-spacing:.5px;margin-bottom:4px}
+.rank-card .rank-pts{font-size:11px;opacity:.75;font-weight:500}
+/* ── LEADERBOARD ── */
+@keyframes shimmer-gold{0%,100%{box-shadow:0 0 18px 4px rgba(72,201,138,.55),0 4px 32px rgba(72,201,138,.25)}50%{box-shadow:0 0 32px 8px rgba(72,201,138,.85),0 8px 48px rgba(72,201,138,.4)}}
+@keyframes shimmer-silver{0%,100%{box-shadow:0 0 18px 4px rgba(251,146,60,.5),0 4px 28px rgba(251,146,60,.2)}50%{box-shadow:0 0 30px 8px rgba(251,146,60,.8),0 8px 40px rgba(251,146,60,.35)}}
+@keyframes shimmer-bronze{0%,100%{box-shadow:0 0 14px 3px rgba(180,180,190,.35),0 3px 20px rgba(180,180,190,.15)}50%{box-shadow:0 0 24px 6px rgba(200,200,210,.6),0 6px 32px rgba(200,200,210,.25)}}
+@keyframes float1{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes float2{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes float3{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes confetti-1{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(80px) rotate(360deg);opacity:0}}
+@keyframes confetti-2{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(70px) rotate(-270deg);opacity:0}}
+@keyframes confetti-3{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(90px) rotate(180deg);opacity:0}}
+@keyframes slide-in{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pulse-crown{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.18) rotate(5deg)}}
+
+.lb-wrap{max-width:860px;margin:0 auto}
+.lb-podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:32px;align-items:end}
+.lb-pod{border-radius:18px;padding:24px 16px 20px;position:relative;overflow:hidden;text-align:center;cursor:default}
+.lb-pod.p1{animation:shimmer-gold 2.2s ease-in-out infinite,float1 3.2s ease-in-out infinite;background:linear-gradient(160deg,#052b14 0%,#0a3d1e 60%,#062015 100%);border:2px solid #48C98A;order:2}
+.lb-pod.p2{animation:shimmer-silver 2.6s ease-in-out infinite,float2 3.8s ease-in-out infinite;background:linear-gradient(160deg,#2a1200 0%,#3d1f00 60%,#1f0e00 100%);border:2px solid #FB923C;order:1}
+.lb-pod.p3{animation:shimmer-bronze 3s ease-in-out infinite,float3 4.4s ease-in-out infinite;background:linear-gradient(160deg,#18181f 0%,#22222c 60%,#111118 100%);border:2px solid #9CA3AF;order:3}
+.lb-pod-crown{font-size:28px;margin-bottom:4px;display:block;line-height:1}
+.lb-pod.p1 .lb-pod-crown{animation:pulse-crown 1.8s ease-in-out infinite}
+.lb-pod-pos{font-size:13px;font-weight:900;letter-spacing:1px;margin-bottom:10px}
+.lb-pod.p1 .lb-pod-pos{color:#48C98A}.lb-pod.p2 .lb-pod-pos{color:#FB923C}.lb-pod.p3 .lb-pod-pos{color:#9CA3AF}
+.lb-pod-av{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;margin:0 auto 10px;border:3px solid}
+.lb-pod.p1 .lb-pod-av{background:rgba(72,201,138,.18);border-color:#48C98A;color:#48C98A}
+.lb-pod.p2 .lb-pod-av{background:rgba(251,146,60,.18);border-color:#FB923C;color:#FB923C}
+.lb-pod.p3 .lb-pod-av{background:rgba(156,163,175,.18);border-color:#9CA3AF;color:#9CA3AF}
+.lb-pod-name{font-weight:700;font-size:14px;color:#fff;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;margin-left:auto;margin-right:auto}
+.lb-pod-email{font-size:11px;opacity:.45;color:#fff;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;margin-left:auto;margin-right:auto}
+.lb-pod-pts{font-size:19px;font-weight:900;margin-bottom:4px}
+.lb-pod.p1 .lb-pod-pts{color:#48C98A}.lb-pod.p2 .lb-pod-pts{color:#FB923C}.lb-pod.p3 .lb-pod-pts{color:#9CA3AF}
+.lb-pod-rank{font-size:11px;font-weight:600;opacity:.6;color:#fff}
+.lb-pod-confetti{position:absolute;top:8px;left:0;right:0;pointer-events:none;overflow:hidden;height:60px}
+.cf{position:absolute;width:7px;height:7px;border-radius:2px;opacity:0}
+.lb-list-row{display:flex;align-items:center;gap:14px;padding:13px 16px;background:var(--sf);border:1px solid var(--bd);border-radius:12px;margin-bottom:8px;transition:.15s;animation:slide-in .3s ease both}
+.lb-list-row:hover{border-color:var(--bd2);box-shadow:var(--sh)}
+.lb-list-row.me{border-color:var(--acm);background:var(--acl)}
+.lb-pos-num{font-size:13px;font-weight:800;color:var(--tx3);width:26px;text-align:center;flex-shrink:0}
+.lb-list-av{width:38px;height:38px;border-radius:50%;background:var(--sf2);border:1.5px solid var(--bd2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--tx2);flex-shrink:0}
+.lb-list-av.me{border-color:var(--acm);background:var(--acl);color:var(--ac)}
+.lb-list-name{font-weight:700;font-size:14px;color:var(--tx)}
+.lb-list-email{font-size:11px;color:var(--tx3);margin-top:1px}
+.lb-list-pts{font-size:16px;font-weight:800;color:#9B6710;margin-left:auto;flex-shrink:0}
+.lb-list-rank-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;border:1px solid;flex-shrink:0}
+.lb-me-tag{font-size:10px;font-weight:800;background:var(--ac);color:#fff;padding:2px 6px;border-radius:6px;letter-spacing:.4px;flex-shrink:0}
+
+.rank-connector{width:28px;height:2px;background:var(--bd2);flex-shrink:0}
+.rank-connector.passed{background:var(--acm)}
+.progress-to-next{background:var(--sf2);border:1px solid var(--bd);border-radius:12px;padding:16px 20px;margin-top:20px}
+.progress-bar-wrap{height:10px;background:var(--sf3);border-radius:5px;overflow:hidden;margin:10px 0}
+.progress-bar-fill{height:100%;border-radius:5px;transition:width .6s ease}
+
+@media(max-width:680px){.g4,.g2{grid-template-columns:1fr}.ads{display:none}.modal{padding:20px 18px}.rank-track{gap:0}.rank-card{min-width:110px;padding:14px 10px 12px}}
+@media(max-width:900px){.home-grid{grid-template-columns:1fr!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef}=React;
+
+/* ─ helpers ─ */
+const DOMAINS=['AI/ML','Web Dev','DSA','Cloud & DevOps','Data Science','Cybersecurity','Mobile Dev','General'];
+
+function ini(n){return(n||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
+function Av({name,size=32}){
+  return<div className="av" style={{width:size,height:size,fontSize:size>34?14:11}}>{ini(name)}</div>;
+}
+function Notif({msg}){return msg?<div className="notif">{msg}</div>:null}
+function useNotif(){
+  const[n,sn]=useState(null);
+  const show=m=>{sn(m);setTimeout(()=>sn(null),3000)};
+  return[n,show];
+}
+function PBadge({p}){
+  if(p==='urgent')return<span className="badge br">● Urgent</span>;
+  if(p==='medium')return<span className="badge ba">● Medium</span>;
+  return<span className="badge bb">● Low</span>;
+}
+function Spin(){return<div className="spin">Loading EduTrack…</div>}
+function isConfigured(){
+  try{return !firebase.apps[0].options.apiKey.startsWith('PASTE')}catch{return false}
+}
+
+/* ═══════════════════════════════════════════════
+   STUDENT AUTH
+═══════════════════════════════════════════════ */
+function StudentAuth({onAuth,onAdmin}){
+  const[mode,setMode]=useState('login');
+  const[email,setEmail]=useState('');
+  const[pw,setPw]=useState('');
+  const[name,setName]=useState('');
+  const[flds,setFlds]=useState([]);
+  const[extra,setExtra]=useState([]);
+  const[addF,setAddF]=useState(false);
+  const[newF,setNewF]=useState('');
+  const[err,setErr]=useState('');
+  const[busy,setBusy]=useState(false);
+  const cfg=isConfigured();
+
+  const allF=[...DOMAINS,...extra];
+  const togF=f=>setFlds(p=>p.includes(f)?p.filter(x=>x!==f):[...p,f]);
+  const saveF=()=>{if(!newF.trim())return;setExtra(p=>[...p,newF.trim()]);setFlds(p=>[...p,newF.trim()]);setNewF('');setAddF(false)};
+
+  const go=async()=>{
+    setErr('');setBusy(true);
+    try{
+      if(mode==='signup'){
+        const r=await auth.createUserWithEmailAndPassword(email,pw);
+        await r.user.updateProfile({displayName:name});
+        await db.collection('users').doc(r.user.uid).set({
+          name,email,fields:flds,role:'student',points:0,
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        onAuth({uid:r.user.uid,displayName:name,email,fields:flds});
+      }else{
+        const r=await auth.signInWithEmailAndPassword(email,pw);
+        const snap=await db.collection('users').doc(r.user.uid).get();
+        const d=snap.data()||{};
+        onAuth({uid:r.user.uid,displayName:r.user.displayName||d.name||email,email,fields:d.fields||[]});
+      }
+    }catch(e){setErr(e.message)}
+    finally{setBusy(false)}
+  };
+
+  return(
+    <div className="aw">
+      <div className="abox">
+        <div className="alogo">Edu<em>Track</em></div>
+        {!cfg&&<div className="fbwarn">
+          ⚠️ <strong>Firebase not connected yet.</strong><br/>
+          Open this file, find <code>firebaseConfig</code> near the top, and replace each <code>PASTE_…_HERE</code> value with your real Firebase project credentials.<br/>
+          Get them at <strong>console.firebase.google.com</strong> → Project Settings → Your apps → Web.<br/>
+          Also enable <strong>Email/Password Authentication</strong> and <strong>Firestore Database</strong> in your project.
+        </div>}
+        <div className="atit">{mode==='login'?'Welcome back':'Create account'}</div>
+        <div className="asub">{mode==='login'?'Sign in to your student dashboard':'Join your cohort and start learning'}</div>
+        {mode==='signup'&&<div className="fld"><label>Full name</label>
+          <input className="fi" placeholder="Your name" value={name} onChange={e=>setName(e.target.value)}/>
+        </div>}
+        <div className="fld"><label>Email</label>
+          <input className="fi" type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)}/>
+        </div>
+        <div className="fld"><label>Password</label>
+          <input className="fi" type="password" placeholder="••••••••" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==='Enter'&&go()}/>
+        </div>
+        {mode==='signup'&&<div className="fld">
+          <label>Your learning fields</label>
+          <div className="chips">
+            {allF.map(f=><button key={f} className={`chip${flds.includes(f)?' on':''}`} onClick={()=>togF(f)}>{f}</button>)}
+            {addF?(
+              <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                <input value={newF} onChange={e=>setNewF(e.target.value)} placeholder="Field name"
+                  style={{padding:'5px 9px',border:'1.5px solid var(--bd2)',borderRadius:8,fontSize:13,width:120,outline:'none',fontFamily:'var(--fn)'}}
+                  onKeyDown={e=>e.key==='Enter'&&saveF()}/>
+                <button className="bs bacc" onClick={saveF}>Add</button>
+                <button className="bs bgh" onClick={()=>setAddF(false)}>✕</button>
+              </div>
+            ):(
+              <button className="chip dash" onClick={()=>setAddF(true)}>+ Add field</button>
+            )}
+          </div>
+        </div>}
+        {err&&<div className="ebox">{err}</div>}
+        <button className="abtn" onClick={go} disabled={busy||!email||!pw}>
+          {busy?'Please wait…':mode==='login'?'Sign in':'Create account'}
+        </button>
+        <div className="asw">
+          {mode==='login'
+            ?<>No account? <button onClick={()=>setMode('signup')}>Sign up free</button></>
+            :<>Already a member? <button onClick={()=>setMode('login')}>Sign in</button></>}
+        </div>
+        <div className="divl"/>
+        <div style={{textAlign:'center'}}>
+          <button className="bs bgh" onClick={onAdmin} style={{fontSize:12,padding:'5px 12px'}}>🔐 Admin login</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN LOGIN
+═══════════════════════════════════════════════ */
+function AdminLogin({onSuccess,onBack}){
+  const[u,setU]=useState('');
+  const[p,setP]=useState('');
+  const[err,setErr]=useState('');
+  const[busy,setBusy]=useState(false);
+
+  const go=async()=>{
+    setErr('');
+    if(u!==ADMIN_USER){setErr('Invalid admin username.');return}
+    if(p!==ADMIN_PASS){setErr('Invalid admin password.');return}
+    setBusy(true);
+    try{
+      try{
+        await auth.signInWithEmailAndPassword(ADMIN_EMAIL,ADMIN_PASS);
+      }catch(e){
+        if(e.code==='auth/user-not-found'||e.code==='auth/invalid-credential'){
+          await auth.createUserWithEmailAndPassword(ADMIN_EMAIL,ADMIN_PASS);
+        }else if(e.code!=='auth/wrong-password'){}
+      }
+      onSuccess();
+    }catch(e){setErr(e.message)}
+    finally{setBusy(false)}
+  };
+
+  return(
+    <div className="aw">
+      <div className="abox">
+        <div className="alogo">Edu<em>Track</em> <span className="bpill">Admin</span></div>
+        <div className="atit">Admin access</div>
+        <div className="asub">Restricted — authorised personnel only</div>
+        <div className="fld"><label>Username</label>
+          <input className="fi" placeholder="hceadmin" value={u} onChange={e=>setU(e.target.value)}/>
+        </div>
+        <div className="fld"><label>Password</label>
+          <input className="fi" type="password" placeholder="••••••••" value={p} onChange={e=>setP(e.target.value)} onKeyDown={e=>e.key==='Enter'&&go()}/>
+        </div>
+        {err&&<div className="ebox">{err}</div>}
+        <button className="abtn" onClick={go} disabled={busy||!u||!p}>
+          {busy?'Signing in…':'Access admin panel'}
+        </button>
+        <div className="asw"><button onClick={onBack}>← Back to student login</button></div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   SUBMIT ASSIGNMENT MODAL
+═══════════════════════════════════════════════ */
+function SubmitModal({task,uid,onClose,onSuccess}){
+  const[github,setGithub]=useState('');
+  const[preview,setPreview]=useState('');
+  const[desc,setDesc]=useState('');
+  const[usedAI,setUsedAI]=useState(false);
+  const[busy,setBusy]=useState(false);
+  const[err,setErr]=useState('');
+
+  const submit=async()=>{
+    if(!github.trim()){setErr('GitHub URL is required.');return}
+    setBusy(true);setErr('');
+    try{
+      const pts=TASK_POINTS[task.title]??DEFAULT_TASK_POINTS;
+      const subRef=db.collection('submissions').doc(`${uid}_${task.id}`);
+      await subRef.set({
+        uid,taskId:task.id,taskTitle:task.title,
+        githubUrl:github.trim(),previewUrl:preview.trim(),
+        description:desc.trim(),usedAI,points:pts,
+        submittedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      // add points to user
+      await db.collection('users').doc(uid).update({
+        points:firebase.firestore.FieldValue.increment(pts)
+      });
+      onSuccess(pts);
+    }catch(e){setErr(e.message)}
+    finally{setBusy(false)}
+  };
+
+  return(
+    <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal">
+        <div className="modal-tit">Submit Assignment</div>
+        <div className="modal-sub">
+          <span className="badge bp" style={{marginRight:6}}>{task.domain}</span>
+          {task.title}
+        </div>
+
+        <div className="modal-fld">
+          <label>GitHub Repository URL *</label>
+          <input className="fi" placeholder="https://github.com/yourusername/repo" value={github} onChange={e=>setGithub(e.target.value)}/>
+        </div>
+        <div className="modal-fld">
+          <label>Preview / Live URL <span style={{fontWeight:400,color:'var(--tx3)',textTransform:'none',fontSize:11}}>(optional)</span></label>
+          <input className="fi" placeholder="https://yourproject.vercel.app" value={preview} onChange={e=>setPreview(e.target.value)}/>
+        </div>
+        <div className="modal-fld">
+          <label>Description <span style={{fontWeight:400,color:'var(--tx3)',textTransform:'none',fontSize:11}}>(what did you build / learn?)</span></label>
+          <textarea className="fta" placeholder="Briefly describe your submission…" value={desc} onChange={e=>setDesc(e.target.value)} style={{minHeight:80}}/>
+        </div>
+        <div className="modal-fld">
+          <label>AI Usage</label>
+          <div className={`ai-toggle${usedAI?' on':''}`} onClick={()=>setUsedAI(p=>!p)}>
+            <input type="checkbox" checked={usedAI} onChange={()=>{}} onClick={e=>e.stopPropagation()}/>
+            <div className="ai-toggle-lbl">
+              I used AI assistance (ChatGPT, Claude, Copilot, etc.)
+              <small>Being honest helps your admin understand your learning better</small>
+            </div>
+          </div>
+        </div>
+
+        <div style={{background:'var(--acl)',border:'1px solid var(--acm)',borderRadius:8,padding:'9px 13px',marginBottom:14,display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:18}}>🏆</span>
+          <div style={{fontSize:13}}>
+            <strong style={{color:'var(--ac)'}}>{TASK_POINTS[task.title]??DEFAULT_TASK_POINTS} points</strong>
+            <span style={{color:'var(--tx2)'}}> will be added to your score on submission</span>
+          </div>
+        </div>
+
+        {err&&<div className="ebox">{err}</div>}
+        <div style={{display:'flex',gap:8}}>
+          <button className="bs bacc" onClick={submit} disabled={busy||!github.trim()}>{busy?'Submitting…':'Submit Assignment'}</button>
+          <button className="bs bgh" onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   STUDENT DASHBOARD
+═══════════════════════════════════════════════ */
+function StudentDash({user,onSignOut}){
+  const[tab,setTab]=useState('home');
+  const[tasks,setTasks]=useState([]);
+  const[roadmaps,setRoadmaps]=useState([]);
+  const[submissions,setSubmissions]=useState([]);
+  const[userData,setUserData]=useState({points:0});
+  const[allStudents,setAllStudents]=useState([]);
+  const[loading,setLoading]=useState(true);
+  const[submitTask,setSubmitTask]=useState(null);
+  const[notif,showNotif]=useNotif();
+
+  useEffect(()=>{
+    const u1=db.collection('tasks').orderBy('createdAt','desc').onSnapshot(s=>{
+      setTasks(s.docs.map(d=>({id:d.id,...d.data()})));setLoading(false);
+    },()=>setLoading(false));
+    const u2=db.collection('roadmaps').orderBy('createdAt','desc').onSnapshot(s=>{
+      setRoadmaps(s.docs.map(d=>({id:d.id,...d.data()})));
+    });
+    const u3=db.collection('submissions').where('uid','==',user.uid).onSnapshot(s=>{
+      setSubmissions(s.docs.map(d=>({id:d.id,...d.data()})));
+    });
+    const u4=db.collection('users').doc(user.uid).onSnapshot(s=>{
+      if(s.exists)setUserData(s.data());
+    });
+    const u5=db.collection('users').onSnapshot(s=>{
+      setAllStudents(s.docs.map(d=>({id:d.id,...d.data()})).filter(d=>d.role==='student'||(!d.role&&d.email)));
+    },()=>{});
+    return()=>{u1();u2();u3();u4();u5()};
+  },[user.uid]);
+
+  const myF=user.fields||[];
+  const myT=myF.length?tasks.filter(t=>myF.includes(t.domain)||t.domain==='General'):tasks;
+  const myR=myF.length?roadmaps.filter(r=>myF.includes(r.domain)):roadmaps;
+  const submittedIds=new Set(submissions.map(s=>s.taskId));
+  const hr=new Date().getHours();
+  const greet=hr<12?'Good morning':hr<18?'Good afternoon':'Good evening';
+  const totalPts=userData.points||0;
+
+  const handleSubmitSuccess=pts=>{
+    setSubmitTask(null);
+    showNotif(`🏆 Submitted! +${pts} points earned`);
+  };
+
+  return(<>
+    <nav>
+      <div className="brand">Edu<em>Track</em></div>
+      <button className={`nk${tab==='home'?' on':''}`} onClick={()=>setTab('home')}>Home</button>
+      <button className={`nk${tab==='tasks'?' on':''}`} onClick={()=>setTab('tasks')}>Tasks</button>
+      <button className={`nk${tab==='roadmap'?' on':''}`} onClick={()=>setTab('roadmap')}>Roadmap</button>
+      <button className={`nk${tab==='rank'?' on':''}`} onClick={()=>setTab('rank')}>🏅 Rank</button>
+      <div className="ml"/>
+      {(()=>{const rank=getRank(totalPts);return<span className="rank-pill" style={{color:rank.color,borderColor:rank.color,background:'rgba(0,0,0,0.04)'}}>{rank.emoji} {rank.name}</span>})()}
+      <div className="pts-badge"><span className="pts-ico">🏆</span>{totalPts} pts</div>
+      <Av name={user.displayName}/>
+      <button className="nout" onClick={onSignOut}>Sign out</button>
+    </nav>
+    <div className="main">
+      {loading?<div className="empty">Loading…</div>:<>
+        {tab==='home'&&<SHome user={user} tasks={myT} roadmaps={myR} greet={greet} points={totalPts} submittedIds={submittedIds} onSubmit={setSubmitTask} allStudents={allStudents}/>}
+        {tab==='tasks'&&<STasks tasks={myT} submittedIds={submittedIds} onSubmit={setSubmitTask}/>}
+        {tab==='roadmap'&&<SRoadmap roadmaps={myR} uid={user.uid}/>}
+        {tab==='rank'&&<SRank points={totalPts}/>}
+      </>}
+    </div>
+    {submitTask&&<SubmitModal task={submitTask} uid={user.uid} onClose={()=>setSubmitTask(null)} onSuccess={handleSubmitSuccess}/>}
+    <Notif msg={notif}/>
+  </>);
+}
+
+/* ── RANK PAGE (student) ── */
+function SRank({points}){
+  const currentRank=getRank(points);
+  const nextRank=getNextRank(points);
+  const currentIdx=RANKS.indexOf(currentRank);
+
+  // progress to next rank
+  const pct=nextRank
+    ?Math.round(((points-currentRank.min)/(nextRank.min-currentRank.min))*100)
+    :100;
+
+  return(
+    <div>
+      {/* Hero banner */}
+      <div style={{background:currentRank.bg,border:`2px solid ${currentRank.border}`,borderRadius:20,padding:'30px 28px',marginBottom:24,boxShadow:`0 0 40px ${currentRank.glow}`,position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',top:-30,right:-30,fontSize:120,opacity:.08,pointerEvents:'none',userSelect:'none'}}>{currentRank.emoji}</div>
+        <div style={{fontSize:11,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',color:currentRank.color,marginBottom:8}}>Your Current Rank</div>
+        <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:12}}>
+          <span style={{fontSize:52,filter:`drop-shadow(0 0 14px ${currentRank.color})`}}>{currentRank.emoji}</span>
+          <div>
+            <div style={{fontSize:28,fontWeight:900,color:currentRank.color,letterSpacing:-.5}}>{currentRank.name}</div>
+            <div style={{fontSize:14,color:'rgba(255,255,255,.55)',marginTop:2}}>🏆 {points} points earned</div>
+          </div>
+        </div>
+        {nextRank?(
+          <div style={{background:'rgba(255,255,255,.06)',borderRadius:10,padding:'12px 14px'}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'rgba(255,255,255,.6)',marginBottom:6}}>
+              <span>{currentRank.name} ({currentRank.min} pts)</span>
+              <span>{nextRank.name} ({nextRank.min} pts)</span>
+            </div>
+            <div className="progress-bar-wrap" style={{background:'rgba(255,255,255,.12)'}}>
+              <div className="progress-bar-fill" style={{width:pct+'%',background:currentRank.color}}/>
+            </div>
+            <div style={{fontSize:12,color:'rgba(255,255,255,.5)',marginTop:4}}>
+              {nextRank.min-points} more pts to reach <strong style={{color:nextRank.color}}>{nextRank.emoji} {nextRank.name}</strong>
+            </div>
+          </div>
+        ):(
+          <div style={{background:'rgba(255,255,255,.08)',borderRadius:10,padding:'10px 14px',fontSize:13,color:'rgba(255,255,255,.7)'}}>
+            🎉 You've reached the <strong style={{color:currentRank.color}}>highest rank</strong>! Legendary status achieved.
+          </div>
+        )}
+      </div>
+
+      {/* Rank track */}
+      <div className="ptit" style={{marginBottom:4}}>Community Ranks</div>
+      <div className="psub" style={{marginBottom:16}}>Earn points by submitting tasks to climb the leaderboard</div>
+
+      <div className="rank-track">
+        {RANKS.map((r,i)=>{
+          const isPast=points>=r.min;
+          const isCurrent=r===currentRank;
+          return(
+            <React.Fragment key={r.name}>
+              {i>0&&<div className={`rank-connector${points>=r.min?' passed':''}`}/>}
+              <div className={`rank-card${isCurrent?' current':''}`} style={{
+                background: isCurrent?r.bg:'var(--sf)',
+                borderColor: isPast?r.color:'var(--bd2)',
+                boxShadow: isCurrent?`0 0 24px ${r.glow}`:isPast?`0 0 8px ${r.glow}`:'none',
+                opacity: isPast?1:.5,
+              }}>
+                {isCurrent&&<div style={{position:'absolute',top:8,right:8,background:r.color,color:'#fff',fontSize:9,fontWeight:800,padding:'2px 6px',borderRadius:8,letterSpacing:.5}}>YOU</div>}
+                <div className="rank-emoji">{r.emoji}</div>
+                <div className="rank-name" style={{color: isPast?r.color:'var(--tx2)'}}>{r.name}</div>
+                <div className="rank-pts" style={{color: isPast?r.color:'var(--tx3)'}}>{r.min===0?'0':r.min}+ pts</div>
+              </div>
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      {/* Rank table */}
+      <div className="card" style={{marginTop:20}}>
+        <div className="slbl" style={{marginBottom:14}}>All Ranks & Requirements</div>
+        {RANKS.map((r,i)=>{
+          const isPast=points>=r.min;
+          const isCurrent=r===currentRank;
+          return(
+            <div key={r.name} style={{display:'flex',alignItems:'center',gap:14,padding:'12px 0',borderBottom:i<RANKS.length-1?'1px solid var(--bd)':'none',opacity:isPast?1:.5}}>
+              <span style={{fontSize:24,width:32,textAlign:'center'}}>{r.emoji}</span>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:700,fontSize:14,color:isPast?r.color:'var(--tx)',display:'flex',alignItems:'center',gap:7}}>
+                  {r.name}
+                  {isCurrent&&<span style={{background:r.color,color:'#fff',fontSize:9,fontWeight:800,padding:'1px 6px',borderRadius:8}}>CURRENT</span>}
+                  {isPast&&!isCurrent&&<span style={{fontSize:11,color:r.color}}>✓ Achieved</span>}
+                </div>
+                <div style={{fontSize:12,color:'var(--tx3)',marginTop:2}}>
+                  {r.max===Infinity?`${r.min}+ points`:`${r.min} – ${r.max} points`}
+                </div>
+              </div>
+              {isCurrent&&nextRank&&(
+                <div style={{fontSize:12,color:'var(--tx3)',textAlign:'right'}}>
+                  <div style={{fontWeight:600,color:r.color}}>{pct}%</div>
+                  <div>to next</div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Task card (student, with submit button) ── */
+function ImageLightbox({src,alt,onClose}){
+  useEffect(()=>{
+    const onKey=e=>{if(e.key==='Escape')onClose()};
+    document.addEventListener('keydown',onKey);
+    return()=>document.removeEventListener('keydown',onKey);
+  },[]);
+  return(
+    <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.88)',zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20,animation:'fdin .15s ease',cursor:'zoom-out'}}>
+      <button onClick={onClose} style={{position:'absolute',top:18,right:22,background:'rgba(255,255,255,.12)',border:'none',color:'#fff',fontSize:22,width:40,height:40,borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1,transition:'.15s'}}
+        onMouseEnter={e=>e.target.style.background='rgba(255,255,255,.25)'}
+        onMouseLeave={e=>e.target.style.background='rgba(255,255,255,.12)'}>✕</button>
+      <img
+        src={src} alt={alt}
+        onClick={e=>e.stopPropagation()}
+        style={{maxWidth:'92vw',maxHeight:'88vh',objectFit:'contain',borderRadius:10,boxShadow:'0 24px 80px rgba(0,0,0,.7)',cursor:'default',animation:'mup .2s ease'}}
+      />
+    </div>
+  );
+}
+
+function TCard({t,submitted,onSubmit}){
+  const[lightbox,setLightbox]=useState(false);
+  return(
+    <div className={`tc ${t.priority||'low'}`}>
+      {t.imageUrl&&<>
+        <img
+          src={t.imageUrl} alt={t.title} className="tc-img"
+          onClick={()=>setLightbox(true)}
+          onError={e=>e.target.style.display='none'}
+          style={{cursor:'zoom-in'}}
+          title="Click to view full size"
+        />
+        {lightbox&&<ImageLightbox src={t.imageUrl} alt={t.title} onClose={()=>setLightbox(false)}/>}
+      </>}
+      <div className="tct">{t.title}</div>
+      <div className="tcd">{t.description}</div>
+      <div className="tcm">
+        <PBadge p={t.priority}/>
+        <span className="badge bp">{t.domain}</span>
+        {t.dueDate&&<span className="badge bgr">📅 {t.dueDate}</span>}
+        {TASK_POINTS[t.title]!=null&&<span className="badge" style={{background:'#FFF3CD',color:'#7A5800',border:'1px solid #F0C040'}}>🏆 {TASK_POINTS[t.title]} pts</span>}
+      </div>
+      <div style={{marginTop:10}}>
+        {submitted
+          ?<span className="sub-done">✅ Submitted</span>
+          :<button className="bs bacc" style={{fontSize:12,padding:'5px 11px'}} onClick={()=>onSubmit(t)}>Submit Assignment</button>
+        }
+      </div>
+    </div>
+  );
+}
+
+function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStudents}){
+  const urg=tasks.filter(t=>t.priority==='urgent').length;
+
+  /* ── helpers shared with leaderboard ── */
+  const nameFrom=s=>s.name||(s.email?s.email.split('@')[0]:'Unknown');
+  const initials=n=>n.split(/[\s._-]+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'??';
+
+  /* ── leaderboard data ── */
+  // Include current user even if their doc hasn't loaded yet in allStudents
+  const sorted=[...allStudents]
+    .sort((a,b)=>(b.points||0)-(a.points||0));
+  const myPos=sorted.findIndex(s=>s.id===user.uid);
+
+  const podConfig=[
+    {cls:'p1',crown:'👑',label:'1ST',confettiColors:['#48C98A','#6EE7B7','#34D399','#10B981','#A7F3D0']},
+    {cls:'p2',crown:'🥈',label:'2ND',confettiColors:['#FB923C','#FED7AA','#F97316','#EA580C','#FDE68A']},
+    {cls:'p3',crown:'🥉',label:'3RD',confettiColors:['#9CA3AF','#D1D5DB','#6B7280','#E5E7EB','#F3F4F6']},
+  ];
+
+  function Confetti({colors}){
+    const pieces=Array.from({length:8},(_,i)=>({
+      id:i,color:colors[i%colors.length],
+      left:6+i*11+'%',delay:(i*0.25)+'s',
+      dur:(1.3+i%3*0.3)+'s',
+      anim:['confetti-1','confetti-2','confetti-3'][i%3],
+    }));
+    return(
+      <div className="lb-pod-confetti">
+        {pieces.map(p=>(
+          <div key={p.id} className="cf" style={{left:p.left,background:p.color,animation:`${p.anim} ${p.dur} ${p.delay} ease-in infinite`}}/>
+        ))}
+      </div>
+    );
+  }
+
+  const top3=sorted.slice(0,3);
+  const rest=sorted.slice(3);
+  // podium order: silver left, gold center, bronze right
+  const podOrder=[top3[1],top3[0],top3[2]];
+  const podCfgOrder=[podConfig[1],podConfig[0],podConfig[2]];
+
+  return(
+    <div className="home-grid" style={{display:'grid',gridTemplateColumns:'1fr 300px',gap:22,alignItems:'start'}}>
+
+      {/* ── LEFT: main dashboard content ── */}
+      <div>
+        <div className="hero">
+          <div className="htag">Dashboard</div>
+          <div className="hh">{greet}, {(user.displayName||'Student').split(' ')[0]} 👋</div>
+          <div className="hs">{tasks.length} task{tasks.length!==1?'s':''} · {urg} urgent · {roadmaps.length} learning path{roadmaps.length!==1?'s':''}</div>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:11,marginBottom:22}}>
+          <div className="pts-stat">
+            <div className="sl">Total Points</div>
+            <div className="sv" style={{color:'#9B6710'}}>{points}</div>
+            <div className="ss">🏆 earned so far</div>
+          </div>
+          {(()=>{const r=getRank(points);const nr=getNextRank(points);return(
+            <div className="stat" style={{background:r.bg,border:`1.5px solid ${r.border}`,boxShadow:`0 0 14px ${r.glow}`}}>
+              <div className="sl" style={{color:'rgba(255,255,255,.5)'}}>Rank</div>
+              <div style={{fontSize:22,fontWeight:800,color:r.color,letterSpacing:-.3}}>{r.emoji} {r.name}</div>
+              <div className="ss" style={{color:'rgba(255,255,255,.4)'}}>{nr?`${nr.min-points} pts to ${nr.name}`:'Max rank!'}</div>
+            </div>
+          )})()}
+          <div className="stat"><div className="sl">Total tasks</div><div className="sv">{tasks.length}</div><div className="ss">assigned</div></div>
+          <div className="stat"><div className="sl">Urgent</div><div className="sv" style={{color:'var(--rr)'}}>{urg}</div><div className="ss">pending</div></div>
+          <div className="stat"><div className="sl">Submitted</div><div className="sv" style={{color:'var(--ac)'}}>{submittedIds.size}</div><div className="ss">of {tasks.length}</div></div>
+        </div>
+        {tasks.length>0&&<><div className="slbl">Recent tasks</div>
+          <div className="g2" style={{marginBottom:24}}>
+            {tasks.slice(0,4).map(t=><TCard key={t.id} t={t} submitted={submittedIds.has(t.id)} onSubmit={onSubmit}/>)}
+          </div>
+        </>}
+        {roadmaps.length>0&&<><div className="slbl">Your roadmaps</div>
+          {roadmaps.slice(0,2).map(r=>(
+            <div key={r.id} className="card" style={{marginBottom:12}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
+                <div style={{fontWeight:700,fontSize:15}}>{r.title}</div>
+                <span className="badge bg">{r.domain}</span>
+              </div>
+              <div style={{fontSize:13,color:'var(--tx2)',marginBottom:12}}>{r.description}</div>
+              {(r.phases||[]).map(p=>(
+                <div key={p.id} style={{display:'flex',alignItems:'center',gap:10,marginBottom:7}}>
+                  <div style={{flex:1,fontSize:13,color:'var(--tx2)'}}>{p.title}</div>
+                  <div className="pbar"><div className="pfill" style={{width:(p.progress||0)+'%'}}/></div>
+                  <div style={{fontSize:11,color:'var(--tx3)',width:28,textAlign:'right'}}>{p.progress||0}%</div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </>}
+        {tasks.length===0&&roadmaps.length===0&&<div className="empty">Nothing here yet — check back when your admin publishes tasks and roadmaps!</div>}
+      </div>
+
+      {/* ── RIGHT: leaderboard panel ── */}
+      <div style={{background:'var(--sf)',border:'1px solid var(--bd)',borderRadius:16,overflow:'hidden',position:'sticky',top:72}}>
+        {/* header */}
+        <div style={{padding:'14px 16px 10px',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div style={{fontWeight:800,fontSize:15,letterSpacing:-.3}}>🏆 Leaderboard</div>
+          {myPos>=0&&<div style={{fontSize:11,fontWeight:700,color:'var(--ac)',background:'var(--acl)',padding:'2px 8px',borderRadius:8}}>#{myPos+1} of {sorted.length}</div>}
+        </div>
+
+        {sorted.length===0&&(
+          <div style={{padding:'28px 16px',textAlign:'center',color:'var(--tx3)',fontSize:13}}>
+            No students yet.<br/><span style={{fontSize:11,marginTop:4,display:'block'}}>You'll appear here once data loads.</span>
+          </div>
+        )}
+
+        {/* Top 3 podium — compact horizontal */}
+        {top3.length>0&&(
+          <div style={{display:'flex',gap:6,padding:'12px 10px 8px',justifyContent:'center',alignItems:'flex-end'}}>
+            {podOrder.map((s,i)=>{
+              if(!s)return null;
+              const cfg=podCfgOrder[i];
+              const isSelf=s.id===user.uid;
+              const name=nameFrom(s);
+              const colorMap={p1:'#48C98A',p2:'#FB923C',p3:'#9CA3AF'};
+              const bgMap={p1:'linear-gradient(160deg,#052b14,#0a3d1e)',p2:'linear-gradient(160deg,#2a1200,#3d1f00)',p3:'linear-gradient(160deg,#18181f,#22222c)'};
+              const animMap={p1:'shimmer-gold 2.2s ease-in-out infinite,float1 3.2s ease-in-out infinite',p2:'shimmer-silver 2.6s ease-in-out infinite,float2 3.8s ease-in-out infinite',p3:'shimmer-bronze 3s ease-in-out infinite,float3 4.4s ease-in-out infinite'};
+              const heightMap={p1:100,p2:82,p3:74};
+              const col=colorMap[cfg.cls];
+              return(
+                <div key={s.id} style={{
+                  flex:1,background:bgMap[cfg.cls],border:`1.5px solid ${col}`,
+                  borderRadius:12,padding:'10px 8px 8px',textAlign:'center',position:'relative',overflow:'hidden',
+                  animation:animMap[cfg.cls],minHeight:heightMap[cfg.cls],display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',
+                }}>
+                  <Confetti colors={cfg.confettiColors}/>
+                  <div style={{fontSize:cfg.cls==='p1'?18:14,marginBottom:2,animation:cfg.cls==='p1'?'pulse-crown 1.8s ease-in-out infinite':''}}>{cfg.crown}</div>
+                  <div style={{width:30,height:30,borderRadius:'50%',background:`rgba(255,255,255,.1)`,border:`1.5px solid ${col}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:col,margin:'0 auto 4px'}}>{initials(name)}</div>
+                  <div style={{fontSize:10,fontWeight:700,color:'#fff',maxWidth:70,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={name}>{name}</div>
+                  <div style={{fontSize:11,fontWeight:800,color:col,marginTop:2}}>🏆{s.points||0}</div>
+                  {isSelf&&<div style={{fontSize:8,fontWeight:800,background:col,color:'#fff',padding:'1px 5px',borderRadius:5,marginTop:3,letterSpacing:.4}}>YOU</div>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* All entries list — scrollable */}
+        <div style={{maxHeight:340,overflowY:'auto',padding:'6px 10px 12px'}}>
+          {sorted.map((s,i)=>{
+            const isSelf=s.id===user.uid;
+            const name=nameFrom(s);
+            const rank=getRank(s.points||0);
+            const posLabel=i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+            return(
+              <div key={s.id} className={`lb-list-row${isSelf?' me':''}`}
+                style={{padding:'9px 10px',borderRadius:9,marginBottom:5,animationDelay:(i*0.04)+'s',gap:8}}>
+                <div style={{fontSize:12,fontWeight:800,color:i<3?['#48C98A','#FB923C','#9CA3AF'][i]:'var(--tx3)',width:22,textAlign:'center',flexShrink:0}}>{posLabel}</div>
+                <div className={`lb-list-av${isSelf?' me':''}`} style={{width:30,height:30,fontSize:10}}>{initials(name)}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:700,color:'var(--tx)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{name}</div>
+                  <div style={{fontSize:10,color:rank.color,fontWeight:600}}>{rank.emoji} {rank.name}</div>
+                </div>
+                <div style={{fontSize:12,fontWeight:800,color:'#9B6710',flexShrink:0}}>🏆{s.points||0}</div>
+                {isSelf&&<div className="lb-me-tag" style={{fontSize:8,padding:'1px 5px'}}>YOU</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+function STasks({tasks,submittedIds,onSubmit}){
+  const[f,setF]=useState('all');
+  const shown=f==='all'?tasks:tasks.filter(t=>t.priority===f);
+  return(<>
+    <div className="ptit">Tasks</div>
+    <div className="psub">All tasks assigned to your fields — submit your work to earn points</div>
+    <div style={{display:'flex',gap:7,marginBottom:18,flexWrap:'wrap'}}>
+      {['all','urgent','medium','low'].map(x=>(
+        <button key={x} className={`bs ${f===x?'bacc':'bgh'}`} onClick={()=>setF(x)}>
+          {x==='all'?'All':x.charAt(0).toUpperCase()+x.slice(1)}
+        </button>
+      ))}
+    </div>
+    {shown.length===0?<div className="empty">No tasks here.</div>
+     :<div className="g2">{shown.map(t=><TCard key={t.id} t={t} submitted={submittedIds.has(t.id)} onSubmit={onSubmit}/>)}</div>}
+  </>);
+}
+
+/* ── Roadmap with interactive status per item ── */
+function SRoadmap({roadmaps,uid}){
+  const[open,setOpen]=useState({});
+  // local status overrides stored in Firestore under users/{uid}/roadmapProgress/{roadmapId_phaseId_itemIdx}
+  const[progress,setProgress]=useState({});
+  const[saving,setSaving]=useState({});
+
+  useEffect(()=>{
+    if(!uid)return;
+    const unsub=db.collection('roadmapProgress').where('uid','==',uid).onSnapshot(s=>{
+      const map={};
+      s.docs.forEach(d=>{map[d.id]=d.data().status});
+      setProgress(map);
+    });
+    return()=>unsub();
+  },[uid]);
+
+  const tog=id=>setOpen(p=>({...p,[id]:!p[id]}));
+
+  const setStatus=async(roadmapId,phaseId,itemIdx,status)=>{
+    const key=`${uid}_${roadmapId}_${phaseId}_${itemIdx}`;
+    setSaving(p=>({...p,[key]:true}));
+    try{
+      await db.collection('roadmapProgress').doc(key).set({uid,roadmapId,phaseId,itemIdx,status,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    }catch(e){console.error(e)}
+    finally{setSaving(p=>({...p,[key]:false}))}
+  };
+
+  const getStatus=(roadmapId,phaseId,itemIdx)=>{
+    const key=`${uid}_${roadmapId}_${phaseId}_${itemIdx}`;
+    return progress[key]||'not-started';
+  };
+
+  const phaseProgress=(roadmapId,phase)=>{
+    const items=phase.items||[];
+    if(!items.length)return 0;
+    const done=items.filter((_,i)=>getStatus(roadmapId,phase.id,i)==='done').length;
+    return Math.round((done/items.length)*100);
+  };
+
+  const statusInfo={
+    'not-started':{label:'Not Started',emoji:'🔜',cls:'act-ns'},
+    'in-progress':{label:'In Progress',emoji:'🔄',cls:'act-ip'},
+    'done':{label:'Done',emoji:'✅',cls:'act-dn'},
+  };
+
+  return(<>
+    <div className="ptit">Roadmap</div>
+    <div className="psub">Your step-by-step learning journey — update your status on each topic</div>
+    {roadmaps.length===0?<div className="empty">No roadmaps published for your fields yet.</div>
+     :roadmaps.map(r=>(
+      <div key={r.id} style={{marginBottom:26}}>
+        <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:10}}>
+          <div style={{fontWeight:700,fontSize:16}}>{r.title}</div>
+          <span className="badge bg">{r.domain}</span>
+        </div>
+        <div style={{fontSize:13,color:'var(--tx2)',marginBottom:12}}>{r.description}</div>
+        {(r.phases||[]).map(p=>{
+          const pct=phaseProgress(r.id,p);
+          return(
+          <div key={p.id} className="rm">
+            <div className="rmh" onClick={()=>tog(p.id)}>
+              <div style={{flex:1}}>
+                <div className="rmht">{p.title}</div>
+                <div style={{fontSize:11,color:'var(--tx3)',marginTop:1}}>{pct}% complete · {(p.items||[]).length} topic{(p.items||[]).length!==1?'s':''}</div>
+              </div>
+              <div className="pbar" style={{marginRight:10}}><div className="pfill" style={{width:pct+'%'}}/></div>
+              <span style={{color:'var(--tx3)',fontSize:11}}>{open[p.id]?'▲':'▼'}</span>
+            </div>
+            {open[p.id]&&<div className="rmb">
+              {(p.items||[]).map((it,i)=>{
+                const st=getStatus(r.id,p.id,i);
+                const key=`${uid}_${r.id}_${p.id}_${i}`;
+                const isSaving=saving[key];
+                return(
+                <div key={i} className="ri" style={{alignItems:'center'}}>
+                  <div className={`dot ${st==='done'?'done':st==='in-progress'?'active':'upcoming'}`} style={{marginTop:0,flexShrink:0}}/>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:500}}>{it.text}</div>
+                  </div>
+                  <div className="status-sel" style={{opacity:isSaving?.6:1}}>
+                    {['not-started','in-progress','done'].map(s=>(
+                      <button key={s}
+                        className={st===s?statusInfo[s].cls:''}
+                        onClick={()=>!isSaving&&setStatus(r.id,p.id,i,s)}
+                        title={statusInfo[s].label}>
+                        {statusInfo[s].emoji} {statusInfo[s].label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )})}
+            </div>}
+          </div>
+        )})}
+      </div>
+    ))}
+  </>);
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN PANEL
+═══════════════════════════════════════════════ */
+function AdminPanel({onSignOut}){
+  const[tab,setTab]=useState('overview');
+  const[tasks,setTasks]=useState([]);
+  const[roadmaps,setRoadmaps]=useState([]);
+  const[students,setStudents]=useState([]);
+  const[submissions,setSubmissions]=useState([]);
+  const[notif,showNotif]=useNotif();
+
+  useEffect(()=>{
+    const u1=db.collection('tasks').orderBy('createdAt','desc').onSnapshot(s=>{setTasks(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    const u2=db.collection('roadmaps').orderBy('createdAt','desc').onSnapshot(s=>{setRoadmaps(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    const u3=db.collection('users').where('role','==','student').onSnapshot(s=>{setStudents(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    const u4=db.collection('submissions').orderBy('submittedAt','desc').onSnapshot(s=>{setSubmissions(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    return()=>{u1();u2();u3();u4()};
+  },[]);
+
+  const addTask=async f=>{await db.collection('tasks').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Task published')};
+  const delTask=async id=>{await db.collection('tasks').doc(id).delete();showNotif('🗑️ Task deleted')};
+  const addRM=async f=>{await db.collection('roadmaps').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Roadmap published')};
+  const delRM=async id=>{await db.collection('roadmaps').doc(id).delete();showNotif('🗑️ Roadmap deleted')};
+
+  const TABS=[['overview','📊','Overview'],['tasks','📋','Tasks'],['roadmaps','🗺️','Roadmaps'],['students','👥','Students'],['submissions','📥','Submissions'],['points','🏆','Points']];
+
+  return(<>
+    <nav>
+      <div className="brand">Edu<em>Track</em> <span className="bpill">Admin</span></div>
+      <div className="ml"/><Av name="Admin"/>
+      <button className="nout" onClick={onSignOut}>Sign out</button>
+    </nav>
+    <div className="adw">
+      <div className="ads">
+        <div className="ads-lbl">Menu</div>
+        {TABS.map(([k,ico,lbl])=>(
+          <button key={k} className={`si${tab===k?' on':''}`} onClick={()=>setTab(k)}>
+            <span className="sico">{ico}</span>{lbl}
+          </button>
+        ))}
+      </div>
+      <div className="adm">
+        {tab==='overview'&&<AOv tasks={tasks} roadmaps={roadmaps} students={students} submissions={submissions}/>}
+        {tab==='tasks'&&<ATasks tasks={tasks} onAdd={addTask} onDel={delTask}/>}
+        {tab==='roadmaps'&&<ARMs roadmaps={roadmaps} onAdd={addRM} onDel={delRM}/>}
+        {tab==='students'&&<AStudents students={students}/>}
+        {tab==='submissions'&&<ASubmissions submissions={submissions} students={students}/>}
+        {tab==='points'&&<APoints students={students} showNotif={showNotif}/>}
+      </div>
+    </div>
+    <Notif msg={notif}/>
+  </>);
+}
+
+function AOv({tasks,roadmaps,students,submissions}){
+  const fc=students.reduce((a,s)=>{(s.fields||[]).forEach(f=>{a[f]=(a[f]||0)+1});return a},{});
+  const mx=Math.max(1,...Object.values(fc));
+  const totalPts=students.reduce((a,s)=>a+(s.points||0),0);
+  return(<>
+    <div className="ptit">Overview</div><div className="psub">Platform stats at a glance</div>
+    <div className="g4" style={{marginBottom:24}}>
+      {[['Students',students.length,'enrolled'],['Tasks',tasks.length,'published'],['Submissions',submissions.length,'received'],['Points Awarded',totalPts,'total']].map(([l,v,s])=>(
+        <div key={l} className="stat"><div className="sl">{l}</div><div className="sv">{v}</div><div className="ss">{s}</div></div>
+      ))}
+    </div>
+    <div className="g2">
+      <div className="card">
+        <div className="slbl">Recent tasks</div>
+        {tasks.length===0?<div className="empty" style={{padding:'16px 0'}}>No tasks yet</div>
+         :tasks.slice(0,5).map(t=>(
+          <div key={t.id} style={{display:'flex',alignItems:'center',gap:9,padding:'8px 0',borderBottom:'1px solid var(--bd)'}}>
+            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600}}>{t.title}</div><div style={{fontSize:11,color:'var(--tx3)'}}>{t.domain}</div></div>
+            <PBadge p={t.priority}/>
+          </div>
+        ))}
+      </div>
+      <div className="card">
+        <div className="slbl">Student fields</div>
+        {Object.keys(fc).length===0?<div className="empty" style={{padding:'16px 0'}}>No students yet</div>
+         :Object.entries(fc).sort((a,b)=>b[1]-a[1]).map(([f,c])=>(
+          <div key={f} style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+            <div style={{flex:1,fontSize:13}}>{f}</div>
+            <div style={{width:90,height:5,background:'var(--sf3)',borderRadius:3,overflow:'hidden'}}>
+              <div style={{height:'100%',background:'var(--ac)',borderRadius:3,width:(c/mx)*100+'%'}}/>
+            </div>
+            <div style={{fontSize:12,color:'var(--tx3)',width:16,textAlign:'right'}}>{c}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </>);
+}
+
+function ATasks({tasks,onAdd,onDel}){
+  const blank={title:'',description:'',priority:'medium',domain:'AI/ML',dueDate:'',points:DEFAULT_TASK_POINTS,imageUrl:''};
+  const[show,setShow]=useState(false);
+  const[form,setForm]=useState(blank);
+  const[saving,setSaving]=useState(false);
+  const[err,setErr]=useState('');
+  const[fd,setFd]=useState('all');
+  const set=k=>v=>setForm(p=>({...p,[k]:v}));
+
+  const submit=async()=>{
+    if(!form.title.trim()){setErr('Task title is required.');return}
+    setSaving(true);setErr('');
+    // store points in TASK_POINTS object at runtime (session only — for persistent, use form.points in firestore)
+    try{await onAdd(form);setForm(blank);setShow(false)}
+    catch(e){setErr(e.message)}
+    finally{setSaving(false)}
+  };
+
+  const doms=['all',...[...new Set(tasks.map(t=>t.domain))]];
+  const shown=fd==='all'?tasks:tasks.filter(t=>t.domain===fd);
+
+  return(<>
+    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
+      <div><div className="ptit">Tasks</div><div className="psub">Assign tasks to student domains</div></div>
+      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'✕ Cancel':'+ New task'}</button>
+    </div>
+
+    {show&&<div className="card" style={{marginBottom:20}}>
+      <div className="slbl">Create task</div>
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Title *</label>
+          <input className="fi" placeholder="Task title" value={form.title} onChange={e=>set('title')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Domain</label>
+          <select className="fi" value={form.domain} onChange={e=>set('domain')(e.target.value)}>
+            {DOMAINS.map(d=><option key={d}>{d}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Description</label>
+          <textarea className="fta" placeholder="What should students do?" value={form.description} onChange={e=>set('description')(e.target.value)}/>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>🖼️ Task Image URL <span style={{fontWeight:400,color:'var(--tx3)',textTransform:'none',fontSize:10}}>(optional — paste any image link)</span></label>
+          <input className="fi" placeholder="https://example.com/image.png" value={form.imageUrl||''} onChange={e=>set('imageUrl')(e.target.value)}/>
+          {form.imageUrl&&<img src={form.imageUrl} alt="preview" className="task-img-preview" onError={e=>e.target.style.display='none'} onLoad={e=>e.target.style.display='block'}/>}
+        </div>
+      </div>
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Priority</label>
+          <select className="fi" value={form.priority} onChange={e=>set('priority')(e.target.value)}>
+            <option value="low">Low</option><option value="medium">Medium</option><option value="urgent">Urgent</option>
+          </select>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Due date</label>
+          <input type="date" className="fi" value={form.dueDate} onChange={e=>set('dueDate')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>🏆 Points</label>
+          <input type="number" className="fi" min="0" max="1000" placeholder="20" value={form.points} onChange={e=>set('points')(Number(e.target.value))}/>
+        </div>
+      </div>
+      {err&&<div className="ebox" style={{marginBottom:10}}>{err}</div>}
+      <div style={{display:'flex',gap:8}}>
+        <button className="bs bacc" onClick={submit} disabled={saving}>{saving?'Publishing…':'Publish task'}</button>
+        <button className="bs bgh" onClick={()=>{setShow(false);setErr('');setForm(blank)}}>Cancel</button>
+      </div>
+    </div>}
+
+    {tasks.length>0&&<div style={{display:'flex',gap:7,marginBottom:14,flexWrap:'wrap'}}>
+      {doms.map(d=><button key={d} className={`bs ${fd===d?'bacc':'bgh'}`} onClick={()=>setFd(d)}>{d==='all'?'All domains':d}</button>)}
+    </div>}
+
+    {shown.length===0
+      ?<div className="empty">{tasks.length===0?'No tasks yet. Create one above!':'No tasks for this domain.'}</div>
+      :shown.map(t=>(
+      <div key={t.id} className="li">
+        <div style={{flex:1}}>
+          <div className="lit">{t.title}</div>
+          <div className="lis" style={{marginBottom:8}}>{(t.description||'').slice(0,90)}{(t.description||'').length>90?'…':''}</div>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+            <PBadge p={t.priority}/><span className="badge bp">{t.domain}</span>
+            {t.dueDate&&<span className="badge bgr">📅 {t.dueDate}</span>}
+            <span className="badge" style={{background:'#FFF3CD',color:'#7A5800',border:'1px solid #F0C040'}}>🏆 {t.points??DEFAULT_TASK_POINTS} pts</span>
+          </div>
+        </div>
+        <div className="la"><button className="bs bdg" onClick={()=>onDel(t.id)}>Delete</button></div>
+      </div>
+    ))}
+  </>);
+}
+
+function ARMs({roadmaps,onAdd,onDel}){
+  const blank={title:'',description:'',domain:'AI/ML',phases:[]};
+  const[show,setShow]=useState(false);
+  const[form,setForm]=useState(blank);
+  const[pTit,setPTit]=useState('');
+  const[pItm,setPItm]=useState('');
+  const[saving,setSaving]=useState(false);
+  const[err,setErr]=useState('');
+  const[fd,setFd]=useState('all');
+  const set=k=>v=>setForm(p=>({...p,[k]:v}));
+
+  const addPhase=()=>{
+    if(!pTit.trim()){setErr('Phase title required.');return}
+    const items=pItm.split('\n').map(s=>s.trim()).filter(Boolean).map(text=>({text}));
+    if(!items.length){setErr('Add at least one topic (one per line).');return}
+    setErr('');
+    setForm(p=>({...p,phases:[...p.phases,{id:'ph'+Date.now(),title:pTit.trim(),items}]}));
+    setPTit('');setPItm('');
+  };
+
+  const submit=async()=>{
+    if(!form.title.trim()){setErr('Roadmap title required.');return}
+    if(!form.phases.length){setErr('Add at least one phase.');return}
+    setSaving(true);setErr('');
+    try{await onAdd(form);setForm(blank);setPTit('');setPItm('');setShow(false)}
+    catch(e){setErr(e.message)}
+    finally{setSaving(false)}
+  };
+
+  const uD=['all',...[...new Set(roadmaps.map(r=>r.domain))]];
+  const shown=fd==='all'?roadmaps:roadmaps.filter(r=>r.domain===fd);
+
+  return(<>
+    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
+      <div><div className="ptit">Roadmaps</div><div className="psub">Build step-by-step learning paths per domain</div></div>
+      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'✕ Cancel':'+ New roadmap'}</button>
+    </div>
+
+    {show&&<div className="card" style={{marginBottom:20}}>
+      <div className="slbl">Create roadmap</div>
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Title *</label>
+          <input className="fi" placeholder="e.g. AI & ML Complete Path" value={form.title} onChange={e=>set('title')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Domain</label>
+          <select className="fi" value={form.domain} onChange={e=>set('domain')(e.target.value)}>
+            {DOMAINS.map(d=><option key={d}>{d}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Short description</label>
+          <input className="fi" placeholder="What will students learn?" value={form.description} onChange={e=>set('description')(e.target.value)}/>
+        </div>
+      </div>
+
+      <div className="divl"/>
+      <div className="slbl">Phases added ({form.phases.length})</div>
+
+      {form.phases.map((ph,i)=>(
+        <div key={ph.id} style={{background:'var(--acl)',border:'1px solid var(--acm)',borderRadius:8,padding:'10px 14px',marginBottom:8,display:'flex',alignItems:'flex-start',gap:10}}>
+          <div style={{width:22,height:22,borderRadius:'50%',background:'var(--ac)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,flexShrink:0,marginTop:1}}>{i+1}</div>
+          <div style={{flex:1}}>
+            <div style={{fontWeight:700,fontSize:13,color:'var(--ac)',marginBottom:4}}>{ph.title}</div>
+            {ph.items.map((it,j)=>(
+              <div key={j} style={{fontSize:12,color:'var(--tx2)',display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
+                <span style={{width:4,height:4,borderRadius:'50%',background:'var(--bd2)',display:'inline-block',flexShrink:0}}/>
+                {it.text}
+              </div>
+            ))}
+          </div>
+          <button style={{background:'none',border:'none',color:'var(--rr)',fontSize:16,cursor:'pointer',flexShrink:0,lineHeight:1}} onClick={()=>setForm(p=>({...p,phases:p.phases.filter(x=>x.id!==ph.id)}))}>✕</button>
+        </div>
+      ))}
+
+      <div style={{background:'var(--sf2)',border:'1.5px dashed var(--bd2)',borderRadius:10,padding:'14px 16px',marginTop:6,marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:.5,marginBottom:10}}>+ Add a phase</div>
+        <div style={{marginBottom:10}}>
+          <label style={{fontSize:11,fontWeight:600,color:'var(--tx2)',display:'block',marginBottom:4}}>Phase title *</label>
+          <input className="fi" placeholder="e.g. Phase 1 — Python Foundations" value={pTit} onChange={e=>setPTit(e.target.value)}/>
+        </div>
+        <div style={{marginBottom:10}}>
+          <label style={{fontSize:11,fontWeight:600,color:'var(--tx2)',display:'block',marginBottom:4}}>
+            Topics <span style={{fontWeight:400,color:'var(--tx3)'}}>— one per line</span>
+          </label>
+          <textarea className="fta" placeholder={"Variables & Data Types\nLoops and Functions\nOOP Concepts"} value={pItm} onChange={e=>setPItm(e.target.value)} style={{minHeight:90}}/>
+        </div>
+        <button className="bs bacc" onClick={addPhase}>+ Save this phase</button>
+      </div>
+
+      {err&&<div className="ebox" style={{marginBottom:10}}>{err}</div>}
+      <div style={{display:'flex',gap:8}}>
+        <button className="bs bacc" onClick={submit} disabled={saving||!form.phases.length}>{saving?'Publishing…':'Publish roadmap'}</button>
+        <button className="bs bgh" onClick={()=>{setShow(false);setErr('');setForm(blank);setPTit('');setPItm('')}}>Cancel</button>
+      </div>
+    </div>}
+
+    {roadmaps.length>0&&<div style={{display:'flex',gap:7,marginBottom:14,flexWrap:'wrap'}}>
+      {uD.map(d=><button key={d} className={`bs ${fd===d?'bacc':'bgh'}`} onClick={()=>setFd(d)}>{d==='all'?'All domains':d}</button>)}
+    </div>}
+
+    {shown.length===0
+      ?<div className="empty">{roadmaps.length===0?'No roadmaps yet. Build one above!':'No roadmaps for this domain.'}</div>
+      :shown.map(r=>(
+      <div key={r.id} className="li" style={{alignItems:'flex-start'}}>
+        <div style={{flex:1}}>
+          <div className="lit">{r.title}</div>
+          <div className="lis" style={{marginBottom:8}}>{r.description}</div>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8}}>
+            <span className="badge bg">{r.domain}</span>
+            <span className="badge bgr">{(r.phases||[]).length} phase{(r.phases||[]).length!==1?'s':''}</span>
+            <span className="badge bb">{(r.phases||[]).reduce((a,p)=>a+(p.items?.length||0),0)} topics</span>
+          </div>
+          {(r.phases||[]).map(p=>(
+            <div key={p.id} style={{fontSize:12,color:'var(--tx3)',marginBottom:2,paddingLeft:4}}>
+              ↳ {p.title} · {p.items?.length||0} item{p.items?.length!==1?'s':''}
+            </div>
+          ))}
+        </div>
+        <div className="la"><button className="bs bdg" onClick={()=>onDel(r.id)}>Delete</button></div>
+      </div>
+    ))}
+  </>);
+}
+
+function AStudents({students}){
+  return(<>
+    <div className="ptit">Students</div>
+    <div className="psub">{students.length} registered student{students.length!==1?'s':''}</div>
+    {students.length===0?<div className="empty">No students registered yet.</div>
+     :students.map(s=>(
+      <div key={s.id} className="li">
+        <Av name={s.name||s.email} size={38}/>
+        <div style={{flex:1}}>
+          <div className="lit">{s.name||'—'}</div>
+          <div className="lis">{s.email}</div>
+          {(s.fields||[]).length>0&&<div style={{marginTop:6,display:'flex',gap:5,flexWrap:'wrap'}}>
+            {(s.fields||[]).map(f=><span key={f} className="badge bp">{f}</span>)}
+          </div>}
+        </div>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4}}>
+          <div className="pts-badge" style={{fontSize:12}}><span>🏆</span>{s.points||0} pts</div>
+          {(()=>{const r=getRank(s.points||0);return<span style={{fontSize:11,fontWeight:700,color:r.color}}>{r.emoji} {r.name}</span>})()}
+          <div style={{fontSize:11,color:'var(--tx3)'}}>{s.createdAt?.toDate?.()?.toLocaleDateString?.()||'—'}</div>
+        </div>
+      </div>
+    ))}
+  </>);
+}
+
+/* ── NEW: Submissions panel (admin) ── */
+function ASubmissions({submissions,students}){
+  const studentMap=students.reduce((a,s)=>{a[s.id]=s;return a},{});
+  const[f,setF]=useState('all');
+  const domains=[...new Set(submissions.map(s=>s.taskId&&students.length?'all':s.taskTitle).filter(Boolean))];
+
+  return(<>
+    <div className="ptit">Submissions</div>
+    <div className="psub">{submissions.length} assignment{submissions.length!==1?'s':''} submitted</div>
+    {submissions.length===0?<div className="empty">No submissions yet.</div>
+     :submissions.map(sub=>{
+      const st=studentMap[sub.uid];
+      return(
+        <div key={sub.id} className="sub-card">
+          <div style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:10}}>
+            <Av name={st?.name||sub.uid} size={36}/>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:700,fontSize:14}}>{st?.name||sub.uid}</div>
+              <div style={{fontSize:12,color:'var(--tx3)'}}>{st?.email||''}</div>
+            </div>
+            <div style={{textAlign:'right'}}>
+              <div className="pts-badge" style={{fontSize:12}}>🏆 +{sub.points||0} pts</div>
+              <div style={{fontSize:11,color:'var(--tx3)',marginTop:3}}>{sub.submittedAt?.toDate?.()?.toLocaleDateString?.()||'—'}</div>
+            </div>
+          </div>
+          <div style={{background:'var(--sf2)',borderRadius:8,padding:'10px 12px',marginBottom:8}}>
+            <div style={{fontSize:12,fontWeight:700,color:'var(--tx2)',marginBottom:2}}>Task</div>
+            <div style={{fontSize:13,fontWeight:600}}>{sub.taskTitle}</div>
+          </div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:8}}>
+            <a href={sub.githubUrl} target="_blank" rel="noreferrer">🔗 GitHub Repo</a>
+            {sub.previewUrl&&<a href={sub.previewUrl} target="_blank" rel="noreferrer">🌐 Live Preview</a>}
+            {sub.usedAI&&<span className="badge ba">🤖 Used AI</span>}
+          </div>
+          {sub.description&&<div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.5}}>{sub.description}</div>}
+        </div>
+      );
+    })}
+  </>);
+}
+
+/* ── NEW: Manual points panel (admin) ── */
+function APoints({students,showNotif}){
+  const[amounts,setAmounts]=useState({});
+  const[reasons,setReasons]=useState({});
+  const[saving,setSaving]=useState({});
+
+  const setAmt=(id,v)=>setAmounts(p=>({...p,[id]:v}));
+  const setReason=(id,v)=>setReasons(p=>({...p,[id]:v}));
+
+  const award=async(student,isDeduct=false)=>{
+    const raw=amounts[student.id];
+    const pts=parseInt(raw)||0;
+    if(!pts){showNotif('Enter a point amount first');return}
+    const delta=isDeduct?-Math.abs(pts):Math.abs(pts);
+    setSaving(p=>({...p,[student.id]:true}));
+    try{
+      await db.collection('users').doc(student.id).update({
+        points:firebase.firestore.FieldValue.increment(delta)
+      });
+      // log the manual adjustment
+      await db.collection('pointsLog').add({
+        uid:student.id,studentName:student.name||student.email,
+        delta,reason:reasons[student.id]||'Manual adjustment by admin',
+        awardedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      setAmounts(p=>({...p,[student.id]:''}));
+      setReasons(p=>({...p,[student.id]:''}));
+      showNotif(`${isDeduct?'Deducted':'Awarded'} ${Math.abs(pts)} pts ${isDeduct?'from':'to'} ${student.name||student.email}`);
+    }catch(e){showNotif('Error: '+e.message)}
+    finally{setSaving(p=>({...p,[student.id]:false}))}
+  };
+
+  const sorted=[...students].sort((a,b)=>(b.points||0)-(a.points||0));
+
+  return(<>
+    <div className="ptit">Points Management</div>
+    <div className="psub">Manually award or deduct points based on student performance</div>
+
+    <div className="card" style={{marginBottom:20,background:'#FFFBEA',border:'1.5px solid #F0C040'}}>
+      <div style={{fontSize:13,color:'#7A5800',lineHeight:1.6}}>
+        💡 <strong>Tip:</strong> Points are also awarded automatically when students submit assignments. Use this panel to award <strong>bonus points</strong> for participation, presentations, or exceptional work — or deduct for missed deadlines.
+      </div>
+    </div>
+
+    {students.length===0?<div className="empty">No students registered yet.</div>
+     :sorted.map((s,rank)=>(
+      <div key={s.id} className="pts-row">
+        <div style={{fontSize:13,fontWeight:700,color:'var(--tx3)',width:22,textAlign:'center'}}>#{rank+1}</div>
+        <Av name={s.name||s.email} size={36}/>
+        <div style={{flex:1}}>
+          <div style={{fontSize:14,fontWeight:600}}>{s.name||'—'}</div>
+          <div style={{fontSize:12,color:'var(--tx3)'}}>{s.email}</div>
+          <input
+            placeholder="Reason (optional)"
+            value={reasons[s.id]||''}
+            onChange={e=>setReason(s.id,e.target.value)}
+            style={{marginTop:6,width:'100%',maxWidth:260,padding:'4px 8px',border:'1.5px solid var(--bd2)',borderRadius:6,fontSize:12,outline:'none',fontFamily:'var(--fn)'}}
+          />
+        </div>
+        <div className="pts-val">{s.points||0}</div>
+        <input
+          type="number"
+          className="pts-inp"
+          placeholder="pts"
+          min="0"
+          value={amounts[s.id]||''}
+          onChange={e=>setAmt(s.id,e.target.value)}
+        />
+        <button
+          className="bs bacc"
+          style={{fontSize:12,padding:'5px 10px'}}
+          disabled={saving[s.id]||!amounts[s.id]}
+          onClick={()=>award(s,false)}>
+          {saving[s.id]?'…':'+ Award'}
+        </button>
+        <button
+          className="bs bdg"
+          style={{fontSize:12,padding:'5px 10px'}}
+          disabled={saving[s.id]||!amounts[s.id]}
+          onClick={()=>award(s,true)}>
+          − Deduct
+        </button>
+      </div>
+    ))}
+  </>);
+}
+
+/* ═══════════════════════════════════════════════
+   ROOT
+═══════════════════════════════════════════════ */
+function App(){
+  const[screen,setScreen]=useState('loading');
+  const[user,setUser]=useState(null);
+
+  useEffect(()=>{
+    const unsub=auth.onAuthStateChanged(async u=>{
+      if(u){
+        if(u.email===ADMIN_EMAIL){setScreen('admin')}
+        else{
+          const snap=await db.collection('users').doc(u.uid).get();
+          const d=snap.data()||{};
+          setUser({uid:u.uid,displayName:u.displayName||d.name||u.email,email:u.email,fields:d.fields||[]});
+          setScreen('student');
+        }
+      }else{setScreen('student-auth')}
+    },()=>setScreen('student-auth'));
+    return()=>unsub();
+  },[]);
+
+  const out=async()=>{try{await auth.signOut()}catch{}setUser(null);setScreen('student-auth')};
+
+  if(screen==='loading')       return<Spin/>;
+  if(screen==='student-auth')  return<StudentAuth onAuth={u=>{setUser(u);setScreen('student')}} onAdmin={()=>setScreen('admin-login')}/>;
+  if(screen==='admin-login')   return<AdminLogin onSuccess={()=>setScreen('admin')} onBack={()=>setScreen('student-auth')}/>;
+  if(screen==='admin')         return<AdminPanel onSignOut={out}/>;
+  if(screen==='student')       return user?<StudentDash user={user} onSignOut={out}/>:<Spin/>;
+  return null;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
