@@ -13,11 +13,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script>
-/* ═══════════════════════════════════════════════════════════════
-   FIREBASE CONFIG — replace with your real project values
-   console.firebase.google.com → Project Settings → Web App
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+   FIREBASE CONFIG \u2014 replace with your real project values
+   console.firebase.google.com \u2192 Project Settings \u2192 Web App
    Required: Enable Email/Password Auth + Firestore Database
-═══════════════════════════════════════════════════════════════ */
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
 const firebaseConfig = {
 
   apiKey: "AIzaSyDjLuWLhH6sT13VoP690BYRKzxKjb9HGeQ",
@@ -37,44 +37,44 @@ const firebaseConfig = {
   measurementId: "G-YGRC5ZHBMQ"
 
 };
-/* ════════════════════════════════════════════════════════════ */
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-/* Admin credentials — change password here if needed */
+/* Admin credentials \u2014 change password here if needed */
 const ADMIN_EMAIL = "hceadmin@edutrack.internal";
 const ADMIN_USER  = "hceadmin";
 const ADMIN_PASS  = "hceadminaksk";
 
-/* ─── POINT VALUES PER TASK ───────────────────────────────────
+/* \u2500\u2500\u2500 POINT VALUES PER TASK \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
    Add task titles (exact match) and their point value here.
    Admin can also award manual bonus points per student.
-────────────────────────────────────────────────────────────── */
+\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 const TASK_POINTS = {
-  /* Example — replace with your real task titles & points:
+  /* Example \u2014 replace with your real task titles & points:
   "Build a Portfolio Website": 50,
   "Intro to Python Assignment": 30,
   */
 };
 const DEFAULT_TASK_POINTS = 20; // fallback if task not listed above
 
-/* ─── RANK SYSTEM ─────────────────────────────────────────────
-   Matches the Community Ranks image: Probationer → Explorer →
-   Guardian → Champion → Legend
-────────────────────────────────────────────────────────────── */
+/* \u2500\u2500\u2500 RANK SYSTEM \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+   Matches the Community Ranks image: Probationer \u2192 Explorer \u2192
+   Guardian \u2192 Champion \u2192 Legend
+\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 const RANKS = [
-  { name:'Probationer', min:0,   max:149,  emoji:'🛡️',  color:'#CD7F32', glow:'rgba(205,127,50,0.35)',  bg:'linear-gradient(135deg,#3a1f00,#1a0e00)', border:'#CD7F32' },
-  { name:'Explorer',    min:150, max:299,  emoji:'🧭',  color:'#48C98A', glow:'rgba(72,201,138,0.35)',  bg:'linear-gradient(135deg,#003a1f,#001a0e)', border:'#48C98A' },
-  { name:'Guardian',   min:300, max:699,  emoji:'⚔️',  color:'#60AAFF', glow:'rgba(96,170,255,0.35)',  bg:'linear-gradient(135deg,#001836,#000d1f)', border:'#60AAFF' },
-  { name:'Champion',   min:700, max:999, emoji:'🦅',  color:'#C080FF', glow:'rgba(192,128,255,0.35)', bg:'linear-gradient(135deg,#1a0033,#0d001a)', border:'#C080FF' },
-  { name:'Legend',     min:1000,max:Infinity,emoji:'👑',color:'#FFB830',glow:'rgba(255,184,48,0.45)',  bg:'linear-gradient(135deg,#2a1800,#150c00)', border:'#FFB830' },
+  { name:'Probationer', min:0,   max:149,  emoji:'\u{1F6E1}\uFE0F',  color:'#CD7F32', glow:'rgba(205,127,50,0.35)',  bg:'linear-gradient(135deg,#3a1f00,#1a0e00)', border:'#CD7F32' },
+  { name:'Explorer',    min:150, max:299,  emoji:'\u{1F9ED}',  color:'#48C98A', glow:'rgba(72,201,138,0.35)',  bg:'linear-gradient(135deg,#003a1f,#001a0e)', border:'#48C98A' },
+  { name:'Guardian',   min:300, max:699,  emoji:'\u2694\uFE0F',  color:'#60AAFF', glow:'rgba(96,170,255,0.35)',  bg:'linear-gradient(135deg,#001836,#000d1f)', border:'#60AAFF' },
+  { name:'Champion',   min:700, max:999, emoji:'\u{1F985}',  color:'#C080FF', glow:'rgba(192,128,255,0.35)', bg:'linear-gradient(135deg,#1a0033,#0d001a)', border:'#C080FF' },
+  { name:'Legend',     min:1000,max:Infinity,emoji:'\u{1F451}',color:'#FFB830',glow:'rgba(255,184,48,0.45)',  bg:'linear-gradient(135deg,#2a1800,#150c00)', border:'#FFB830' },
 ];
 function getRank(pts){ return RANKS.find(r=>pts>=r.min&&pts<=r.max)||RANKS[0]; }
 function getNextRank(pts){ const i=RANKS.findIndex(r=>pts>=r.min&&pts<=r.max); return i<RANKS.length-1?RANKS[i+1]:null; }
 
-/* ── DEADLINE DUNGEON helpers ── */
+/* \u2500\u2500 DEADLINE DUNGEON helpers \u2500\u2500 */
 const MONSTER_MAP={
   urgent:[
     {emoji:'\u{1F409}',prefix:'Dragon of'},
@@ -117,9 +117,9 @@ function getDungeonNarrative(userName,tasks,submittedIds,points){
   const done=submittedIds.size;
   const rank=getRank(points);
   if(done===0&&pending===0) return`The dungeon awaits, ${userName}. Your admin has yet to summon the monsters. Prepare your gear.`;
-  if(urgent>2) return`⚠️ DIRE WARNING, ${userName}! ${urgent} ancient beasts have awakened. The dungeon trembles. Strike now or face the consequences!`;
+  if(urgent>2) return`\u26A0\uFE0F DIRE WARNING, ${userName}! ${urgent} ancient beasts have awakened. The dungeon trembles. Strike now or face the consequences!`;
   if(urgent>0) return`${userName}, a ${urgent===1?'powerful creature stirs':'dark presence grows'} in the dungeon. ${urgent} urgent monster${urgent>1?'s are':'is'} closing in on your kingdom!`;
-  if(done>0&&pending===0) return`🏆 LEGENDARY! You've cleared the dungeon, ${rank.emoji} ${rank.name}. All monsters have fallen before your might!`;
+  if(done>0&&pending===0) return`\u{1F3C6} LEGENDARY! You've cleared the dungeon, ${rank.emoji} ${rank.name}. All monsters have fallen before your might!`;
   if(done>pending) return`Well fought, ${userName}! ${done} monster${done>1?'s':''} defeated. ${pending} creature${pending>1?'s remain':'remains'} in the shadows...`;
   return`${userName}, ${pending} monster${pending>1?'s lurk':'lurks'} in the dungeon. Your quest continues, brave ${rank.name}.`;
 }
@@ -566,7 +566,7 @@ window.onerror=function(msg,src,line,col,err){
 <script type="text/babel">
 const {useState,useEffect,useRef}=React;
 
-/* ─ helpers ─ */
+/* \u2500 helpers \u2500 */
 const DOMAINS=['AI/ML','Web Dev','DSA','Cloud & DevOps','Data Science','Cybersecurity','Mobile Dev','Game Dev','General'];
 
 function ini(n){return(n||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
@@ -580,18 +580,18 @@ function useNotif(){
   return[n,show];
 }
 function PBadge({p}){
-  if(p==='urgent')return<span className="badge br">● Urgent</span>;
-  if(p==='medium')return<span className="badge ba">● Medium</span>;
-  return<span className="badge bb">● Low</span>;
+  if(p==='urgent')return<span className="badge br">\u25CF Urgent</span>;
+  if(p==='medium')return<span className="badge ba">\u25CF Medium</span>;
+  return<span className="badge bb">\u25CF Low</span>;
 }
-function Spin(){return<div className="spin">Loading EduTrack…</div>}
+function Spin(){return<div className="spin">Loading EduTrack\u2026</div>}
 function isConfigured(){
   try{return !firebase.apps[0].options.apiKey.startsWith('PASTE')}catch{return false}
 }
 
-/* ═══════════════════════════════════════════════
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
    STUDENT AUTH
-═══════════════════════════════════════════════ */
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
 function StudentAuth({onAuth,onAdmin}){
   const[mode,setMode]=useState('login');
   const[email,setEmail]=useState('');
@@ -635,9 +635,9 @@ function StudentAuth({onAuth,onAdmin}){
       <div className="abox">
         <div className="alogo">Edu<em>Track</em></div>
         {!cfg&&<div className="fbwarn">
-          ⚠️ <strong>Firebase not connected yet.</strong><br/>
-          Open this file, find <code>firebaseConfig</code> near the top, and replace each <code>PASTE_…_HERE</code> value with your real Firebase project credentials.<br/>
-          Get them at <strong>console.firebase.google.com</strong> → Project Settings → Your apps → Web.<br/>
+          \u26A0\uFE0F <strong>Firebase not connected yet.</strong><br/>
+          Open this file, find <code>firebaseConfig</code> near the top, and replace each <code>PASTE_\u2026_HERE</code> value with your real Firebase project credentials.<br/>
+          Get them at <strong>console.firebase.google.com</strong> \u2192 Project Settings \u2192 Your apps \u2192 Web.<br/>
           Also enable <strong>Email/Password Authentication</strong> and <strong>Firestore Database</strong> in your project.
         </div>}
         <div className="atit">{mode==='login'?'Welcome back':'Create account'}</div>
@@ -649,7 +649,7 @@ function StudentAuth({onAuth,onAdmin}){
           <input className="fi" type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)}/>
         </div>
         <div className="fld"><label>Password</label>
-          <input className="fi" type="password" placeholder="••••••••" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==='Enter'&&go()}/>
+          <input className="fi" type="password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==='Enter'&&go()}/>
         </div>
         {mode==='signup'&&<div className="fld">
           <label>Your learning fields</label>
@@ -661,7 +661,7 @@ function StudentAuth({onAuth,onAdmin}){
                   style={{padding:'5px 9px',border:'1.5px solid var(--bd2)',borderRadius:8,fontSize:13,width:120,outline:'none',fontFamily:'var(--fn)'}}
                   onKeyDown={e=>e.key==='Enter'&&saveF()}/>
                 <button className="bs bacc" onClick={saveF}>Add</button>
-                <button className="bs bgh" onClick={()=>setAddF(false)}>✕</button>
+                <button className="bs bgh" onClick={()=>setAddF(false)}>\u2715</button>
               </div>
             ):(
               <button className="chip dash" onClick={()=>setAddF(true)}>+ Add field</button>
@@ -670,7 +670,7 @@ function StudentAuth({onAuth,onAdmin}){
         </div>}
         {err&&<div className="ebox">{err}</div>}
         <button className="abtn" onClick={go} disabled={busy||!email||!pw}>
-          {busy?'Please wait…':mode==='login'?'Sign in':'Create account'}
+          {busy?'Please wait\u2026':mode==='login'?'Sign in':'Create account'}
         </button>
         <div className="asw">
           {mode==='login'
@@ -679,16 +679,16 @@ function StudentAuth({onAuth,onAdmin}){
         </div>
         <div className="divl"/>
         <div style={{textAlign:'center'}}>
-          <button className="bs bgh" onClick={onAdmin} style={{fontSize:12,padding:'5px 12px'}}>🔐 Admin login</button>
+          <button className="bs bgh" onClick={onAdmin} style={{fontSize:12,padding:'5px 12px'}}>\u{1F510} Admin login</button>
         </div>
       </div>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
    ADMIN LOGIN
-═══════════════════════════════════════════════ */
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
 function AdminLogin({onSuccess,onBack}){
   const[u,setU]=useState('');
   const[p,setP]=useState('');
@@ -718,26 +718,26 @@ function AdminLogin({onSuccess,onBack}){
       <div className="abox">
         <div className="alogo">Edu<em>Track</em> <span className="bpill">Admin</span></div>
         <div className="atit">Admin access</div>
-        <div className="asub">Restricted — authorised personnel only</div>
+        <div className="asub">Restricted \u2014 authorised personnel only</div>
         <div className="fld"><label>Username</label>
           <input className="fi" placeholder="hceadmin" value={u} onChange={e=>setU(e.target.value)}/>
         </div>
         <div className="fld"><label>Password</label>
-          <input className="fi" type="password" placeholder="••••••••" value={p} onChange={e=>setP(e.target.value)} onKeyDown={e=>e.key==='Enter'&&go()}/>
+          <input className="fi" type="password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" value={p} onChange={e=>setP(e.target.value)} onKeyDown={e=>e.key==='Enter'&&go()}/>
         </div>
         {err&&<div className="ebox">{err}</div>}
         <button className="abtn" onClick={go} disabled={busy||!u||!p}>
-          {busy?'Signing in…':'Access admin panel'}
+          {busy?'Signing in\u2026':'Access admin panel'}
         </button>
-        <div className="asw"><button onClick={onBack}>← Back to student login</button></div>
+        <div className="asw"><button onClick={onBack}>\u2190 Back to student login</button></div>
       </div>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
    ASSIGNMENT SUBMIT MODAL
-═══════════════════════════════════════════════ */
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
 const WHAT_DONE_OPTIONS=[
   'Read / studied the material',
   'Solved the sheet / problems',
@@ -755,8 +755,8 @@ function AssignmentSubmitModal({assignment,uid,onClose,onSuccess}){
   const[busy,setBusy]=useState(false);
   const[err,setErr]=useState('');
 
-  const typeInfo={sheet:{emoji:'📄',label:'Sheet'},resource:{emoji:'📚',label:'Resource'},research:{emoji:'🔬',label:'Research'}};
-  const info=typeInfo[assignment.type]||{emoji:'📝',label:'Assignment'};
+  const typeInfo={sheet:{emoji:'\u{1F4C4}',label:'Sheet'},resource:{emoji:'\u{1F4DA}',label:'Resource'},research:{emoji:'\u{1F52C}',label:'Research'}};
+  const info=typeInfo[assignment.type]||{emoji:'\u{1F4DD}',label:'Assignment'};
 
   const submit=async()=>{
     if(!whatDone){setErr('Please select what you did.');return}
@@ -781,7 +781,7 @@ function AssignmentSubmitModal({assignment,uid,onClose,onSuccess}){
           <span style={{fontSize:24}}>{info.emoji}</span>
           <div>
             <div className="modal-tit" style={{marginBottom:0}}>Submit Assignment</div>
-            <div style={{fontSize:12,color:'var(--tx3)',marginTop:2}}>{info.label} · {assignment.domain}</div>
+            <div style={{fontSize:12,color:'var(--tx3)',marginTop:2}}>{info.label} \u00B7 {assignment.domain}</div>
           </div>
         </div>
         <div style={{fontWeight:600,fontSize:15,marginBottom:18,color:'var(--tx)'}}>{assignment.title}</div>
@@ -815,15 +815,15 @@ function AssignmentSubmitModal({assignment,uid,onClose,onSuccess}){
 
         {/* file note */}
         <div style={{background:'#FEF3C7',border:'1px solid #F0C040',borderRadius:8,padding:'10px 14px',marginBottom:14,display:'flex',gap:10,alignItems:'flex-start'}}>
-          <span style={{fontSize:16,flexShrink:0,marginTop:1}}>📌</span>
+          <span style={{fontSize:16,flexShrink:0,marginTop:1}}>\u{1F4CC}</span>
           <div style={{fontSize:12,color:'#78350F',lineHeight:1.6}}>
-            <strong>Have a file to share?</strong> Upload it in the <strong>Community</strong> section — not here. This form is just for your written reflection.
+            <strong>Have a file to share?</strong> Upload it in the <strong>Community</strong> section \u2014 not here. This form is just for your written reflection.
           </div>
         </div>
 
         {err&&<div className="ebox">{err}</div>}
         <div style={{display:'flex',gap:8}}>
-          <button className="bs bacc" onClick={submit} disabled={busy||!whatDone||!desc.trim()}>{busy?'Submitting…':'Submit'}</button>
+          <button className="bs bacc" onClick={submit} disabled={busy||!whatDone||!desc.trim()}>{busy?'Submitting\u2026':'Submit'}</button>
           <button className="bs bgh" onClick={onClose}>Cancel</button>
         </div>
       </div>
@@ -831,12 +831,12 @@ function AssignmentSubmitModal({assignment,uid,onClose,onSuccess}){
   );
 }
 
-/* ═══════════════════════════════════════════════
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
    STUDENT ASSIGNMENTS TAB
-═══════════════════════════════════════════════ */
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
 function SAssignments({assignments,submittedIds,onSubmit}){
   const[filter,setFilter]=useState('all');
-  const typeInfo={sheet:{emoji:'📄',label:'Sheet'},resource:{emoji:'📚',label:'Resource'},research:{emoji:'🔬',label:'Research'}};
+  const typeInfo={sheet:{emoji:'\u{1F4C4}',label:'Sheet'},resource:{emoji:'\u{1F4DA}',label:'Resource'},research:{emoji:'\u{1F52C}',label:'Research'}};
 
   const types=['all','sheet','resource','research'];
   const shown=filter==='all'?assignments:assignments.filter(a=>a.type===filter);
@@ -845,8 +845,8 @@ function SAssignments({assignments,submittedIds,onSubmit}){
   return(<>
     <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4,flexWrap:'wrap',gap:8}}>
       <div>
-        <div className="ptit">📝 Assignments</div>
-        <div className="psub">{pending>0?`${pending} pending · `:'All caught up · '}{assignments.length} total assignment{assignments.length!==1?'s':''}</div>
+        <div className="ptit">\u{1F4DD} Assignments</div>
+        <div className="psub">{pending>0?`${pending} pending \u00B7 `:'All caught up \u00B7 '}{assignments.length} total assignment{assignments.length!==1?'s':''}</div>
       </div>
     </div>
 
@@ -854,17 +854,17 @@ function SAssignments({assignments,submittedIds,onSubmit}){
     <div style={{display:'flex',gap:7,marginBottom:18,flexWrap:'wrap'}}>
       {types.map(t=>(
         <button key={t} className={`bs ${filter===t?'bacc':'bgh'}`} onClick={()=>setFilter(t)}>
-          {t==='all'?'All':`${typeInfo[t]?.emoji||'📝'} ${typeInfo[t]?.label||t}`}
+          {t==='all'?'All':`${typeInfo[t]?.emoji||'\u{1F4DD}'} ${typeInfo[t]?.label||t}`}
         </button>
       ))}
     </div>
 
-    {shown.length===0&&<div className="empty">{assignments.length===0?'No assignments yet — check back soon!':'No assignments of this type.'}</div>}
+    {shown.length===0&&<div className="empty">{assignments.length===0?'No assignments yet \u2014 check back soon!':'No assignments of this type.'}</div>}
 
     <div className="ac-wrap">
       {shown.map(a=>{
         const done=submittedIds.has(a.id);
-        const info=typeInfo[a.type]||{emoji:'📝',label:'Assignment'};
+        const info=typeInfo[a.type]||{emoji:'\u{1F4DD}',label:'Assignment'};
         return(
           <div key={a.id} className={`asgn-card ${a.type||'sheet'}`}>
             <div className={`asgn-type-pill ${a.type||'sheet'}`}>{info.emoji} {info.label}</div>
@@ -872,14 +872,14 @@ function SAssignments({assignments,submittedIds,onSubmit}){
             {a.description&&<div className="asgn-desc">{a.description}</div>}
             {a.resourceUrl&&(
               <a href={a.resourceUrl} target="_blank" rel="noreferrer" className="asgn-resource-link">
-                🔗 Open resource ↗
+                \u{1F517} Open resource \u2197
               </a>
             )}
             <div style={{display:'flex',alignItems:'center',gap:7,flexWrap:'wrap',marginTop:4}}>
               <span className="badge bp">{a.domain}</span>
-              {a.dueDate&&<span className="badge bgr">📅 {a.dueDate}</span>}
+              {a.dueDate&&<span className="badge bgr">\u{1F4C5} {a.dueDate}</span>}
               {done
-                ?<span className="asgn-done-badge">✅ Submitted</span>
+                ?<span className="asgn-done-badge">\u2705 Submitted</span>
                 :<button className="bs bacc" style={{fontSize:12,padding:'4px 11px',marginLeft:'auto'}} onClick={()=>onSubmit(a)}>Submit</button>
               }
             </div>
@@ -890,9 +890,9 @@ function SAssignments({assignments,submittedIds,onSubmit}){
   </>);
 }
 
-/* ═══════════════════════════════════════════════
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
    SUBMIT ASSIGNMENT MODAL (tasks)
-═══════════════════════════════════════════════ */
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
 function SubmitModal({task,uid,onClose,onSuccess}){
   const[github,setGithub]=useState('');
   const[preview,setPreview]=useState('');
@@ -941,7 +941,7 @@ function SubmitModal({task,uid,onClose,onSuccess}){
         </div>
         <div className="modal-fld">
           <label>Description <span style={{fontWeight:400,color:'var(--tx3)',textTransform:'none',fontSize:11}}>(what did you build / learn?)</span></label>
-          <textarea className="fta" placeholder="Briefly describe your submission…" value={desc} onChange={e=>setDesc(e.target.value)} style={{minHeight:80}}/>
+          <textarea className="fta" placeholder="Briefly describe your submission\u2026" value={desc} onChange={e=>setDesc(e.target.value)} style={{minHeight:80}}/>
         </div>
         <div className="modal-fld">
           <label>AI Usage</label>
@@ -955,7 +955,7 @@ function SubmitModal({task,uid,onClose,onSuccess}){
         </div>
 
         <div style={{background:'var(--acl)',border:'1px solid var(--acm)',borderRadius:8,padding:'9px 13px',marginBottom:14,display:'flex',alignItems:'center',gap:8}}>
-          <span style={{fontSize:18}}>🏆</span>
+          <span style={{fontSize:18}}>\u{1F3C6}</span>
           <div style={{fontSize:13}}>
             <strong style={{color:'var(--ac)'}}>{TASK_POINTS[task.title]??DEFAULT_TASK_POINTS} points</strong>
             <span style={{color:'var(--tx2)'}}> will be added to your score on submission</span>
@@ -964,7 +964,7 @@ function SubmitModal({task,uid,onClose,onSuccess}){
 
         {err&&<div className="ebox">{err}</div>}
         <div style={{display:'flex',gap:8}}>
-          <button className="bs bacc" onClick={submit} disabled={busy||!github.trim()}>{busy?'Submitting…':'Submit Assignment'}</button>
+          <button className="bs bacc" onClick={submit} disabled={busy||!github.trim()}>{busy?'Submitting\u2026':'Submit Assignment'}</button>
           <button className="bs bgh" onClick={onClose}>Cancel</button>
         </div>
       </div>
@@ -972,9 +972,9 @@ function SubmitModal({task,uid,onClose,onSuccess}){
   );
 }
 
-/* ═══════════════════════════════════════════════
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
    STUDENT DASHBOARD
-═══════════════════════════════════════════════ */
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
 function StudentDash({user,onSignOut}){
   const[tab,setTab]=useState('home');
   const[tasks,setTasks]=useState([]);
@@ -1035,27 +1035,27 @@ function StudentDash({user,onSignOut}){
   const greet=hr<12?'Good morning':hr<18?'Good afternoon':'Good evening';
   const totalPts=userData.points||0;
 
-  const handleSubmitSuccess=pts=>{setSubmitTask(null);showNotif(`🏆 Submitted! +${pts} points earned`)};
-  const handleAsnSubmitSuccess=()=>{setSubmitAsn(null);showNotif('✅ Assignment submitted!')};
+  const handleSubmitSuccess=pts=>{setSubmitTask(null);showNotif(`\u{1F3C6} Submitted! +${pts} points earned`)};
+  const handleAsnSubmitSuccess=()=>{setSubmitAsn(null);showNotif('\u2705 Assignment submitted!')};
 
   return(<>
     <nav>
-      <div className="brand">Edu<em>Track</em> <span className="bpill" style={{background:'linear-gradient(135deg,#7c3aed,#5b21b6)',color:'#e9d5ff',border:'none'}}>⚔️ Dungeon</span></div>
+      <div className="brand">Edu<em>Track</em> <span className="bpill" style={{background:'linear-gradient(135deg,#7c3aed,#5b21b6)',color:'#e9d5ff',border:'none'}}>\u2694\uFE0F Dungeon</span></div>
       <button className={`nk${tab==='home'?' on':''}`} onClick={()=>setTab('home')}>Home</button>
       <button className={`nk${tab==='tasks'?' on':''}`} onClick={()=>setTab('tasks')}>Tasks</button>
       <button className={`nk${tab==='assignments'?' on':''}`} onClick={()=>setTab('assignments')}>
-        📝 Assignments {myA.filter(a=>!submittedAsnIds.has(a.id)).length>0&&<span style={{background:'var(--rr)',color:'#fff',borderRadius:10,fontSize:10,fontWeight:800,padding:'1px 5px',marginLeft:3}}>{myA.filter(a=>!submittedAsnIds.has(a.id)).length}</span>}
+        \u{1F4DD} Assignments {myA.filter(a=>!submittedAsnIds.has(a.id)).length>0&&<span style={{background:'var(--rr)',color:'#fff',borderRadius:10,fontSize:10,fontWeight:800,padding:'1px 5px',marginLeft:3}}>{myA.filter(a=>!submittedAsnIds.has(a.id)).length}</span>}
       </button>
       <button className={`nk${tab==='roadmap'?' on':''}`} onClick={()=>setTab('roadmap')}>Roadmap</button>
-      <button className={`nk${tab==='rank'?' on':''}`} onClick={()=>setTab('rank')}>🏅 Rank</button>
+      <button className={`nk${tab==='rank'?' on':''}`} onClick={()=>setTab('rank')}>\u{1F3C5} Rank</button>
       <div className="ml"/>
       {(()=>{const rank=getRank(totalPts);return<span className="rank-pill" style={{color:rank.color,borderColor:rank.color,background:'rgba(0,0,0,0.04)'}}>{rank.emoji} {rank.name}</span>})()}
-      <div className="pts-badge"><span className="pts-ico">🏆</span>{totalPts} pts</div>
+      <div className="pts-badge"><span className="pts-ico">\u{1F3C6}</span>{totalPts} pts</div>
       <Av name={user.displayName}/>
       <button className="nout" onClick={onSignOut}>Sign out</button>
     </nav>
     <div className="main">
-      {loading?<div className="empty">Loading…</div>:<>
+      {loading?<div className="empty">Loading\u2026</div>:<>
         {tab==='home'&&<SHome user={user} tasks={myT} roadmaps={myR} greet={greet} points={totalPts} submittedIds={submittedIds} onSubmit={setSubmitTask} allStudents={allStudents} warning={myWarning} warnDismissed={warnDismissed} onDismissWarn={()=>setWarnDismissed(myWarning?.level)}/>}
         {tab==='tasks'&&<STasks tasks={myT} submittedIds={submittedIds} onSubmit={setSubmitTask}/>}
         {tab==='assignments'&&<SAssignments assignments={myA} submittedIds={submittedAsnIds} onSubmit={setSubmitAsn}/>}
@@ -1069,7 +1069,7 @@ function StudentDash({user,onSignOut}){
   </>);
 }
 
-/* ── RANK PAGE (student) ── */
+/* \u2500\u2500 RANK PAGE (student) \u2500\u2500 */
 function SRank({points}){
   const currentRank=getRank(points);
   const nextRank=getNextRank(points);
@@ -1090,7 +1090,7 @@ function SRank({points}){
           <span style={{fontSize:52,filter:`drop-shadow(0 0 14px ${currentRank.color})`}}>{currentRank.emoji}</span>
           <div>
             <div style={{fontSize:28,fontWeight:900,color:currentRank.color,letterSpacing:-.5}}>{currentRank.name}</div>
-            <div style={{fontSize:14,color:'rgba(255,255,255,.55)',marginTop:2}}>🏆 {points} points earned</div>
+            <div style={{fontSize:14,color:'rgba(255,255,255,.55)',marginTop:2}}>\u{1F3C6} {points} points earned</div>
           </div>
         </div>
         {nextRank?(
@@ -1108,7 +1108,7 @@ function SRank({points}){
           </div>
         ):(
           <div style={{background:'rgba(255,255,255,.08)',borderRadius:10,padding:'10px 14px',fontSize:13,color:'rgba(255,255,255,.7)'}}>
-            🎉 You've reached the <strong style={{color:currentRank.color}}>highest rank</strong>! Legendary status achieved.
+            \u{1F389} You've reached the <strong style={{color:currentRank.color}}>highest rank</strong>! Legendary status achieved.
           </div>
         )}
       </div>
@@ -1153,10 +1153,10 @@ function SRank({points}){
                 <div style={{fontWeight:700,fontSize:14,color:isPast?r.color:'var(--tx)',display:'flex',alignItems:'center',gap:7}}>
                   {r.name}
                   {isCurrent&&<span style={{background:r.color,color:'#fff',fontSize:9,fontWeight:800,padding:'1px 6px',borderRadius:8}}>CURRENT</span>}
-                  {isPast&&!isCurrent&&<span style={{fontSize:11,color:r.color}}>✓ Achieved</span>}
+                  {isPast&&!isCurrent&&<span style={{fontSize:11,color:r.color}}>\u2713 Achieved</span>}
                 </div>
                 <div style={{fontSize:12,color:'var(--tx3)',marginTop:2}}>
-                  {r.max===Infinity?`${r.min}+ points`:`${r.min} – ${r.max} points`}
+                  {r.max===Infinity?`${r.min}+ points`:`${r.min} \u2013 ${r.max} points`}
                 </div>
               </div>
               {isCurrent&&nextRank&&(
@@ -1173,7 +1173,7 @@ function SRank({points}){
   );
 }
 
-/* ── Task card (student, with submit button) ── */
+/* \u2500\u2500 Task card (student, with submit button) \u2500\u2500 */
 function ImageLightbox({src,alt,onClose}){
   useEffect(()=>{
     const onKey=e=>{if(e.key==='Escape')onClose()};
@@ -1184,7 +1184,7 @@ function ImageLightbox({src,alt,onClose}){
     <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.88)',zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20,animation:'fdin .15s ease',cursor:'zoom-out'}}>
       <button onClick={onClose} style={{position:'absolute',top:18,right:22,background:'rgba(255,255,255,.12)',border:'none',color:'#fff',fontSize:22,width:40,height:40,borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1,transition:'.15s'}}
         onMouseEnter={e=>e.target.style.background='rgba(255,255,255,.25)'}
-        onMouseLeave={e=>e.target.style.background='rgba(255,255,255,.12)'}>✕</button>
+        onMouseLeave={e=>e.target.style.background='rgba(255,255,255,.12)'}>\u2715</button>
       <img
         src={src} alt={alt}
         onClick={e=>e.stopPropagation()}
@@ -1213,12 +1213,12 @@ function TCard({t,submitted,onSubmit}){
       <div className="tcm">
         <PBadge p={t.priority}/>
         <span className="badge bp">{t.domain}</span>
-        {t.dueDate&&<span className="badge bgr">📅 {t.dueDate}</span>}
-        {TASK_POINTS[t.title]!=null&&<span className="badge" style={{background:'#FFF3CD',color:'#7A5800',border:'1px solid #F0C040'}}>🏆 {TASK_POINTS[t.title]} pts</span>}
+        {t.dueDate&&<span className="badge bgr">\u{1F4C5} {t.dueDate}</span>}
+        {TASK_POINTS[t.title]!=null&&<span className="badge" style={{background:'#FFF3CD',color:'#7A5800',border:'1px solid #F0C040'}}>\u{1F3C6} {TASK_POINTS[t.title]} pts</span>}
       </div>
       <div style={{marginTop:10}}>
         {submitted
-          ?<span className="sub-done">✅ Submitted</span>
+          ?<span className="sub-done">\u2705 Submitted</span>
           :<button className="bs bacc" style={{fontSize:12,padding:'5px 11px'}} onClick={()=>onSubmit(t)}>Submit Assignment</button>
         }
       </div>
@@ -1237,8 +1237,8 @@ function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStuden
 
   /* warning config */
   const warnConfig={
-    1:{cls:'w1',icon:'🚨',tag:'Warning 1',title:'Community Inactivity Notice',defaultMsg:'You haven\'t been active in the community recently. Please start engaging — post updates, share your work, and participate in discussions.'},
-    2:{cls:'w2',icon:'⚠️',tag:'Warning 2 — Final Notice',title:'Last Warning: Immediate Action Required',defaultMsg:'This is your final warning. Your community participation is critically low. Continued inactivity may result in removal from the program.'},
+    1:{cls:'w1',icon:'\u{1F6A8}',tag:'Warning 1',title:'Community Inactivity Notice',defaultMsg:'You haven\'t been active in the community recently. Please start engaging \u2014 post updates, share your work, and participate in discussions.'},
+    2:{cls:'w2',icon:'\u26A0\uFE0F',tag:'Warning 2 \u2014 Final Notice',title:'Last Warning: Immediate Action Required',defaultMsg:'This is your final warning. Your community participation is critically low. Continued inactivity may result in removal from the program.'},
   };
   const showWarn=warning&&warning.level&&!(warnDismissed===warning.level);
   const wCfg=showWarn?warnConfig[warning.level]:null;
@@ -1250,9 +1250,9 @@ function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStuden
   const myPos=sorted.findIndex(s=>s.id===user.uid);
 
   const podConfig=[
-    {cls:'p1',crown:'👑',label:'1ST',confettiColors:['#48C98A','#6EE7B7','#34D399','#10B981','#A7F3D0']},
-    {cls:'p2',crown:'🥈',label:'2ND',confettiColors:['#FB923C','#FED7AA','#F97316','#EA580C','#FDE68A']},
-    {cls:'p3',crown:'🥉',label:'3RD',confettiColors:['#9CA3AF','#D1D5DB','#6B7280','#E5E7EB','#F3F4F6']},
+    {cls:'p1',crown:'\u{1F451}',label:'1ST',confettiColors:['#48C98A','#6EE7B7','#34D399','#10B981','#A7F3D0']},
+    {cls:'p2',crown:'\u{1F948}',label:'2ND',confettiColors:['#FB923C','#FED7AA','#F97316','#EA580C','#FDE68A']},
+    {cls:'p3',crown:'\u{1F949}',label:'3RD',confettiColors:['#9CA3AF','#D1D5DB','#6B7280','#E5E7EB','#F3F4F6']},
   ];
 
   function Confetti({colors}){
@@ -1269,7 +1269,7 @@ function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStuden
 
   return(
     <div className="dg-home">
-      {/* ── WARNING BANNER ── */}
+      {/* \u2500\u2500 WARNING BANNER \u2500\u2500 */}
       {showWarn&&wCfg&&(
         <div className={`warn-banner ${wCfg.cls}`}>
           <div className="warn-icon">{wCfg.icon}</div>
@@ -1279,30 +1279,30 @@ function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStuden
             <div className="warn-msg">{warning.message||wCfg.defaultMsg}</div>
             {warning.issuedAt&&<div style={{fontSize:11,opacity:.45,marginTop:8,color:'#fff'}}>Issued {warning.issuedAt?.toDate?.()?.toLocaleDateString?.()}</div>}
           </div>
-          <button className="warn-dismiss" onClick={onDismissWarn} title="Dismiss">✕</button>
+          <button className="warn-dismiss" onClick={onDismissWarn} title="Dismiss">\u2715</button>
         </div>
       )}
 
-      {/* ── DUNGEON STORY BANNER ── */}
+      {/* \u2500\u2500 DUNGEON STORY BANNER \u2500\u2500 */}
       <div className="dg-story-banner">
         <div className="dg-story-content">
-          <div className="dg-story-icon">{pendingCount===0?'🏆':urg>0?'⚔️':'🗺️'}</div>
+          <div className="dg-story-icon">{pendingCount===0?'\u{1F3C6}':urg>0?'\u2694\uFE0F':'\u{1F5FA}\uFE0F'}</div>
           <div className="dg-story-text">
-            <div className="dg-story-label">⚔️ DeadLine Dungeon — {greet}</div>
+            <div className="dg-story-label">\u2694\uFE0F DeadLine Dungeon \u2014 {greet}</div>
             <div className="dg-story-title">{rank.emoji} {rank.name} {firstName}</div>
             <div className="dg-story-sub">{narrative}</div>
             <div className="dg-story-stats">
-              <div className="dg-stat-chip">⚔️ {pendingCount} monsters remaining</div>
-              <div className="dg-stat-chip">💀 {submittedIds.size} defeated</div>
-              <div className="dg-stat-chip">🔥 {urg} urgent threat{urg!==1?'s':''}</div>
-              {nextRank&&<div className="dg-stat-chip">🎯 {nextRank.min-points} XP to {nextRank.emoji} {nextRank.name}</div>}
+              <div className="dg-stat-chip">\u2694\uFE0F {pendingCount} monsters remaining</div>
+              <div className="dg-stat-chip">\u{1F480} {submittedIds.size} defeated</div>
+              <div className="dg-stat-chip">\u{1F525} {urg} urgent threat{urg!==1?'s':''}</div>
+              {nextRank&&<div className="dg-stat-chip">\u{1F3AF} {nextRank.min-points} XP to {nextRank.emoji} {nextRank.name}</div>}
             </div>
           </div>
         </div>
         {/* Dungeon danger meter */}
         <div style={{marginTop:14}}>
           <div style={{display:'flex',justifyContent:'space-between',fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.3)',marginBottom:4,textTransform:'uppercase',letterSpacing:.8}}>
-            <span>☠️ Dungeon Danger Level</span>
+            <span>\u2620\uFE0F Dungeon Danger Level</span>
             <span style={{color:dangerLevel>=70?'#e85555':dangerLevel>=40?'#fb923c':'#48C98A'}}>{dangerLevel}%</span>
           </div>
           <div className="dg-danger-bar">
@@ -1313,14 +1313,14 @@ function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStuden
 
       <div className="home-grid" style={{display:'grid',gridTemplateColumns:'1fr 300px',gap:22,alignItems:'start'}}>
 
-      {/* ── LEFT ── */}
+      {/* \u2500\u2500 LEFT \u2500\u2500 */}
       <div>
         {/* Stats row */}
         <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:11,marginBottom:22}}>
           <div className="pts-stat">
             <div className="sl">Total XP</div>
             <div className="sv" style={{color:'#FFB830'}}>{points}</div>
-            <div className="ss">⚔️ earned in battle</div>
+            <div className="ss">\u2694\uFE0F earned in battle</div>
           </div>
           {(()=>{const r=getRank(points);const nr=getNextRank(points);return(
             <div className="stat" style={{background:r.bg,border:`1.5px solid ${r.border}`,boxShadow:`0 0 14px ${r.glow}`}}>
@@ -1335,7 +1335,7 @@ function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStuden
             <div className="ss" style={{color:'rgba(255,255,255,.3)'}}>summoned</div>
           </div>
           <div className="stat" style={{background:'#1a0505',borderColor:'rgba(232,85,85,0.3)'}}>
-            <div className="sl" style={{color:'rgba(232,85,85,.5)'}}>🔥 Urgent</div>
+            <div className="sl" style={{color:'rgba(232,85,85,.5)'}}>\u{1F525} Urgent</div>
             <div className="sv" style={{color:'#e85555'}}>{urg}</div>
             <div className="ss" style={{color:'rgba(232,85,85,.4)'}}>closing in</div>
           </div>
@@ -1350,7 +1350,7 @@ function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStuden
         {tasks.length>0&&(
           <>
             <div className="dg-section-label">
-              <span>⚔️ Active Dungeon Monsters</span>
+              <span>\u2694\uFE0F Active Dungeon Monsters</span>
             </div>
             <div className="g2" style={{marginBottom:24}}>
               {tasks.slice(0,4).map((t,i)=>{
@@ -1365,14 +1365,14 @@ function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStuden
                       <div style={{flex:1}}>
                         <div className="dg-monster-name">{monster.name}</div>
                         <div className="dg-monster-type">
-                          {done?'☠️ DEFEATED':t.priority==='urgent'?'⚠️ BOSS MONSTER':t.priority==='medium'?'⚔️ ELITE ENEMY':'🗡️ MINION'}
+                          {done?'\u2620\uFE0F DEFEATED':t.priority==='urgent'?'\u26A0\uFE0F BOSS MONSTER':t.priority==='medium'?'\u2694\uFE0F ELITE ENEMY':'\u{1F5E1}\uFE0F MINION'}
                         </div>
                         {t.domain&&<div style={{marginTop:3}}><span className="badge bp" style={{fontSize:10}}>{t.domain}</span></div>}
                       </div>
                     </div>
                     <div className="dg-hp-wrap">
                       <div className="dg-hp-label">
-                        <span>❤️ Monster HP</span>
+                        <span>\u2764\uFE0F Monster HP</span>
                         <span>{done?'0':hpPct}%</span>
                       </div>
                       <div className="dg-hp-bar">
@@ -1382,11 +1382,11 @@ function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStuden
                     {t.description&&<div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginBottom:10,lineHeight:1.5,fontStyle:'italic'}}>"{t.description}"</div>}
                     <div className="dg-monster-footer">
                       {done
-                        ?<span className="dg-defeated-badge">✅ Quest Complete! +{pts} XP</span>
+                        ?<span className="dg-defeated-badge">\u2705 Quest Complete! +{pts} XP</span>
                         :<>
-                          <span className="dg-xp-badge">⚡ +{pts} XP</span>
+                          <span className="dg-xp-badge">\u26A1 +{pts} XP</span>
                           <button className={`dg-attack-btn${t.priority==='urgent'?' urgent':''}`} onClick={()=>onSubmit(t)}>
-                            {t.priority==='urgent'?'⚔️ Fight Now!':'🗡️ Attack'}
+                            {t.priority==='urgent'?'\u2694\uFE0F Fight Now!':'\u{1F5E1}\uFE0F Attack'}
                           </button>
                         </>
                       }
@@ -1401,17 +1401,17 @@ function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStuden
         {/* Quest roadmaps */}
         {roadmaps.length>0&&(
           <>
-            <div className="dg-section-label"><span>🗺️ Active Quests</span></div>
+            <div className="dg-section-label"><span>\u{1F5FA}\uFE0F Active Quests</span></div>
             {roadmaps.slice(0,2).map(r=>(
               <div key={r.id} className="dg-quest-card">
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:3}}>
-                  <div className="dg-quest-title">📜 {r.title}</div>
+                  <div className="dg-quest-title">\u{1F4DC} {r.title}</div>
                   <span className="badge bp" style={{fontSize:10}}>{r.domain}</span>
                 </div>
                 <div className="dg-quest-sub">{r.description}</div>
                 {(r.phases||[]).map(p=>(
                   <div key={p.id} className="dg-quest-phase">
-                    <div className="dg-quest-phase-name">▸ {p.title}</div>
+                    <div className="dg-quest-phase-name">\u25B8 {p.title}</div>
                     <div className="dg-quest-bar"><div className="dg-quest-fill" style={{width:(p.progress||0)+'%'}}/></div>
                     <div className="dg-quest-pct">{p.progress||0}%</div>
                   </div>
@@ -1423,16 +1423,16 @@ function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStuden
 
         {tasks.length===0&&roadmaps.length===0&&(
           <div className="dg-narrative">
-            <div className="dg-narrative-label">🔮 Dungeon Master</div>
+            <div className="dg-narrative-label">\u{1F52E} Dungeon Master</div>
             <div className="dg-narrative-text">The dungeon is eerily quiet, {firstName}. Your admin has yet to summon the monsters. Sharpen your blade and await the call to battle...</div>
           </div>
         )}
       </div>
 
-      {/* ── RIGHT: leaderboard panel ── */}
+      {/* \u2500\u2500 RIGHT: leaderboard panel \u2500\u2500 */}
       <div className="dg-lb-sidebar" style={{background:'var(--sf)',border:'1px solid var(--bd)',borderRadius:16,overflow:'hidden',position:'sticky',top:72}}>
         <div style={{padding:'14px 16px 10px',borderBottom:'1px solid #1e2840',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-          <div style={{fontWeight:800,fontSize:15,letterSpacing:-.3,color:'#fff'}}>⚔️ Hall of Heroes</div>
+          <div style={{fontWeight:800,fontSize:15,letterSpacing:-.3,color:'#fff'}}>\u2694\uFE0F Hall of Heroes</div>
           {myPos>=0&&<div style={{fontSize:11,fontWeight:700,color:'#a78bfa',background:'rgba(124,58,237,0.15)',padding:'2px 8px',borderRadius:8,border:'1px solid rgba(124,58,237,0.3)'}}>#{myPos+1} of {sorted.length}</div>}
         </div>
 
@@ -1460,7 +1460,7 @@ function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStuden
                   <div style={{fontSize:cfg.cls==='p1'?18:14,marginBottom:2,animation:cfg.cls==='p1'?'pulse-crown 1.8s ease-in-out infinite':''}}>{cfg.crown}</div>
                   <div style={{width:30,height:30,borderRadius:'50%',background:`rgba(255,255,255,.1)`,border:`1.5px solid ${col}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:col,margin:'0 auto 4px'}}>{initials(name)}</div>
                   <div style={{fontSize:10,fontWeight:700,color:'#fff',maxWidth:70,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={name}>{name}</div>
-                  <div style={{fontSize:11,fontWeight:800,color:col,marginTop:2}}>⚡{s.points||0}</div>
+                  <div style={{fontSize:11,fontWeight:800,color:col,marginTop:2}}>\u26A1{s.points||0}</div>
                   {isSelf&&<div style={{fontSize:8,fontWeight:800,background:col,color:'#fff',padding:'1px 5px',borderRadius:5,marginTop:3,letterSpacing:.4}}>YOU</div>}
                 </div>
               );
@@ -1473,7 +1473,7 @@ function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStuden
             const isSelf=s.id===user.uid;
             const name=nameFrom(s);
             const rank=getRank(s.points||0);
-            const posLabel=i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+            const posLabel=i===0?'\u{1F947}':i===1?'\u{1F948}':i===2?'\u{1F949}':`#${i+1}`;
             return(
               <div key={s.id} className={`lb-list-row${isSelf?' me':''}`}
                 style={{padding:'9px 10px',borderRadius:9,marginBottom:5,animationDelay:(i*0.04)+'s',gap:8,background:isSelf?'rgba(124,58,237,0.1)':'rgba(255,255,255,0.02)',borderColor:isSelf?'rgba(124,58,237,0.3)':'#1e2840'}}>
@@ -1483,7 +1483,7 @@ function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStuden
                   <div style={{fontSize:12,fontWeight:700,color:'rgba(255,255,255,0.8)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{name}</div>
                   <div style={{fontSize:10,color:rank.color,fontWeight:600}}>{rank.emoji} {rank.name}</div>
                 </div>
-                <div style={{fontSize:12,fontWeight:800,color:'#FFB830',flexShrink:0}}>⚡{s.points||0}</div>
+                <div style={{fontSize:12,fontWeight:800,color:'#FFB830',flexShrink:0}}>\u26A1{s.points||0}</div>
                 {isSelf&&<div className="lb-me-tag" style={{fontSize:8,padding:'1px 5px',background:'#7c3aed'}}>YOU</div>}
               </div>
             );
@@ -1506,14 +1506,14 @@ function STasks({tasks,submittedIds,onSubmit}){
     <div style={{background:'#0a0d14',margin:'-28px -22px',padding:'28px 22px',minHeight:'100vh'}}>
       <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4,flexWrap:'wrap',gap:8}}>
         <div>
-          <div style={{fontSize:20,fontWeight:800,letterSpacing:-.4,color:'#fff',marginBottom:3}}>⚔️ Dungeon Map</div>
+          <div style={{fontSize:20,fontWeight:800,letterSpacing:-.4,color:'#fff',marginBottom:3}}>\u2694\uFE0F Dungeon Map</div>
           <div style={{color:'rgba(255,255,255,0.4)',fontSize:13,marginBottom:18}}>
-            {pending.length} monster{pending.length!==1?'s':''} remaining · {defeated.length} defeated · submit to earn XP
+            {pending.length} monster{pending.length!==1?'s':''} remaining \u00B7 {defeated.length} defeated \u00B7 submit to earn XP
           </div>
         </div>
         <div style={{display:'flex',gap:7}}>
-          <button className={`bs ${view==='dungeon'?'bacc':'bgh'}`} style={{fontSize:12}} onClick={()=>setView('dungeon')}>🐉 Dungeon View</button>
-          <button className={`bs ${view==='classic'?'bacc':'bgh'}`} style={{fontSize:12}} onClick={()=>setView('classic')}>📋 Classic</button>
+          <button className={`bs ${view==='dungeon'?'bacc':'bgh'}`} style={{fontSize:12}} onClick={()=>setView('dungeon')}>\u{1F409} Dungeon View</button>
+          <button className={`bs ${view==='classic'?'bacc':'bgh'}`} style={{fontSize:12}} onClick={()=>setView('classic')}>\u{1F4CB} Classic</button>
         </div>
       </div>
 
@@ -1523,7 +1523,7 @@ function STasks({tasks,submittedIds,onSubmit}){
             background:f===x?(x==='urgent'?'#dc2626':x==='medium'?'#b45309':x==='low'?'#1d4ed8':'var(--ac)'):'rgba(255,255,255,0.05)',
             color:f===x?'#fff':'rgba(255,255,255,0.5)',
             border:`1px solid ${f===x?'transparent':'rgba(255,255,255,0.1)'}`}}>
-            {x==='all'?'⚔️ All':x==='urgent'?'🔥 Boss':x==='medium'?'⚔️ Elite':'🗡️ Minion'}
+            {x==='all'?'\u2694\uFE0F All':x==='urgent'?'\u{1F525} Boss':x==='medium'?'\u2694\uFE0F Elite':'\u{1F5E1}\uFE0F Minion'}
           </button>
         ))}
       </div>
@@ -1533,7 +1533,7 @@ function STasks({tasks,submittedIds,onSubmit}){
         <>
           {pending.length>0&&(
             <>
-              <div className="dg-section-label"><span>⚔️ Active Threats ({pending.length})</span></div>
+              <div className="dg-section-label"><span>\u2694\uFE0F Active Threats ({pending.length})</span></div>
               <div className="g2" style={{marginBottom:28}}>
                 {pending.map((t,i)=>{
                   const monster=getMonster(t,i);
@@ -1546,20 +1546,20 @@ function STasks({tasks,submittedIds,onSubmit}){
                         <div style={{flex:1}}>
                           <div className="dg-monster-name">{monster.name}</div>
                           <div className="dg-monster-type">
-                            {t.priority==='urgent'?'⚠️ BOSS MONSTER':t.priority==='medium'?'⚔️ ELITE ENEMY':'🗡️ MINION'}
+                            {t.priority==='urgent'?'\u26A0\uFE0F BOSS MONSTER':t.priority==='medium'?'\u2694\uFE0F ELITE ENEMY':'\u{1F5E1}\uFE0F MINION'}
                           </div>
                           {t.domain&&<div style={{marginTop:3}}><span className="badge bp" style={{fontSize:10}}>{t.domain}</span></div>}
                         </div>
                       </div>
                       <div className="dg-hp-wrap">
-                        <div className="dg-hp-label"><span>❤️ HP</span><span>{hpPct}%</span></div>
+                        <div className="dg-hp-label"><span>\u2764\uFE0F HP</span><span>{hpPct}%</span></div>
                         <div className="dg-hp-bar"><div className="dg-hp-fill" style={{width:hpPct+'%'}}/></div>
                       </div>
                       {t.description&&<div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginBottom:10,lineHeight:1.5,fontStyle:'italic'}}>"{t.description}"</div>}
                       <div className="dg-monster-footer">
-                        <span className="dg-xp-badge">⚡ +{pts} XP</span>
+                        <span className="dg-xp-badge">\u26A1 +{pts} XP</span>
                         <button className={`dg-attack-btn${t.priority==='urgent'?' urgent':''}`} onClick={()=>onSubmit(t)}>
-                          {t.priority==='urgent'?'⚔️ Fight Now!':'🗡️ Attack'}
+                          {t.priority==='urgent'?'\u2694\uFE0F Fight Now!':'\u{1F5E1}\uFE0F Attack'}
                         </button>
                       </div>
                     </div>
@@ -1570,7 +1570,7 @@ function STasks({tasks,submittedIds,onSubmit}){
           )}
           {defeated.length>0&&(
             <>
-              <div className="dg-section-label"><span>☠️ Defeated ({defeated.length})</span></div>
+              <div className="dg-section-label"><span>\u2620\uFE0F Defeated ({defeated.length})</span></div>
               <div className="g2">
                 {defeated.map((t,i)=>{
                   const monster=getMonster(t,i+pending.length);
@@ -1581,15 +1581,15 @@ function STasks({tasks,submittedIds,onSubmit}){
                         <div className="dg-monster-emoji">{monster.emoji}</div>
                         <div style={{flex:1}}>
                           <div className="dg-monster-name">{monster.name}</div>
-                          <div className="dg-monster-type">☠️ SLAIN</div>
+                          <div className="dg-monster-type">\u2620\uFE0F SLAIN</div>
                         </div>
                       </div>
                       <div className="dg-hp-wrap">
-                        <div className="dg-hp-label"><span>❤️ HP</span><span>0%</span></div>
+                        <div className="dg-hp-label"><span>\u2764\uFE0F HP</span><span>0%</span></div>
                         <div className="dg-hp-bar"><div className="dg-hp-fill" style={{width:'0%'}}/></div>
                       </div>
                       <div className="dg-monster-footer">
-                        <span className="dg-defeated-badge">✅ Quest Complete! +{pts} XP</span>
+                        <span className="dg-defeated-badge">\u2705 Quest Complete! +{pts} XP</span>
                       </div>
                     </div>
                   );
@@ -1605,7 +1605,7 @@ function STasks({tasks,submittedIds,onSubmit}){
   );
 }
 
-/* ── Roadmap with interactive status per item ── */
+/* \u2500\u2500 Roadmap with interactive status per item \u2500\u2500 */
 function SRoadmap({roadmaps,uid}){
   const[open,setOpen]=useState({});
   // local status overrides stored in Firestore under users/{uid}/roadmapProgress/{roadmapId_phaseId_itemIdx}
@@ -1646,14 +1646,14 @@ function SRoadmap({roadmaps,uid}){
   };
 
   const statusInfo={
-    'not-started':{label:'Not Started',emoji:'🔜',cls:'act-ns'},
-    'in-progress':{label:'In Progress',emoji:'🔄',cls:'act-ip'},
-    'done':{label:'Done',emoji:'✅',cls:'act-dn'},
+    'not-started':{label:'Not Started',emoji:'\u{1F51C}',cls:'act-ns'},
+    'in-progress':{label:'In Progress',emoji:'\u{1F504}',cls:'act-ip'},
+    'done':{label:'Done',emoji:'\u2705',cls:'act-dn'},
   };
 
   return(<>
     <div className="ptit">Roadmap</div>
-    <div className="psub">Your step-by-step learning journey — update your status on each topic</div>
+    <div className="psub">Your step-by-step learning journey \u2014 update your status on each topic</div>
     {roadmaps.length===0?<div className="empty">No roadmaps published for your fields yet.</div>
      :roadmaps.map(r=>(
       <div key={r.id} style={{marginBottom:26}}>
@@ -1669,10 +1669,10 @@ function SRoadmap({roadmaps,uid}){
             <div className="rmh" onClick={()=>tog(p.id)}>
               <div style={{flex:1}}>
                 <div className="rmht">{p.title}</div>
-                <div style={{fontSize:11,color:'var(--tx3)',marginTop:1}}>{pct}% complete · {(p.items||[]).length} topic{(p.items||[]).length!==1?'s':''}</div>
+                <div style={{fontSize:11,color:'var(--tx3)',marginTop:1}}>{pct}% complete \u00B7 {(p.items||[]).length} topic{(p.items||[]).length!==1?'s':''}</div>
               </div>
               <div className="pbar" style={{marginRight:10}}><div className="pfill" style={{width:pct+'%'}}/></div>
-              <span style={{color:'var(--tx3)',fontSize:11}}>{open[p.id]?'▲':'▼'}</span>
+              <span style={{color:'var(--tx3)',fontSize:11}}>{open[p.id]?'\u25B2':'\u25BC'}</span>
             </div>
             {open[p.id]&&<div className="rmb">
               {(p.items||[]).map((it,i)=>{
@@ -1705,9 +1705,9 @@ function SRoadmap({roadmaps,uid}){
   </>);
 }
 
-/* ═══════════════════════════════════════════════
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
    ADMIN PANEL
-═══════════════════════════════════════════════ */
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
 function AdminPanel({onSignOut}){
   const[tab,setTab]=useState('overview');
   const[tasks,setTasks]=useState([]);
@@ -1732,14 +1732,14 @@ function AdminPanel({onSignOut}){
     return()=>{u1();u2();u3();u4();u5();u6();u7()};
   },[]);
 
-  const addTask=async f=>{await db.collection('tasks').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Task published')};
-  const delTask=async id=>{await db.collection('tasks').doc(id).delete();showNotif('🗑️ Task deleted')};
-  const addRM=async f=>{await db.collection('roadmaps').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Roadmap published')};
-  const delRM=async id=>{await db.collection('roadmaps').doc(id).delete();showNotif('🗑️ Roadmap deleted')};
-  const addAsn=async f=>{await db.collection('assignments').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Assignment published')};
-  const delAsn=async id=>{await db.collection('assignments').doc(id).delete();showNotif('🗑️ Assignment deleted')};
+  const addTask=async f=>{await db.collection('tasks').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('\u2705 Task published')};
+  const delTask=async id=>{await db.collection('tasks').doc(id).delete();showNotif('\u{1F5D1}\uFE0F Task deleted')};
+  const addRM=async f=>{await db.collection('roadmaps').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('\u2705 Roadmap published')};
+  const delRM=async id=>{await db.collection('roadmaps').doc(id).delete();showNotif('\u{1F5D1}\uFE0F Roadmap deleted')};
+  const addAsn=async f=>{await db.collection('assignments').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('\u2705 Assignment published')};
+  const delAsn=async id=>{await db.collection('assignments').doc(id).delete();showNotif('\u{1F5D1}\uFE0F Assignment deleted')};
 
-  const TABS=[['overview','📊','Overview'],['tasks','📋','Tasks'],['assignments','📝','Assignments'],['roadmaps','🗺️','Roadmaps'],['students','👥','Students'],['warnings','⚠️','Warnings'],['submissions','📥','Submissions'],['asn-submissions','📨','Asn. Responses'],['points','🏆','Points']];
+  const TABS=[['overview','\u{1F4CA}','Overview'],['tasks','\u{1F4CB}','Tasks'],['assignments','\u{1F4DD}','Assignments'],['roadmaps','\u{1F5FA}\uFE0F','Roadmaps'],['students','\u{1F465}','Students'],['warnings','\u26A0\uFE0F','Warnings'],['submissions','\u{1F4E5}','Submissions'],['asn-submissions','\u{1F4E8}','Asn. Responses'],['points','\u{1F3C6}','Points']];
 
   return(<>
     <nav>
@@ -1777,17 +1777,17 @@ function AdminPanel({onSignOut}){
   </>);
 }
 
-/* ─── ADMIN: ASSIGNMENT RESPONSES ─────────────────────────── */
+/* \u2500\u2500\u2500 ADMIN: ASSIGNMENT RESPONSES \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 function AAsnSubmissions({submissions,students}){
   const nameFrom=s=>s?.name||(s?.email?s.email.split('@')[0]:'Unknown');
-  const typeInfo={sheet:{emoji:'📄',label:'Sheet'},resource:{emoji:'📚',label:'Resource'},research:{emoji:'🔬',label:'Research'}};
+  const typeInfo={sheet:{emoji:'\u{1F4C4}',label:'Sheet'},resource:{emoji:'\u{1F4DA}',label:'Resource'},research:{emoji:'\u{1F52C}',label:'Research'}};
   return(<>
-    <div className="ptit">📨 Assignment Responses</div>
+    <div className="ptit">\u{1F4E8} Assignment Responses</div>
     <div className="psub">{submissions.length} response{submissions.length!==1?'s':''} received</div>
     {submissions.length===0&&<div className="empty">No assignment responses yet.</div>}
     {submissions.map(s=>{
       const stu=students.find(x=>x.id===s.uid);
-      const info=typeInfo[s.assignmentType]||{emoji:'📝',label:'Assignment'};
+      const info=typeInfo[s.assignmentType]||{emoji:'\u{1F4DD}',label:'Assignment'};
       return(
         <div key={s.id} className="sub-card">
           <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8,flexWrap:'wrap'}}>
@@ -1796,11 +1796,11 @@ function AAsnSubmissions({submissions,students}){
               <div style={{fontSize:11,color:'var(--tx3)'}}>{stu?.email||s.uid}</div>
             </div>
             <span className={`asgn-type-pill ${s.assignmentType||'sheet'}`}>{info.emoji} {info.label}</span>
-            <div style={{fontSize:11,color:'var(--tx3)'}}>{s.submittedAt?.toDate?.()?.toLocaleDateString?.()||'—'}</div>
+            <div style={{fontSize:11,color:'var(--tx3)'}}>{s.submittedAt?.toDate?.()?.toLocaleDateString?.()||'\u2014'}</div>
           </div>
           <div style={{fontWeight:600,fontSize:13,marginBottom:6,color:'var(--tx)'}}>{s.assignmentTitle}</div>
           <div style={{fontSize:12,background:'var(--acl)',border:'1px solid var(--acm)',borderRadius:7,padding:'6px 10px',marginBottom:6,color:'var(--ac)',fontWeight:600}}>
-            ✅ {s.whatDone}
+            \u2705 {s.whatDone}
           </div>
           {s.description&&<div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.6,background:'var(--sf2)',borderRadius:7,padding:'8px 11px'}}>{s.description}</div>}
         </div>
@@ -1809,9 +1809,9 @@ function AAsnSubmissions({submissions,students}){
   </>);
 }
 
-/* ─── ADMIN: CREATE ASSIGNMENTS ───────────────────────────── */
+/* \u2500\u2500\u2500 ADMIN: CREATE ASSIGNMENTS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 function AAssignments({assignments,onAdd,onDel,students}){
-  const TYPES=[['sheet','📄','Sheet / Problem Set'],['resource','📚','Resource / Study Material'],['research','🔬','Research Topic']];
+  const TYPES=[['sheet','\u{1F4C4}','Sheet / Problem Set'],['resource','\u{1F4DA}','Resource / Study Material'],['research','\u{1F52C}','Research Topic']];
   const blank={title:'',description:'',type:'sheet',domain:'AI/ML',dueDate:'',resourceUrl:'',assignedUids:[]};
   const[show,setShow]=useState(false);
   const[form,setForm]=useState(blank);
@@ -1839,13 +1839,13 @@ function AAssignments({assignments,onAdd,onDel,students}){
     finally{setSaving(false)}
   };
 
-  const typeInfo={sheet:{emoji:'📄',label:'Sheet'},resource:{emoji:'📚',label:'Resource'},research:{emoji:'🔬',label:'Research'}};
+  const typeInfo={sheet:{emoji:'\u{1F4C4}',label:'Sheet'},resource:{emoji:'\u{1F4DA}',label:'Resource'},research:{emoji:'\u{1F52C}',label:'Research'}};
   const shown=filterType==='all'?assignments:assignments.filter(a=>a.type===filterType);
 
   return(<>
     <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
-      <div><div className="ptit">📝 Assignments</div><div className="psub">Learning tasks — sheets, resources, research topics</div></div>
-      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'✕ Cancel':'+ New assignment'}</button>
+      <div><div className="ptit">\u{1F4DD} Assignments</div><div className="psub">Learning tasks \u2014 sheets, resources, research topics</div></div>
+      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'\u2715 Cancel':'+ New assignment'}</button>
     </div>
 
     {show&&<div className="card" style={{marginBottom:20}}>
@@ -1882,13 +1882,13 @@ function AAssignments({assignments,onAdd,onDel,students}){
       <div className="fgr">
         <div>
           <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Instructions / Description</label>
-          <textarea className="fta" placeholder="What should students do? What to study, what questions to solve, what topic to research…" value={form.description} onChange={e=>set('description')(e.target.value)}/>
+          <textarea className="fta" placeholder="What should students do? What to study, what questions to solve, what topic to research\u2026" value={form.description} onChange={e=>set('description')(e.target.value)}/>
         </div>
       </div>
       <div className="fgr" style={{gridTemplateColumns:'1fr 1fr'}}>
         <div>
-          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>🔗 Resource URL <span style={{fontWeight:400,textTransform:'none',fontSize:10,color:'var(--tx3)'}}>optional</span></label>
-          <input className="fi" placeholder="https://docs.google.com/… or any link" value={form.resourceUrl||''} onChange={e=>set('resourceUrl')(e.target.value)}/>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>\u{1F517} Resource URL <span style={{fontWeight:400,textTransform:'none',fontSize:10,color:'var(--tx3)'}}>optional</span></label>
+          <input className="fi" placeholder="https://docs.google.com/\u2026 or any link" value={form.resourceUrl||''} onChange={e=>set('resourceUrl')(e.target.value)}/>
         </div>
         <div>
           <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Due date</label>
@@ -1898,9 +1898,9 @@ function AAssignments({assignments,onAdd,onDel,students}){
 
       {/* assign to */}
       <div style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:10,padding:'14px 16px',marginBottom:14}}>
-        <div style={{fontSize:11,fontWeight:700,color:'var(--tx2)',textTransform:'uppercase',letterSpacing:.4,marginBottom:10}}>👥 Assign To</div>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--tx2)',textTransform:'uppercase',letterSpacing:.4,marginBottom:10}}>\u{1F465} Assign To</div>
         <div style={{display:'flex',gap:8,marginBottom:assignMode==='specific'?14:0}}>
-          {[['all','🌐 Everyone'],['specific','🎯 Specific students']].map(([m,lbl])=>(
+          {[['all','\u{1F310} Everyone'],['specific','\u{1F3AF} Specific students']].map(([m,lbl])=>(
             <button key={m} onClick={()=>{setAssignMode(m);if(m==='all')setForm(p=>({...p,assignedUids:[]}));}}
               style={{padding:'7px 16px',borderRadius:8,border:`1.5px solid ${assignMode===m?'var(--ac)':'var(--bd2)'}`,
                 background:assignMode===m?'var(--acl)':'var(--sf)',color:assignMode===m?'var(--ac)':'var(--tx2)',
@@ -1910,14 +1910,14 @@ function AAssignments({assignments,onAdd,onDel,students}){
         {assignMode==='specific'&&(
           <div>
             {students.length===0?<div style={{fontSize:13,color:'var(--tx3)',fontStyle:'italic'}}>No students registered yet.</div>:<>
-              <input className="fi" placeholder="🔍 Search by name or email…" value={stuSearch} onChange={e=>setStuSearch(e.target.value)} style={{marginBottom:10,fontSize:13}}/>
+              <input className="fi" placeholder="\u{1F50D} Search by name or email\u2026" value={stuSearch} onChange={e=>setStuSearch(e.target.value)} style={{marginBottom:10,fontSize:13}}/>
               {form.assignedUids.length>0&&(
                 <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:10}}>
                   {form.assignedUids.map(uid=>{
                     const s=students.find(x=>x.id===uid);if(!s)return null;
                     const r=getRank(s.points||0);
                     return<div key={uid} style={{display:'flex',alignItems:'center',gap:5,background:r.bg||'var(--acl)',border:`1.5px solid ${r.border||'var(--acm)'}`,borderRadius:20,padding:'3px 10px 3px 8px',fontSize:12,fontWeight:600,color:r.color||'var(--ac)'}}>
-                      {r.emoji} {nameFrom(s)}<span onClick={()=>toggleUid(uid)} style={{cursor:'pointer',marginLeft:3,opacity:.6,fontWeight:900,fontSize:14,lineHeight:1}}>×</span>
+                      {r.emoji} {nameFrom(s)}<span onClick={()=>toggleUid(uid)} style={{cursor:'pointer',marginLeft:3,opacity:.6,fontWeight:900,fontSize:14,lineHeight:1}}>\u00D7</span>
                     </div>;
                   })}
                 </div>
@@ -1930,14 +1930,14 @@ function AAssignments({assignments,onAdd,onDel,students}){
                       border:`1.5px solid ${sel?r.border||'var(--acm)':'var(--bd)'}`,
                       background:sel?r.bg||'var(--acl)':'var(--sf)',cursor:'pointer',transition:'.12s',userSelect:'none'}}>
                     <div style={{width:18,height:18,borderRadius:5,border:`2px solid ${sel?r.color||'var(--ac)':'var(--bd2)'}`,
-                      background:sel?r.color||'var(--ac)':'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#fff'}}>{sel&&'✓'}</div>
+                      background:sel?r.color||'var(--ac)':'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#fff'}}>{sel&&'\u2713'}</div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:13,fontWeight:700,color:sel?r.color||'var(--ac)':'var(--tx)'}}>{name}</div>
-                      <div style={{fontSize:11,color:'var(--tx3)'}}>{s.email||'—'}</div>
+                      <div style={{fontSize:11,color:'var(--tx3)'}}>{s.email||'\u2014'}</div>
                     </div>
                     <div style={{flexShrink:0,textAlign:'right'}}>
                       <div style={{fontSize:11,fontWeight:700,color:r.color}}>{r.emoji} {r.name}</div>
-                      <div style={{fontSize:11,color:'var(--tx3)'}}>🏆 {s.points||0} pts</div>
+                      <div style={{fontSize:11,color:'var(--tx3)'}}>\u{1F3C6} {s.points||0} pts</div>
                     </div>
                   </div>;
                 })}
@@ -1950,7 +1950,7 @@ function AAssignments({assignments,onAdd,onDel,students}){
 
       {err&&<div className="ebox" style={{marginBottom:10}}>{err}</div>}
       <div style={{display:'flex',gap:8}}>
-        <button className="bs bacc" onClick={submit} disabled={saving}>{saving?'Publishing…':'Publish assignment'}</button>
+        <button className="bs bacc" onClick={submit} disabled={saving}>{saving?'Publishing\u2026':'Publish assignment'}</button>
         <button className="bs bgh" onClick={()=>{setShow(false);setErr('');setForm(blank);setAssignMode('all');setStuSearch('')}}>Cancel</button>
       </div>
     </div>}
@@ -1959,7 +1959,7 @@ function AAssignments({assignments,onAdd,onDel,students}){
     <div style={{display:'flex',gap:7,marginBottom:14,flexWrap:'wrap'}}>
       {['all','sheet','resource','research'].map(t=>(
         <button key={t} className={`bs ${filterType===t?'bacc':'bgh'}`} onClick={()=>setFilterType(t)}>
-          {t==='all'?'All types':`${typeInfo[t]?.emoji||'📝'} ${typeInfo[t]?.label||t}`}
+          {t==='all'?'All types':`${typeInfo[t]?.emoji||'\u{1F4DD}'} ${typeInfo[t]?.label||t}`}
         </button>
       ))}
     </div>
@@ -1967,7 +1967,7 @@ function AAssignments({assignments,onAdd,onDel,students}){
     {shown.length===0
       ?<div className="empty">{assignments.length===0?'No assignments yet. Create one above!':'No assignments of this type.'}</div>
       :shown.map(a=>{
-        const info=typeInfo[a.type]||{emoji:'📝',label:'Assignment'};
+        const info=typeInfo[a.type]||{emoji:'\u{1F4DD}',label:'Assignment'};
         const isSpecific=a.assignedUids&&a.assignedUids.length>0;
         const nameFrom2=s=>s?.name||(s?.email?s.email.split('@')[0]:'?');
         const assignedNames=isSpecific?a.assignedUids.map(uid=>{const s=students.find(x=>x.id===uid);return s?nameFrom2(s):null}).filter(Boolean):[];
@@ -1978,11 +1978,11 @@ function AAssignments({assignments,onAdd,onDel,students}){
                 <span className={`asgn-type-pill ${a.type||'sheet'}`}>{info.emoji} {info.label}</span>
                 <div className="lit">{a.title}</div>
                 {isSpecific
-                  ?<span style={{fontSize:10,fontWeight:700,background:'#EEF2FF',color:'#4338CA',border:'1px solid #C7D2FE',padding:'2px 7px',borderRadius:8}}>🎯 {a.assignedUids.length} student{a.assignedUids.length!==1?'s':''}</span>
-                  :<span style={{fontSize:10,fontWeight:700,background:'var(--acl)',color:'var(--ac)',border:'1px solid var(--acm)',padding:'2px 7px',borderRadius:8}}>🌐 Everyone</span>
+                  ?<span style={{fontSize:10,fontWeight:700,background:'#EEF2FF',color:'#4338CA',border:'1px solid #C7D2FE',padding:'2px 7px',borderRadius:8}}>\u{1F3AF} {a.assignedUids.length} student{a.assignedUids.length!==1?'s':''}</span>
+                  :<span style={{fontSize:10,fontWeight:700,background:'var(--acl)',color:'var(--ac)',border:'1px solid var(--acm)',padding:'2px 7px',borderRadius:8}}>\u{1F310} Everyone</span>
                 }
               </div>
-              <div className="lis" style={{marginBottom:6}}>{(a.description||'').slice(0,90)}{(a.description||'').length>90?'…':''}</div>
+              <div className="lis" style={{marginBottom:6}}>{(a.description||'').slice(0,90)}{(a.description||'').length>90?'\u2026':''}</div>
               {isSpecific&&assignedNames.length>0&&(
                 <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
                   {assignedNames.slice(0,4).map(n=><span key={n} style={{fontSize:10,background:'var(--sf2)',border:'1px solid var(--bd)',padding:'1px 7px',borderRadius:10,color:'var(--tx2)',fontWeight:600}}>{n}</span>)}
@@ -1991,8 +1991,8 @@ function AAssignments({assignments,onAdd,onDel,students}){
               )}
               <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                 <span className="badge bp">{a.domain}</span>
-                {a.dueDate&&<span className="badge bgr">📅 {a.dueDate}</span>}
-                {a.resourceUrl&&<span className="badge bb">🔗 Has resource link</span>}
+                {a.dueDate&&<span className="badge bgr">\u{1F4C5} {a.dueDate}</span>}
+                {a.resourceUrl&&<span className="badge bb">\u{1F517} Has resource link</span>}
               </div>
             </div>
             <div className="la"><button className="bs bdg" onClick={()=>onDel(a.id)}>Delete</button></div>
@@ -2082,7 +2082,7 @@ function ATasks({tasks,onAdd,onDel,students}){
   return(<>
     <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
       <div><div className="ptit">Tasks</div><div className="psub">Assign tasks by domain or to specific students</div></div>
-      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'✕ Cancel':'+ New task'}</button>
+      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'\u2715 Cancel':'+ New task'}</button>
     </div>
 
     {show&&<div className="card" style={{marginBottom:20}}>
@@ -2107,7 +2107,7 @@ function ATasks({tasks,onAdd,onDel,students}){
       </div>
       <div className="fgr">
         <div>
-          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>🖼️ Task Image URL <span style={{fontWeight:400,color:'var(--tx3)',textTransform:'none',fontSize:10}}>(optional — paste any image link)</span></label>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>\u{1F5BC}\uFE0F Task Image URL <span style={{fontWeight:400,color:'var(--tx3)',textTransform:'none',fontSize:10}}>(optional \u2014 paste any image link)</span></label>
           <input className="fi" placeholder="https://example.com/image.png" value={form.imageUrl||''} onChange={e=>set('imageUrl')(e.target.value)}/>
           {form.imageUrl&&<img src={form.imageUrl} alt="preview" className="task-img-preview" onError={e=>e.target.style.display='none'} onLoad={e=>e.target.style.display='block'}/>}
         </div>
@@ -2124,16 +2124,16 @@ function ATasks({tasks,onAdd,onDel,students}){
           <input type="date" className="fi" value={form.dueDate} onChange={e=>set('dueDate')(e.target.value)}/>
         </div>
         <div>
-          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>🏆 Points</label>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>\u{1F3C6} Points</label>
           <input type="number" className="fi" min="0" max="1000" placeholder="20" value={form.points} onChange={e=>set('points')(Number(e.target.value))}/>
         </div>
       </div>
 
-      {/* ── ASSIGN TO SECTION ── */}
+      {/* \u2500\u2500 ASSIGN TO SECTION \u2500\u2500 */}
       <div style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:10,padding:'14px 16px',marginBottom:14}}>
-        <div style={{fontSize:11,fontWeight:700,color:'var(--tx2)',textTransform:'uppercase',letterSpacing:.4,marginBottom:10}}>👥 Assign To</div>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--tx2)',textTransform:'uppercase',letterSpacing:.4,marginBottom:10}}>\u{1F465} Assign To</div>
         <div style={{display:'flex',gap:8,marginBottom:assignMode==='specific'?14:0}}>
-          {[['all','🌐 Everyone'],['specific','🎯 Specific students']].map(([m,lbl])=>(
+          {[['all','\u{1F310} Everyone'],['specific','\u{1F3AF} Specific students']].map(([m,lbl])=>(
             <button key={m}
               onClick={()=>{setAssignMode(m);if(m==='all')setForm(p=>({...p,assignedUids:[]}));}}
               style={{padding:'7px 16px',borderRadius:8,border:`1.5px solid ${assignMode===m?'var(--ac)':'var(--bd2)'}`,
@@ -2149,7 +2149,7 @@ function ATasks({tasks,onAdd,onDel,students}){
             {students.length===0
               ?<div style={{fontSize:13,color:'var(--tx3)',fontStyle:'italic'}}>No students registered yet.</div>
               :<>
-                <input className="fi" placeholder="🔍 Search by name or email…" value={stuSearch}
+                <input className="fi" placeholder="\u{1F50D} Search by name or email\u2026" value={stuSearch}
                   onChange={e=>setStuSearch(e.target.value)}
                   style={{marginBottom:10,fontSize:13}}/>
 
@@ -2163,7 +2163,7 @@ function ATasks({tasks,onAdd,onDel,students}){
                       return(
                         <div key={uid} style={{display:'flex',alignItems:'center',gap:5,background:r.bg||'var(--acl)',border:`1.5px solid ${r.border||'var(--acm)'}`,borderRadius:20,padding:'3px 10px 3px 8px',fontSize:12,fontWeight:600,color:r.color||'var(--ac)'}}>
                           {r.emoji} {nameFrom(s)}
-                          <span onClick={()=>toggleUid(uid)} style={{cursor:'pointer',marginLeft:3,opacity:.6,fontWeight:900,fontSize:14,lineHeight:1}}>×</span>
+                          <span onClick={()=>toggleUid(uid)} style={{cursor:'pointer',marginLeft:3,opacity:.6,fontWeight:900,fontSize:14,lineHeight:1}}>\u00D7</span>
                         </div>
                       );
                     })}
@@ -2185,7 +2185,7 @@ function ATasks({tasks,onAdd,onDel,students}){
                         {/* checkbox */}
                         <div style={{width:18,height:18,borderRadius:5,border:`2px solid ${sel?r.color||'var(--ac)':'var(--bd2)'}`,
                           background:sel?r.color||'var(--ac)':'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#fff'}}>
-                          {sel&&'✓'}
+                          {sel&&'\u2713'}
                         </div>
                         {/* avatar */}
                         <div style={{width:32,height:32,borderRadius:'50%',background:sel?'rgba(255,255,255,.12)':'var(--sf2)',
@@ -2196,11 +2196,11 @@ function ATasks({tasks,onAdd,onDel,students}){
                         </div>
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{fontSize:13,fontWeight:700,color:sel?r.color||'var(--ac)':'var(--tx)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{name}</div>
-                          <div style={{fontSize:11,color:'var(--tx3)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{s.email||'—'}</div>
+                          <div style={{fontSize:11,color:'var(--tx3)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{s.email||'\u2014'}</div>
                         </div>
                         <div style={{flexShrink:0,textAlign:'right'}}>
                           <div style={{fontSize:11,fontWeight:700,color:r.color}}>{r.emoji} {r.name}</div>
-                          <div style={{fontSize:11,color:'var(--tx3)',marginTop:1}}>🏆 {s.points||0} pts</div>
+                          <div style={{fontSize:11,color:'var(--tx3)',marginTop:1}}>\u{1F3C6} {s.points||0} pts</div>
                         </div>
                       </div>
                     );
@@ -2215,7 +2215,7 @@ function ATasks({tasks,onAdd,onDel,students}){
 
       {err&&<div className="ebox" style={{marginBottom:10}}>{err}</div>}
       <div style={{display:'flex',gap:8}}>
-        <button className="bs bacc" onClick={submit} disabled={saving}>{saving?'Publishing…':'Publish task'}</button>
+        <button className="bs bacc" onClick={submit} disabled={saving}>{saving?'Publishing\u2026':'Publish task'}</button>
         <button className="bs bgh" onClick={()=>{setShow(false);setErr('');setForm(blank);setAssignMode('all');setStuSearch('')}}>Cancel</button>
       </div>
     </div>}
@@ -2237,11 +2237,11 @@ function ATasks({tasks,onAdd,onDel,students}){
             <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
               <div className="lit">{t.title}</div>
               {isSpecific
-                ?<span style={{fontSize:10,fontWeight:700,background:'#EEF2FF',color:'#4338CA',border:'1px solid #C7D2FE',padding:'2px 7px',borderRadius:8,flexShrink:0}}>🎯 {t.assignedUids.length} student{t.assignedUids.length!==1?'s':''}</span>
-                :<span style={{fontSize:10,fontWeight:700,background:'var(--acl)',color:'var(--ac)',border:'1px solid var(--acm)',padding:'2px 7px',borderRadius:8,flexShrink:0}}>🌐 Everyone</span>
+                ?<span style={{fontSize:10,fontWeight:700,background:'#EEF2FF',color:'#4338CA',border:'1px solid #C7D2FE',padding:'2px 7px',borderRadius:8,flexShrink:0}}>\u{1F3AF} {t.assignedUids.length} student{t.assignedUids.length!==1?'s':''}</span>
+                :<span style={{fontSize:10,fontWeight:700,background:'var(--acl)',color:'var(--ac)',border:'1px solid var(--acm)',padding:'2px 7px',borderRadius:8,flexShrink:0}}>\u{1F310} Everyone</span>
               }
             </div>
-            <div className="lis" style={{marginBottom:6}}>{(t.description||'').slice(0,90)}{(t.description||'').length>90?'…':''}</div>
+            <div className="lis" style={{marginBottom:6}}>{(t.description||'').slice(0,90)}{(t.description||'').length>90?'\u2026':''}</div>
             {isSpecific&&assignedNames.length>0&&(
               <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
                 {assignedNames.slice(0,4).map(n=>(
@@ -2252,8 +2252,8 @@ function ATasks({tasks,onAdd,onDel,students}){
             )}
             <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
               <PBadge p={t.priority}/><span className="badge bp">{t.domain}</span>
-              {t.dueDate&&<span className="badge bgr">📅 {t.dueDate}</span>}
-              <span className="badge" style={{background:'#FFF3CD',color:'#7A5800',border:'1px solid #F0C040'}}>🏆 {t.points??DEFAULT_TASK_POINTS} pts</span>
+              {t.dueDate&&<span className="badge bgr">\u{1F4C5} {t.dueDate}</span>}
+              <span className="badge" style={{background:'#FFF3CD',color:'#7A5800',border:'1px solid #F0C040'}}>\u{1F3C6} {t.points??DEFAULT_TASK_POINTS} pts</span>
             </div>
           </div>
           <div className="la"><button className="bs bdg" onClick={()=>onDel(t.id)}>Delete</button></div>
@@ -2297,7 +2297,7 @@ function ARMs({roadmaps,onAdd,onDel}){
   return(<>
     <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
       <div><div className="ptit">Roadmaps</div><div className="psub">Build step-by-step learning paths per domain</div></div>
-      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'✕ Cancel':'+ New roadmap'}</button>
+      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'\u2715 Cancel':'+ New roadmap'}</button>
     </div>
 
     {show&&<div className="card" style={{marginBottom:20}}>
@@ -2336,7 +2336,7 @@ function ARMs({roadmaps,onAdd,onDel}){
               </div>
             ))}
           </div>
-          <button style={{background:'none',border:'none',color:'var(--rr)',fontSize:16,cursor:'pointer',flexShrink:0,lineHeight:1}} onClick={()=>setForm(p=>({...p,phases:p.phases.filter(x=>x.id!==ph.id)}))}>✕</button>
+          <button style={{background:'none',border:'none',color:'var(--rr)',fontSize:16,cursor:'pointer',flexShrink:0,lineHeight:1}} onClick={()=>setForm(p=>({...p,phases:p.phases.filter(x=>x.id!==ph.id)}))}>\u2715</button>
         </div>
       ))}
 
@@ -2344,11 +2344,11 @@ function ARMs({roadmaps,onAdd,onDel}){
         <div style={{fontSize:11,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:.5,marginBottom:10}}>+ Add a phase</div>
         <div style={{marginBottom:10}}>
           <label style={{fontSize:11,fontWeight:600,color:'var(--tx2)',display:'block',marginBottom:4}}>Phase title *</label>
-          <input className="fi" placeholder="e.g. Phase 1 — Python Foundations" value={pTit} onChange={e=>setPTit(e.target.value)}/>
+          <input className="fi" placeholder="e.g. Phase 1 \u2014 Python Foundations" value={pTit} onChange={e=>setPTit(e.target.value)}/>
         </div>
         <div style={{marginBottom:10}}>
           <label style={{fontSize:11,fontWeight:600,color:'var(--tx2)',display:'block',marginBottom:4}}>
-            Topics <span style={{fontWeight:400,color:'var(--tx3)'}}>— one per line</span>
+            Topics <span style={{fontWeight:400,color:'var(--tx3)'}}>\u2014 one per line</span>
           </label>
           <textarea className="fta" placeholder={"Variables & Data Types\nLoops and Functions\nOOP Concepts"} value={pItm} onChange={e=>setPItm(e.target.value)} style={{minHeight:90}}/>
         </div>
@@ -2357,7 +2357,7 @@ function ARMs({roadmaps,onAdd,onDel}){
 
       {err&&<div className="ebox" style={{marginBottom:10}}>{err}</div>}
       <div style={{display:'flex',gap:8}}>
-        <button className="bs bacc" onClick={submit} disabled={saving||!form.phases.length}>{saving?'Publishing…':'Publish roadmap'}</button>
+        <button className="bs bacc" onClick={submit} disabled={saving||!form.phases.length}>{saving?'Publishing\u2026':'Publish roadmap'}</button>
         <button className="bs bgh" onClick={()=>{setShow(false);setErr('');setForm(blank);setPTit('');setPItm('')}}>Cancel</button>
       </div>
     </div>}
@@ -2380,7 +2380,7 @@ function ARMs({roadmaps,onAdd,onDel}){
           </div>
           {(r.phases||[]).map(p=>(
             <div key={p.id} style={{fontSize:12,color:'var(--tx3)',marginBottom:2,paddingLeft:4}}>
-              ↳ {p.title} · {p.items?.length||0} item{p.items?.length!==1?'s':''}
+              \u21B3 {p.title} \u00B7 {p.items?.length||0} item{p.items?.length!==1?'s':''}
             </div>
           ))}
         </div>
@@ -2390,7 +2390,7 @@ function ARMs({roadmaps,onAdd,onDel}){
   </>);
 }
 
-/* ─── ADMIN: WARNINGS ─────────────────────────────────────── */
+/* \u2500\u2500\u2500 ADMIN: WARNINGS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 function AWarnings({students,warnings,showNotif}){
   const[saving,setSaving]=useState({});
   const[customMsg,setCustomMsg]=useState({});
@@ -2401,13 +2401,13 @@ function AWarnings({students,warnings,showNotif}){
     try{
       if(level===0){
         await db.collection('warnings').doc(uid).delete();
-        showNotif('✅ Warning cleared');
+        showNotif('\u2705 Warning cleared');
       } else {
         await db.collection('warnings').doc(uid).set({
           level,message:customMsg[uid]||'',
           issuedAt:firebase.firestore.FieldValue.serverTimestamp(),uid,
         });
-        showNotif(`⚠️ Warning ${level} issued`);
+        showNotif(`\u26A0\uFE0F Warning ${level} issued`);
       }
       setCustomMsg(p=>({...p,[uid]:''}));
     }catch(e){showNotif('Error: '+e.message)}
@@ -2419,21 +2419,21 @@ function AWarnings({students,warnings,showNotif}){
   return(<>
     <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
       <div>
-        <div className="ptit">⚠️ Warnings</div>
-        <div className="psub">Issue community activity warnings to specific students · {warnCount} active warning{warnCount!==1?'s':''}</div>
+        <div className="ptit">\u26A0\uFE0F Warnings</div>
+        <div className="psub">Issue community activity warnings to specific students \u00B7 {warnCount} active warning{warnCount!==1?'s':''}</div>
       </div>
     </div>
     <div style={{display:'flex',gap:10,marginBottom:20,flexWrap:'wrap'}}>
       <div style={{display:'flex',alignItems:'center',gap:8,background:'#1A0505',border:'1.5px solid #7A1A1A',borderRadius:10,padding:'8px 14px'}}>
-        <span style={{fontSize:16}}>🚨</span>
-        <div><div style={{fontSize:12,fontWeight:700,color:'#FF6B6B'}}>Warning 1</div><div style={{fontSize:11,color:'rgba(255,150,150,.6)'}}>First notice — low engagement</div></div>
+        <span style={{fontSize:16}}>\u{1F6A8}</span>
+        <div><div style={{fontSize:12,fontWeight:700,color:'#FF6B6B'}}>Warning 1</div><div style={{fontSize:11,color:'rgba(255,150,150,.6)'}}>First notice \u2014 low engagement</div></div>
       </div>
       <div style={{display:'flex',alignItems:'center',gap:8,background:'#2D1A00',border:'1.5px solid #7A4A00',borderRadius:10,padding:'8px 14px'}}>
-        <span style={{fontSize:16}}>⚠️</span>
-        <div><div style={{fontSize:12,fontWeight:700,color:'#FFB830'}}>Warning 2</div><div style={{fontSize:11,color:'rgba(255,200,100,.6)'}}>Final notice — action required</div></div>
+        <span style={{fontSize:16}}>\u26A0\uFE0F</span>
+        <div><div style={{fontSize:12,fontWeight:700,color:'#FFB830'}}>Warning 2</div><div style={{fontSize:11,color:'rgba(255,200,100,.6)'}}>Final notice \u2014 action required</div></div>
       </div>
       <div style={{display:'flex',alignItems:'center',gap:8,background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:10,padding:'8px 14px'}}>
-        <span style={{fontSize:16}}>✅</span>
+        <span style={{fontSize:16}}>\u2705</span>
         <div><div style={{fontSize:12,fontWeight:700,color:'var(--ac)'}}>Clear</div><div style={{fontSize:11,color:'var(--tx3)'}}>Remove all warnings</div></div>
       </div>
     </div>
@@ -2450,30 +2450,30 @@ function AWarnings({students,warnings,showNotif}){
             <div style={{flex:1}}>
               <div style={{fontWeight:700,fontSize:14,display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
                 {name}
-                {activeLevel===1&&<span style={{fontSize:10,fontWeight:800,background:'#FCEAEA',color:'#B32B2B',border:'1px solid #F5A0A0',padding:'2px 7px',borderRadius:6}}>🚨 Warning 1</span>}
-                {activeLevel===2&&<span style={{fontSize:10,fontWeight:800,background:'#FEF2D9',color:'#9B6710',border:'1px solid #F0C040',padding:'2px 7px',borderRadius:6}}>⚠️ Warning 2</span>}
+                {activeLevel===1&&<span style={{fontSize:10,fontWeight:800,background:'#FCEAEA',color:'#B32B2B',border:'1px solid #F5A0A0',padding:'2px 7px',borderRadius:6}}>\u{1F6A8} Warning 1</span>}
+                {activeLevel===2&&<span style={{fontSize:10,fontWeight:800,background:'#FEF2D9',color:'#9B6710',border:'1px solid #F0C040',padding:'2px 7px',borderRadius:6}}>\u26A0\uFE0F Warning 2</span>}
               </div>
-              <div style={{fontSize:12,color:'var(--tx3)'}}>{s.email} · <span style={{color:rank.color,fontWeight:600}}>{rank.emoji} {rank.name}</span> · 🏆 {s.points||0} pts</div>
+              <div style={{fontSize:12,color:'var(--tx3)'}}>{s.email} \u00B7 <span style={{color:rank.color,fontWeight:600}}>{rank.emoji} {rank.name}</span> \u00B7 \u{1F3C6} {s.points||0} pts</div>
             </div>
             <div style={{display:'flex',gap:6,flexShrink:0,flexWrap:'wrap',justifyContent:'flex-end'}}>
               <button onClick={()=>setWarning(s.id,1)} disabled={saving[s.id]||activeLevel===1}
                 style={{padding:'6px 12px',borderRadius:8,border:'1.5px solid #B32B2B',background:activeLevel===1?'#B32B2B':'transparent',color:activeLevel===1?'#fff':'#B32B2B',fontWeight:700,fontSize:12,cursor:'pointer',opacity:saving[s.id]?.55:1,transition:'.15s'}}>
-                🚨 Warn 1
+                \u{1F6A8} Warn 1
               </button>
               <button onClick={()=>setWarning(s.id,2)} disabled={saving[s.id]||activeLevel===2}
                 style={{padding:'6px 12px',borderRadius:8,border:'1.5px solid #9B6710',background:activeLevel===2?'#9B6710':'transparent',color:activeLevel===2?'#fff':'#9B6710',fontWeight:700,fontSize:12,cursor:'pointer',opacity:saving[s.id]?.55:1,transition:'.15s'}}>
-                ⚠️ Warn 2
+                \u26A0\uFE0F Warn 2
               </button>
               {activeLevel>0&&<button onClick={()=>setWarning(s.id,0)} disabled={saving[s.id]}
                 style={{padding:'6px 12px',borderRadius:8,border:'1.5px solid var(--ac)',background:'transparent',color:'var(--ac)',fontWeight:700,fontSize:12,cursor:'pointer',transition:'.15s'}}>
-                ✅ Clear
+                \u2705 Clear
               </button>}
             </div>
           </div>
           {/* custom message input when no active warning */}
           {activeLevel===0&&(
             <div style={{marginTop:10}}>
-              <input className="fi" style={{fontSize:12}} placeholder="Optional custom message for the student (leave blank for default)…"
+              <input className="fi" style={{fontSize:12}} placeholder="Optional custom message for the student (leave blank for default)\u2026"
                 value={customMsg[s.id]||''} onChange={e=>setCustomMsg(p=>({...p,[s.id]:e.target.value}))}/>
             </div>
           )}
@@ -2503,27 +2503,27 @@ function AStudents({students,warnings}){
       <div key={s.id} className="li">
         <Av name={s.name||s.email} size={38}/>
         <div style={{flex:1}}>
-          <div className="lit">{s.name||'—'}</div>
+          <div className="lit">{s.name||'\u2014'}</div>
           <div className="lis">{s.email}</div>
           {(s.fields||[]).length>0&&<div style={{marginTop:6,display:'flex',gap:5,flexWrap:'wrap'}}>
             {(s.fields||[]).map(f=><span key={f} className="badge bp">{f}</span>)}
           </div>}
           {w?.level&&<div style={{marginTop:6}}>
-            {w.level===1&&<span style={{fontSize:10,fontWeight:800,background:'#FCEAEA',color:'#B32B2B',border:'1px solid #F5A0A0',padding:'2px 8px',borderRadius:6,letterSpacing:.3}}>🚨 Warning 1 Active</span>}
-            {w.level===2&&<span style={{fontSize:10,fontWeight:800,background:'#FEF2D9',color:'#9B6710',border:'1px solid #F0C040',padding:'2px 8px',borderRadius:6,letterSpacing:.3}}>⚠️ Warning 2 Active</span>}
+            {w.level===1&&<span style={{fontSize:10,fontWeight:800,background:'#FCEAEA',color:'#B32B2B',border:'1px solid #F5A0A0',padding:'2px 8px',borderRadius:6,letterSpacing:.3}}>\u{1F6A8} Warning 1 Active</span>}
+            {w.level===2&&<span style={{fontSize:10,fontWeight:800,background:'#FEF2D9',color:'#9B6710',border:'1px solid #F0C040',padding:'2px 8px',borderRadius:6,letterSpacing:.3}}>\u26A0\uFE0F Warning 2 Active</span>}
           </div>}
         </div>
         <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4}}>
-          <div className="pts-badge" style={{fontSize:12}}><span>🏆</span>{s.points||0} pts</div>
+          <div className="pts-badge" style={{fontSize:12}}><span>\u{1F3C6}</span>{s.points||0} pts</div>
           {(()=>{const r=getRank(s.points||0);return<span style={{fontSize:11,fontWeight:700,color:r.color}}>{r.emoji} {r.name}</span>})()}
-          <div style={{fontSize:11,color:'var(--tx3)'}}>{s.createdAt?.toDate?.()?.toLocaleDateString?.()||'—'}</div>
+          <div style={{fontSize:11,color:'var(--tx3)'}}>{s.createdAt?.toDate?.()?.toLocaleDateString?.()||'\u2014'}</div>
         </div>
       </div>
     );})}
   </>);
 }
 
-/* ── NEW: Submissions panel (admin) ── */
+/* \u2500\u2500 NEW: Submissions panel (admin) \u2500\u2500 */
 function ASubmissions({submissions,students}){
   const studentMap=students.reduce((a,s)=>{a[s.id]=s;return a},{});
   const[f,setF]=useState('all');
@@ -2544,8 +2544,8 @@ function ASubmissions({submissions,students}){
               <div style={{fontSize:12,color:'var(--tx3)'}}>{st?.email||''}</div>
             </div>
             <div style={{textAlign:'right'}}>
-              <div className="pts-badge" style={{fontSize:12}}>🏆 +{sub.points||0} pts</div>
-              <div style={{fontSize:11,color:'var(--tx3)',marginTop:3}}>{sub.submittedAt?.toDate?.()?.toLocaleDateString?.()||'—'}</div>
+              <div className="pts-badge" style={{fontSize:12}}>\u{1F3C6} +{sub.points||0} pts</div>
+              <div style={{fontSize:11,color:'var(--tx3)',marginTop:3}}>{sub.submittedAt?.toDate?.()?.toLocaleDateString?.()||'\u2014'}</div>
             </div>
           </div>
           <div style={{background:'var(--sf2)',borderRadius:8,padding:'10px 12px',marginBottom:8}}>
@@ -2553,9 +2553,9 @@ function ASubmissions({submissions,students}){
             <div style={{fontSize:13,fontWeight:600}}>{sub.taskTitle}</div>
           </div>
           <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:8}}>
-            <a href={sub.githubUrl} target="_blank" rel="noreferrer">🔗 GitHub Repo</a>
-            {sub.previewUrl&&<a href={sub.previewUrl} target="_blank" rel="noreferrer">🌐 Live Preview</a>}
-            {sub.usedAI&&<span className="badge ba">🤖 Used AI</span>}
+            <a href={sub.githubUrl} target="_blank" rel="noreferrer">\u{1F517} GitHub Repo</a>
+            {sub.previewUrl&&<a href={sub.previewUrl} target="_blank" rel="noreferrer">\u{1F310} Live Preview</a>}
+            {sub.usedAI&&<span className="badge ba">\u{1F916} Used AI</span>}
           </div>
           {sub.description&&<div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.5}}>{sub.description}</div>}
         </div>
@@ -2564,7 +2564,7 @@ function ASubmissions({submissions,students}){
   </>);
 }
 
-/* ── NEW: Manual points panel (admin) ── */
+/* \u2500\u2500 NEW: Manual points panel (admin) \u2500\u2500 */
 function APoints({students,showNotif}){
   const[amounts,setAmounts]=useState({});
   const[reasons,setReasons]=useState({});
@@ -2604,7 +2604,7 @@ function APoints({students,showNotif}){
 
     <div className="card" style={{marginBottom:20,background:'#FFFBEA',border:'1.5px solid #F0C040'}}>
       <div style={{fontSize:13,color:'#7A5800',lineHeight:1.6}}>
-        💡 <strong>Tip:</strong> Points are also awarded automatically when students submit assignments. Use this panel to award <strong>bonus points</strong> for participation, presentations, or exceptional work — or deduct for missed deadlines.
+        \u{1F4A1} <strong>Tip:</strong> Points are also awarded automatically when students submit assignments. Use this panel to award <strong>bonus points</strong> for participation, presentations, or exceptional work \u2014 or deduct for missed deadlines.
       </div>
     </div>
 
@@ -2614,7 +2614,7 @@ function APoints({students,showNotif}){
         <div style={{fontSize:13,fontWeight:700,color:'var(--tx3)',width:22,textAlign:'center'}}>#{rank+1}</div>
         <Av name={s.name||s.email} size={36}/>
         <div style={{flex:1}}>
-          <div style={{fontSize:14,fontWeight:600}}>{s.name||'—'}</div>
+          <div style={{fontSize:14,fontWeight:600}}>{s.name||'\u2014'}</div>
           <div style={{fontSize:12,color:'var(--tx3)'}}>{s.email}</div>
           <input
             placeholder="Reason (optional)"
@@ -2637,23 +2637,23 @@ function APoints({students,showNotif}){
           style={{fontSize:12,padding:'5px 10px'}}
           disabled={saving[s.id]||!amounts[s.id]}
           onClick={()=>award(s,false)}>
-          {saving[s.id]?'…':'+ Award'}
+          {saving[s.id]?'\u2026':'+ Award'}
         </button>
         <button
           className="bs bdg"
           style={{fontSize:12,padding:'5px 10px'}}
           disabled={saving[s.id]||!amounts[s.id]}
           onClick={()=>award(s,true)}>
-          − Deduct
+          \u2212 Deduct
         </button>
       </div>
     ))}
   </>);
 }
 
-/* ═══════════════════════════════════════════════
+/* \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
    ROOT
-═══════════════════════════════════════════════ */
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550 */
 function App(){
   const[screen,setScreen]=useState('loading');
   const[user,setUser]=useState(null);
