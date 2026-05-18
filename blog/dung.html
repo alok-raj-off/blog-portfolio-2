@@ -4,10 +4,11 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>EduTrack</title>
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet"/>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -76,25 +77,25 @@ function getNextRank(pts){ const i=RANKS.findIndex(r=>pts>=r.min&&pts<=r.max); r
 /* ── DEADLINE DUNGEON helpers ── */
 const MONSTER_MAP={
   urgent:[
-    {emoji:'🐉',prefix:'Dragon of'},
-    {emoji:'💀',prefix:'Necromancer of'},
-    {emoji:'👹',prefix:'Demon Lord of'},
-    {emoji:'🦂',prefix:'Scorpion Boss:'},
-    {emoji:'🔥',prefix:'Infernal Beast of'},
+    {emoji:'\u{1F409}',prefix:'Dragon of'},
+    {emoji:'\u{1F480}',prefix:'Necromancer of'},
+    {emoji:'\u{1F479}',prefix:'Demon Lord of'},
+    {emoji:'\u{1F982}',prefix:'Scorpion Boss:'},
+    {emoji:'\u{1F525}',prefix:'Infernal Beast of'},
   ],
   medium:[
-    {emoji:'🧟',prefix:'Zombie Horde:'},
-    {emoji:'🐺',prefix:'Werewolf of'},
-    {emoji:'🕷️',prefix:'Spider Knight of'},
-    {emoji:'🦇',prefix:'Vampire Count of'},
-    {emoji:'⚔️',prefix:'Dark Knight of'},
+    {emoji:'\u{1F9DF}',prefix:'Zombie Horde:'},
+    {emoji:'\u{1F43A}',prefix:'Werewolf of'},
+    {emoji:'\u{1F577}\uFE0F',prefix:'Spider Knight of'},
+    {emoji:'\u{1F987}',prefix:'Vampire Count of'},
+    {emoji:'\u2694\uFE0F',prefix:'Dark Knight of'},
   ],
   low:[
-    {emoji:'👻',prefix:'Ghost of'},
-    {emoji:'🐸',prefix:'Goblin of'},
-    {emoji:'🦎',prefix:'Lizard Scout:'},
-    {emoji:'🐭',prefix:'Rat Swarm:'},
-    {emoji:'🍄',prefix:'Mushroom Wisp:'},
+    {emoji:'\u{1F47B}',prefix:'Ghost of'},
+    {emoji:'\u{1F438}',prefix:'Goblin of'},
+    {emoji:'\u{1F98E}',prefix:'Lizard Scout:'},
+    {emoji:'\u{1F42D}',prefix:'Rat Swarm:'},
+    {emoji:'\u{1F344}',prefix:'Mushroom Wisp:'},
   ],
 };
 function getMonster(task,idx){
@@ -392,7 +393,6 @@ nav{background:var(--sf);border-bottom:1px solid var(--bd);height:56px;display:f
 /* ═══════════════════════════════════════════════
    🎮 DEADLINE DUNGEON — GAMIFICATION LAYER
 ═══════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
 
 :root {
   --dg-bg: #0a0d14;
@@ -555,6 +555,14 @@ nav{background:var(--sf);border-bottom:1px solid var(--bd);height:56px;display:f
 </head>
 <body>
 <div id="root"></div>
+<div id="err-display" style="display:none;padding:24px;font-family:monospace;font-size:13px;background:#1a0000;color:#ff8a8a;border:1px solid #7a1a1a;border-radius:8px;margin:20px;white-space:pre-wrap;"></div>
+<script>
+window.onerror=function(msg,src,line,col,err){
+  var d=document.getElementById('err-display');
+  if(d){d.style.display='block';d.textContent='JS Error: '+msg+'\nLine: '+line+'\n'+(err?err.stack:'');}
+  return false;
+};
+</script>
 <script type="text/babel">
 const {useState,useEffect,useRef}=React;
 
