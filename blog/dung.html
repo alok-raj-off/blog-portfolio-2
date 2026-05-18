@@ -1,0 +1,2681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduTrack</title>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   FIREBASE CONFIG — replace with your real project values
+   console.firebase.google.com → Project Settings → Web App
+   Required: Enable Email/Password Auth + Firestore Database
+═══════════════════════════════════════════════════════════════ */
+const firebaseConfig = {
+
+  apiKey: "AIzaSyDjLuWLhH6sT13VoP690BYRKzxKjb9HGeQ",
+
+  authDomain: "sskill-e944f.firebaseapp.com",
+
+  databaseURL: "https://sskill-e944f-default-rtdb.firebaseio.com",
+
+  projectId: "sskill-e944f",
+
+  storageBucket: "sskill-e944f.firebasestorage.app",
+
+  messagingSenderId: "650928874757",
+
+  appId: "1:650928874757:web:be0663b30a91edbdb6436c",
+
+  measurementId: "G-YGRC5ZHBMQ"
+
+};
+/* ════════════════════════════════════════════════════════════ */
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+/* Admin credentials — change password here if needed */
+const ADMIN_EMAIL = "hceadmin@edutrack.internal";
+const ADMIN_USER  = "hceadmin";
+const ADMIN_PASS  = "hceadminaksk";
+
+/* ─── POINT VALUES PER TASK ───────────────────────────────────
+   Add task titles (exact match) and their point value here.
+   Admin can also award manual bonus points per student.
+────────────────────────────────────────────────────────────── */
+const TASK_POINTS = {
+  /* Example — replace with your real task titles & points:
+  "Build a Portfolio Website": 50,
+  "Intro to Python Assignment": 30,
+  */
+};
+const DEFAULT_TASK_POINTS = 20; // fallback if task not listed above
+
+/* ─── RANK SYSTEM ─────────────────────────────────────────────
+   Matches the Community Ranks image: Probationer → Explorer →
+   Guardian → Champion → Legend
+────────────────────────────────────────────────────────────── */
+const RANKS = [
+  { name:'Probationer', min:0,   max:149,  emoji:'🛡️',  color:'#CD7F32', glow:'rgba(205,127,50,0.35)',  bg:'linear-gradient(135deg,#3a1f00,#1a0e00)', border:'#CD7F32' },
+  { name:'Explorer',    min:150, max:299,  emoji:'🧭',  color:'#48C98A', glow:'rgba(72,201,138,0.35)',  bg:'linear-gradient(135deg,#003a1f,#001a0e)', border:'#48C98A' },
+  { name:'Guardian',   min:300, max:699,  emoji:'⚔️',  color:'#60AAFF', glow:'rgba(96,170,255,0.35)',  bg:'linear-gradient(135deg,#001836,#000d1f)', border:'#60AAFF' },
+  { name:'Champion',   min:700, max:999, emoji:'🦅',  color:'#C080FF', glow:'rgba(192,128,255,0.35)', bg:'linear-gradient(135deg,#1a0033,#0d001a)', border:'#C080FF' },
+  { name:'Legend',     min:1000,max:Infinity,emoji:'👑',color:'#FFB830',glow:'rgba(255,184,48,0.45)',  bg:'linear-gradient(135deg,#2a1800,#150c00)', border:'#FFB830' },
+];
+function getRank(pts){ return RANKS.find(r=>pts>=r.min&&pts<=r.max)||RANKS[0]; }
+function getNextRank(pts){ const i=RANKS.findIndex(r=>pts>=r.min&&pts<=r.max); return i<RANKS.length-1?RANKS[i+1]:null; }
+
+/* ── DEADLINE DUNGEON helpers ── */
+const MONSTER_MAP={
+  urgent:[
+    {emoji:'🐉',prefix:'Dragon of'},
+    {emoji:'💀',prefix:'Necromancer of'},
+    {emoji:'👹',prefix:'Demon Lord of'},
+    {emoji:'🦂',prefix:'Scorpion Boss:'},
+    {emoji:'🔥',prefix:'Infernal Beast of'},
+  ],
+  medium:[
+    {emoji:'🧟',prefix:'Zombie Horde:'},
+    {emoji:'🐺',prefix:'Werewolf of'},
+    {emoji:'🕷️',prefix:'Spider Knight of'},
+    {emoji:'🦇',prefix:'Vampire Count of'},
+    {emoji:'⚔️',prefix:'Dark Knight of'},
+  ],
+  low:[
+    {emoji:'👻',prefix:'Ghost of'},
+    {emoji:'🐸',prefix:'Goblin of'},
+    {emoji:'🦎',prefix:'Lizard Scout:'},
+    {emoji:'🐭',prefix:'Rat Swarm:'},
+    {emoji:'🍄',prefix:'Mushroom Wisp:'},
+  ],
+};
+function getMonster(task,idx){
+  const p=task.priority||'low';
+  const arr=MONSTER_MAP[p]||MONSTER_MAP.low;
+  const m=arr[idx%arr.length];
+  return{emoji:m.emoji,name:`${m.prefix} ${task.title}`};
+}
+function getDangerLevel(tasks,submittedIds){
+  const pending=tasks.filter(t=>!submittedIds.has(t.id));
+  const urgentPending=pending.filter(t=>t.priority==='urgent').length;
+  const total=tasks.length||1;
+  const raw=Math.min(100,Math.round((urgentPending/total)*100+(pending.length/total)*40));
+  return Math.min(100,raw);
+}
+function getDungeonNarrative(userName,tasks,submittedIds,points){
+  const pending=tasks.filter(t=>!submittedIds.has(t.id)).length;
+  const urgent=tasks.filter(t=>t.priority==='urgent'&&!submittedIds.has(t.id)).length;
+  const done=submittedIds.size;
+  const rank=getRank(points);
+  if(done===0&&pending===0) return`The dungeon awaits, ${userName}. Your admin has yet to summon the monsters. Prepare your gear.`;
+  if(urgent>2) return`⚠️ DIRE WARNING, ${userName}! ${urgent} ancient beasts have awakened. The dungeon trembles. Strike now or face the consequences!`;
+  if(urgent>0) return`${userName}, a ${urgent===1?'powerful creature stirs':'dark presence grows'} in the dungeon. ${urgent} urgent monster${urgent>1?'s are':'is'} closing in on your kingdom!`;
+  if(done>0&&pending===0) return`🏆 LEGENDARY! You've cleared the dungeon, ${rank.emoji} ${rank.name}. All monsters have fallen before your might!`;
+  if(done>pending) return`Well fought, ${userName}! ${done} monster${done>1?'s':''} defeated. ${pending} creature${pending>1?'s remain':'remains'} in the shadows...`;
+  return`${userName}, ${pending} monster${pending>1?'s lurk':'lurks'} in the dungeon. Your quest continues, brave ${rank.name}.`;
+}
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#F8F7F4;--sf:#FFFFFF;--sf2:#F2F0EC;--sf3:#E8E5DF;
+  --tx:#17160E;--tx2:#615E57;--tx3:#A09D96;
+  --ac:#1A5C39;--ach:#13492D;--acl:#E4F2EB;--acm:#48A872;
+  --bd:#E2DFD9;--bd2:#C8C4BC;
+  --rr:#B32B2B;--rl:#FCEAEA;
+  --wr:#9B6710;--wl:#FEF2D9;
+  --if:#135298;--il:#E5EFF9;
+  --pu:#5230C0;--pl:#EDEAFB;
+  --r:10px;--rl2:16px;--rx:22px;
+  --sh:0 1px 2px rgba(0,0,0,.05),0 3px 12px rgba(0,0,0,.07);
+  --fn:'DM Sans',sans-serif;
+}
+body{font-family:var(--fn);background:var(--bg);color:var(--tx);min-height:100vh;font-size:15px;line-height:1.6}
+button,input,select,textarea{font-family:var(--fn)}button{cursor:pointer}
+/* NAV */
+nav{background:var(--sf);border-bottom:1px solid var(--bd);height:56px;display:flex;align-items:center;padding:0 24px;gap:3px;position:sticky;top:0;z-index:300}
+.brand{font-weight:800;font-size:17px;letter-spacing:-.5px;color:var(--tx);display:flex;align-items:center;gap:5px;margin-right:12px}
+.brand em{color:var(--ac);font-style:normal}
+.bpill{font-size:10px;font-weight:700;background:var(--acl);color:var(--ac);padding:2px 7px;border-radius:20px}
+.nk{padding:6px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--tx2);background:none;border:none;transition:.1s}
+.nk:hover,.nk.on{background:var(--sf2);color:var(--tx);font-weight:600}
+.ml{margin-left:auto}
+.av{width:32px;height:32px;border-radius:50%;background:var(--acl);border:1.5px solid var(--acm);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ac);flex-shrink:0}
+.nout{padding:6px 13px;border-radius:8px;font-size:13px;font-weight:500;border:1.5px solid var(--bd2);background:var(--sf);color:var(--tx2);transition:.1s;margin-left:8px}
+.nout:hover{background:var(--sf2)}
+/* LAYOUT */
+.main{max-width:1200px;margin:0 auto;padding:28px 22px}
+.ptit{font-size:20px;font-weight:700;letter-spacing:-.4px;margin-bottom:3px}
+.psub{color:var(--tx2);font-size:13px;margin-bottom:24px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl2);padding:20px 22px;box-shadow:var(--sh)}
+.stat{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl2);padding:15px 17px}
+.sl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--tx3);margin-bottom:5px}
+.sv{font-size:23px;font-weight:700;letter-spacing:-.5px}
+.ss{font-size:11px;color:var(--tx3);margin-top:2px}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;white-space:nowrap}
+.bg{background:var(--acl);color:var(--ac)}.br{background:var(--rl);color:var(--rr)}.ba{background:var(--wl);color:var(--wr)}.bb{background:var(--il);color:var(--if)}.bgr{background:var(--sf2);color:var(--tx2)}.bp{background:var(--pl);color:var(--pu)}
+/* TASK CARDS */
+.tc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;transition:.1s}
+.tc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.tc.urgent::before{background:var(--rr)}.tc.medium::before{background:var(--wr)}.tc.low::before{background:var(--if)}
+.tc:hover{border-color:var(--bd2);box-shadow:var(--sh)}
+.tct{font-weight:600;font-size:13px;margin-bottom:4px;line-height:1.4}
+.tcd{font-size:12px;color:var(--tx2);margin-bottom:9px;line-height:1.5}
+.tcm{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+/* ROADMAP */
+.rm{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl2);overflow:hidden;margin-bottom:12px}
+.rmh{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.rmh:hover{background:var(--sf2)}
+.rmht{font-weight:600;font-size:14px}
+.rmb{padding:15px 20px}
+.ri{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--bd2);margin-top:6px;flex-shrink:0}
+.dot.done{background:var(--ac)}.dot.active{background:var(--ac);box-shadow:0 0 0 3px var(--acl)}.dot.upcoming{background:var(--bd2)}
+.pbar{height:4px;background:var(--sf3);border-radius:2px;overflow:hidden;width:70px}
+.pfill{height:100%;background:var(--ac);border-radius:2px}
+/* AUTH */
+.aw{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:20px}
+.abox{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rx);padding:36px 40px;width:100%;max-width:420px;box-shadow:var(--sh)}
+.alogo{font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:24px}
+.alogo em{color:var(--ac);font-style:normal}
+.atit{font-size:20px;font-weight:700;letter-spacing:-.4px;margin-bottom:5px}
+.asub{font-size:13px;color:var(--tx2);margin-bottom:24px}
+.fld{margin-bottom:13px}
+.fld label{display:block;font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.fi{width:100%;padding:9px 11px;border:1.5px solid var(--bd2);border-radius:var(--r);font-size:14px;color:var(--tx);background:var(--sf);outline:none;transition:.1s}
+.fi:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acl)}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:5px}
+.chip{padding:6px 12px;border-radius:8px;border:1.5px solid var(--bd2);font-size:13px;font-weight:500;background:var(--sf);color:var(--tx2);transition:.1s}
+.chip:hover{background:var(--sf2)}.chip.on{border-color:var(--ac);background:var(--acl);color:var(--ac);font-weight:600}.chip.dash{border-style:dashed;color:var(--tx3)}
+.abtn{width:100%;padding:10px;border-radius:var(--r);font-size:14px;font-weight:700;border:none;background:var(--ac);color:#fff;transition:.1s;margin-top:6px}
+.abtn:hover{background:var(--ach)}.abtn:disabled{opacity:.55;cursor:not-allowed}
+.asw{text-align:center;margin-top:15px;font-size:13px;color:var(--tx2)}
+.asw button{background:none;border:none;color:var(--ac);font-weight:600;font-size:13px}
+.ebox{background:var(--rl);color:var(--rr);padding:9px 12px;border-radius:8px;font-size:13px;margin-bottom:12px}
+.fbwarn{background:#FFF8E6;border:1px solid #E8C84A;color:#7A5A00;padding:11px 14px;border-radius:var(--r);font-size:12px;margin-bottom:16px;line-height:1.7}
+.fbwarn code{background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-size:11px}
+/* ADMIN */
+.adw{display:flex;min-height:calc(100vh - 56px)}
+.ads{width:210px;background:#0D0F16;border-right:1px solid #1A1D25;padding:14px 10px;flex-shrink:0}
+.adm{flex:1;padding:28px 26px;overflow-y:auto}
+.si{display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:8px;font-size:13px;font-weight:500;color:#767676;background:none;border:none;width:100%;text-align:left;transition:.1s;margin-bottom:2px}
+.si:hover{background:#181B23;color:#C8C8C8}.si.on{background:#1A5C39;color:#48A872;font-weight:700}
+.sico{font-size:14px;width:16px;text-align:center}
+.ads-lbl{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#383B45;padding:14px 12px 6px}
+/* FORM */
+.fta{width:100%;padding:9px 11px;border:1.5px solid var(--bd2);border-radius:var(--r);font-size:14px;color:var(--tx);background:var(--sf);outline:none;resize:vertical;min-height:72px;transition:.1s;font-family:var(--fn)}
+.fta:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acl)}
+.fgr{display:grid;gap:11px;margin-bottom:13px}
+.bs{padding:7px 13px;border-radius:8px;font-size:13px;font-weight:600;border:none;transition:.1s}
+.bacc{background:var(--ac);color:#fff}.bacc:hover{background:var(--ach)}.bacc:disabled{opacity:.55;cursor:not-allowed}
+.bgh{background:var(--sf2);color:var(--tx2);border:1px solid var(--bd)}.bgh:hover{background:var(--sf3);color:var(--tx)}
+.bdg{background:var(--rl);color:var(--rr)}.bdg:hover{background:#F8D2D2}
+/* LIST */
+.li{display:flex;align-items:flex-start;gap:11px;padding:13px 15px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:8px}
+.lit{font-size:14px;font-weight:600}.lis{font-size:12px;color:var(--tx3);margin-top:1px}
+.la{display:flex;gap:6px;flex-shrink:0;margin-left:auto;align-items:center}
+/* HERO */
+.hero{background:linear-gradient(125deg,var(--acl) 0%,var(--bg) 100%);border:1px solid var(--bd);border-radius:var(--rx);padding:26px 28px;margin-bottom:20px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-30px;top:-30px;width:160px;height:160px;border-radius:50%;background:rgba(72,168,114,.1)}
+.htag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--ac);margin-bottom:5px}
+.hh{font-size:21px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.hs{color:var(--tx2);font-size:13px}
+/* MISC */
+.empty{text-align:center;padding:38px;color:var(--tx3);font-size:13px}
+.spin{display:flex;align-items:center;justify-content:center;height:100vh;font-size:14px;color:var(--tx3)}
+.notif{position:fixed;bottom:22px;right:22px;background:var(--tx);color:#fff;padding:11px 16px;border-radius:var(--r);font-size:13px;box-shadow:var(--sh);z-index:9999;animation:nsl .25s ease}
+@keyframes nsl{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.divl{height:1px;background:var(--bd);margin:16px 0}
+.slbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--tx3);margin-bottom:12px}
+
+/* ── STATUS SELECTOR (roadmap items) ── */
+.status-sel{display:inline-flex;border:1.5px solid var(--bd2);border-radius:7px;overflow:hidden;font-size:11px;font-weight:600;flex-shrink:0}
+.status-sel button{padding:3px 8px;border:none;background:var(--sf2);color:var(--tx3);transition:.1s;white-space:nowrap}
+.status-sel button:not(:last-child){border-right:1px solid var(--bd2)}
+.status-sel button.act-ns{background:#E8E5DF;color:var(--tx2)}
+.status-sel button.act-ip{background:var(--wl);color:var(--wr)}
+.status-sel button.act-dn{background:var(--acl);color:var(--ac)}
+
+/* ── POINTS BADGE ── */
+.pts-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#FFF3CD,#FFE082);border:1.5px solid #F0C040;border-radius:20px;padding:4px 12px;font-size:13px;font-weight:700;color:#7A5800}
+.pts-badge .pts-ico{font-size:15px}
+.pts-stat{background:linear-gradient(135deg,#FFFBEA,#FFF3CD);border:1.5px solid #F0C040;border-radius:var(--rl2);padding:15px 17px}
+.pts-stat .sv{color:#9B6710}
+
+/* ── MODAL OVERLAY ── */
+.modal-bg{position:fixed;inset:0;background:rgba(23,22,14,.45);z-index:800;display:flex;align-items:center;justify-content:center;padding:20px;animation:fdin .15s ease}
+@keyframes fdin{from{opacity:0}to{opacity:1}}
+.modal{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rx);padding:28px 30px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.18);animation:mup .2s ease}
+@keyframes mup{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-tit{font-size:17px;font-weight:700;letter-spacing:-.3px;margin-bottom:4px}
+.modal-sub{font-size:13px;color:var(--tx2);margin-bottom:20px}
+.modal-fld{margin-bottom:12px}
+.modal-fld label{display:block;font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.ai-toggle{display:flex;align-items:center;gap:10px;padding:10px 13px;border:1.5px solid var(--bd2);border-radius:var(--r);cursor:pointer;transition:.1s;user-select:none}
+.ai-toggle:hover{border-color:var(--ac);background:var(--acl)}
+.ai-toggle.on{border-color:var(--ac);background:var(--acl)}
+.ai-toggle input{accent-color:var(--ac);width:16px;height:16px}
+.ai-toggle-lbl{font-size:13px;font-weight:500;flex:1}
+.ai-toggle-lbl small{display:block;font-size:11px;color:var(--tx3);font-weight:400}
+
+/* ── SUBMISSION BADGE ── */
+.sub-done{display:inline-flex;align-items:center;gap:4px;background:var(--acl);color:var(--ac);border:1px solid var(--acm);border-radius:5px;font-size:11px;font-weight:600;padding:2px 7px}
+
+/* ── ADMIN POINTS PANEL ── */
+.pts-row{display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:8px}
+.pts-row .pts-val{font-size:18px;font-weight:700;color:#9B6710;min-width:40px;text-align:right}
+.pts-inp{width:70px;padding:5px 8px;border:1.5px solid var(--bd2);border-radius:7px;font-size:13px;font-weight:600;text-align:center;outline:none}
+.pts-inp:focus{border-color:var(--ac)}
+
+/* ── SUBMISSIONS VIEW (admin) ── */
+.sub-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;margin-bottom:10px}
+.sub-card a{color:var(--ac);font-size:12px;font-weight:600;text-decoration:none}
+.sub-card a:hover{text-decoration:underline}
+
+/* ── ASSIGNMENT CARDS ── */
+.ac-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.asgn-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px;position:relative;overflow:hidden;transition:.1s}
+.asgn-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.asgn-card.sheet::before{background:#7C3AED}.asgn-card.resource::before{background:#0369A1}.asgn-card.research::before{background:#B45309}
+.asgn-card:hover{border-color:var(--bd2);box-shadow:var(--sh)}
+.asgn-type-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;margin-bottom:8px}
+.asgn-type-pill.sheet{background:#EDE9FE;color:#5B21B6}
+.asgn-type-pill.resource{background:#E0F2FE;color:#0369A1}
+.asgn-type-pill.research{background:#FEF3C7;color:#92400E}
+.asgn-title{font-weight:700;font-size:14px;margin-bottom:5px;line-height:1.35}
+.asgn-desc{font-size:12px;color:var(--tx2);margin-bottom:10px;line-height:1.5}
+.asgn-resource-link{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--if);text-decoration:none;background:var(--il);padding:3px 8px;border-radius:5px;margin-bottom:10px}
+.asgn-resource-link:hover{text-decoration:underline}
+.asgn-done-badge{display:inline-flex;align-items:center;gap:4px;background:var(--acl);color:var(--ac);border:1px solid var(--acm);border-radius:5px;font-size:11px;font-weight:600;padding:3px 8px}
+
+
+/* ── TASK IMAGE ── */
+.tc-img{width:100%;height:140px;object-fit:cover;border-radius:6px;margin-bottom:10px;display:block}
+.task-img-preview{width:100%;max-height:180px;object-fit:cover;border-radius:8px;margin-top:8px;border:1.5px solid var(--bd2)}
+
+/* ── RANK BADGE (nav) ── */
+.rank-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px solid;transition:.2s}
+
+/* ── RANK PAGE ── */
+.rank-page{padding:28px 22px;max-width:1060px;margin:0 auto}
+.rank-track{display:flex;align-items:center;gap:0;margin:28px 0;overflow-x:auto;padding:10px 4px}
+.rank-card{display:flex;flex-direction:column;align-items:center;padding:22px 18px 16px;border-radius:16px;border:2px solid;min-width:140px;flex:1;position:relative;transition:.3s;cursor:default}
+.rank-card.current{transform:scale(1.08);z-index:2}
+.rank-card .rank-emoji{font-size:36px;margin-bottom:10px;filter:drop-shadow(0 0 8px currentColor)}
+.rank-card .rank-name{font-weight:800;font-size:14px;letter-spacing:.5px;margin-bottom:4px}
+.rank-card .rank-pts{font-size:11px;opacity:.75;font-weight:500}
+/* ── WARNING BANNERS ── */
+@keyframes warn-pulse{0%,100%{box-shadow:0 0 0 0 rgba(179,43,43,.25)}50%{box-shadow:0 0 0 6px rgba(179,43,43,.0)}}
+@keyframes warn2-pulse{0%,100%{box-shadow:0 0 0 0 rgba(155,103,16,.3)}50%{box-shadow:0 0 0 6px rgba(155,103,16,.0)}}
+.warn-banner{border-radius:14px;padding:18px 20px;margin-bottom:20px;display:flex;gap:14px;align-items:flex-start;position:relative;overflow:hidden}
+.warn-banner.w1{background:linear-gradient(135deg,#2D0A0A,#1A0505);border:1.5px solid #7A1A1A;animation:warn-pulse 2.5s ease-in-out infinite}
+.warn-banner.w2{background:linear-gradient(135deg,#2D1A00,#1A0E00);border:1.5px solid #7A4A00;animation:warn2-pulse 2.5s ease-in-out infinite}
+.warn-banner::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.warn-banner.w1::before{background:linear-gradient(90deg,#B32B2B,#FF6B6B,#B32B2B);background-size:200% 100%;animation:warn-shimmer 2s linear infinite}
+.warn-banner.w2::before{background:linear-gradient(90deg,#9B6710,#FFB830,#9B6710);background-size:200% 100%;animation:warn-shimmer 2s linear infinite}
+@keyframes warn-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.warn-icon{font-size:28px;flex-shrink:0;margin-top:2px}
+.warn-body{flex:1}
+.warn-tag{font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:5px}
+.warn-banner.w1 .warn-tag{color:#FF6B6B}.warn-banner.w2 .warn-tag{color:#FFB830}
+.warn-title{font-size:16px;font-weight:800;margin-bottom:5px;letter-spacing:-.2px}
+.warn-banner.w1 .warn-title{color:#FFB3B3}.warn-banner.w2 .warn-title{color:#FFD580}
+.warn-msg{font-size:13px;line-height:1.65}
+.warn-banner.w1 .warn-msg{color:rgba(255,200,200,.75)}.warn-banner.w2 .warn-msg{color:rgba(255,220,160,.75)}
+.warn-dismiss{position:absolute;top:12px;right:14px;background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.4);width:24px;height:24px;border-radius:50%;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.warn-dismiss:hover{background:rgba(255,255,255,.18);color:rgba(255,255,255,.8)}
+@keyframes shimmer-gold{0%,100%{box-shadow:0 0 18px 4px rgba(72,201,138,.55),0 4px 32px rgba(72,201,138,.25)}50%{box-shadow:0 0 32px 8px rgba(72,201,138,.85),0 8px 48px rgba(72,201,138,.4)}}
+@keyframes shimmer-silver{0%,100%{box-shadow:0 0 18px 4px rgba(251,146,60,.5),0 4px 28px rgba(251,146,60,.2)}50%{box-shadow:0 0 30px 8px rgba(251,146,60,.8),0 8px 40px rgba(251,146,60,.35)}}
+@keyframes shimmer-bronze{0%,100%{box-shadow:0 0 14px 3px rgba(180,180,190,.35),0 3px 20px rgba(180,180,190,.15)}50%{box-shadow:0 0 24px 6px rgba(200,200,210,.6),0 6px 32px rgba(200,200,210,.25)}}
+@keyframes float1{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes float2{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes float3{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes confetti-1{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(80px) rotate(360deg);opacity:0}}
+@keyframes confetti-2{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(70px) rotate(-270deg);opacity:0}}
+@keyframes confetti-3{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(90px) rotate(180deg);opacity:0}}
+@keyframes slide-in{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pulse-crown{0%,100%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.18) rotate(5deg)}}
+
+.lb-wrap{max-width:860px;margin:0 auto}
+.lb-podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:32px;align-items:end}
+.lb-pod{border-radius:18px;padding:24px 16px 20px;position:relative;overflow:hidden;text-align:center;cursor:default}
+.lb-pod.p1{animation:shimmer-gold 2.2s ease-in-out infinite,float1 3.2s ease-in-out infinite;background:linear-gradient(160deg,#052b14 0%,#0a3d1e 60%,#062015 100%);border:2px solid #48C98A;order:2}
+.lb-pod.p2{animation:shimmer-silver 2.6s ease-in-out infinite,float2 3.8s ease-in-out infinite;background:linear-gradient(160deg,#2a1200 0%,#3d1f00 60%,#1f0e00 100%);border:2px solid #FB923C;order:1}
+.lb-pod.p3{animation:shimmer-bronze 3s ease-in-out infinite,float3 4.4s ease-in-out infinite;background:linear-gradient(160deg,#18181f 0%,#22222c 60%,#111118 100%);border:2px solid #9CA3AF;order:3}
+.lb-pod-crown{font-size:28px;margin-bottom:4px;display:block;line-height:1}
+.lb-pod.p1 .lb-pod-crown{animation:pulse-crown 1.8s ease-in-out infinite}
+.lb-pod-pos{font-size:13px;font-weight:900;letter-spacing:1px;margin-bottom:10px}
+.lb-pod.p1 .lb-pod-pos{color:#48C98A}.lb-pod.p2 .lb-pod-pos{color:#FB923C}.lb-pod.p3 .lb-pod-pos{color:#9CA3AF}
+.lb-pod-av{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;margin:0 auto 10px;border:3px solid}
+.lb-pod.p1 .lb-pod-av{background:rgba(72,201,138,.18);border-color:#48C98A;color:#48C98A}
+.lb-pod.p2 .lb-pod-av{background:rgba(251,146,60,.18);border-color:#FB923C;color:#FB923C}
+.lb-pod.p3 .lb-pod-av{background:rgba(156,163,175,.18);border-color:#9CA3AF;color:#9CA3AF}
+.lb-pod-name{font-weight:700;font-size:14px;color:#fff;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;margin-left:auto;margin-right:auto}
+.lb-pod-email{font-size:11px;opacity:.45;color:#fff;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;margin-left:auto;margin-right:auto}
+.lb-pod-pts{font-size:19px;font-weight:900;margin-bottom:4px}
+.lb-pod.p1 .lb-pod-pts{color:#48C98A}.lb-pod.p2 .lb-pod-pts{color:#FB923C}.lb-pod.p3 .lb-pod-pts{color:#9CA3AF}
+.lb-pod-rank{font-size:11px;font-weight:600;opacity:.6;color:#fff}
+.lb-pod-confetti{position:absolute;top:8px;left:0;right:0;pointer-events:none;overflow:hidden;height:60px}
+.cf{position:absolute;width:7px;height:7px;border-radius:2px;opacity:0}
+.lb-list-row{display:flex;align-items:center;gap:14px;padding:13px 16px;background:var(--sf);border:1px solid var(--bd);border-radius:12px;margin-bottom:8px;transition:.15s;animation:slide-in .3s ease both}
+.lb-list-row:hover{border-color:var(--bd2);box-shadow:var(--sh)}
+.lb-list-row.me{border-color:var(--acm);background:var(--acl)}
+.lb-pos-num{font-size:13px;font-weight:800;color:var(--tx3);width:26px;text-align:center;flex-shrink:0}
+.lb-list-av{width:38px;height:38px;border-radius:50%;background:var(--sf2);border:1.5px solid var(--bd2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--tx2);flex-shrink:0}
+.lb-list-av.me{border-color:var(--acm);background:var(--acl);color:var(--ac)}
+.lb-list-name{font-weight:700;font-size:14px;color:var(--tx)}
+.lb-list-email{font-size:11px;color:var(--tx3);margin-top:1px}
+.lb-list-pts{font-size:16px;font-weight:800;color:#9B6710;margin-left:auto;flex-shrink:0}
+.lb-list-rank-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;border:1px solid;flex-shrink:0}
+.lb-me-tag{font-size:10px;font-weight:800;background:var(--ac);color:#fff;padding:2px 6px;border-radius:6px;letter-spacing:.4px;flex-shrink:0}
+
+.rank-connector{width:28px;height:2px;background:var(--bd2);flex-shrink:0}
+.rank-connector.passed{background:var(--acm)}
+.progress-to-next{background:var(--sf2);border:1px solid var(--bd);border-radius:12px;padding:16px 20px;margin-top:20px}
+.progress-bar-wrap{height:10px;background:var(--sf3);border-radius:5px;overflow:hidden;margin:10px 0}
+.progress-bar-fill{height:100%;border-radius:5px;transition:width .6s ease}
+
+@media(max-width:680px){.g4,.g2{grid-template-columns:1fr}.ads{display:none}.modal{padding:20px 18px}.rank-track{gap:0}.rank-card{min-width:110px;padding:14px 10px 12px}}
+@media(max-width:900px){.home-grid{grid-template-columns:1fr!important}}
+
+/* ═══════════════════════════════════════════════
+   🎮 DEADLINE DUNGEON — GAMIFICATION LAYER
+═══════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap');
+
+:root {
+  --dg-bg: #0a0d14;
+  --dg-border: #2a3050;
+  --dg-gold: #FFB830;
+  --dg-red: #e85555;
+  --dg-green: #48C98A;
+  --dg-purple: #a78bfa;
+  --dg-blue: #60a5fa;
+  --dg-glow-red: rgba(232,85,85,0.4);
+  --dg-glow-gold: rgba(255,184,48,0.4);
+  --dg-glow-green: rgba(72,201,138,0.4);
+}
+
+/* ── DUNGEON STORY BANNER ── */
+.dg-story-banner {
+  background: linear-gradient(135deg, #0d1117 0%, #111827 50%, #0d1117 100%);
+  border: 1.5px solid #2a3050;
+  border-radius: 18px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.dg-story-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 20% 50%, rgba(167,139,250,0.07) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 50%, rgba(255,184,48,0.05) 0%, transparent 60%);
+  pointer-events: none;
+}
+.dg-story-banner::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, #7c3aed, #FFB830, #48C98A, #7c3aed);
+  background-size: 300% 100%;
+  animation: dg-shimmer 4s linear infinite;
+}
+@keyframes dg-shimmer { 0%{background-position:0% 0} 100%{background-position:300% 0} }
+
+.dg-story-content { display: flex; align-items: center; gap: 16px; position: relative; z-index: 1; }
+.dg-story-icon { font-size: 42px; flex-shrink: 0; filter: drop-shadow(0 0 12px rgba(167,139,250,0.6)); animation: dg-float 3s ease-in-out infinite; }
+@keyframes dg-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+.dg-story-text { flex: 1; }
+.dg-story-label { font-size: 9px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #a78bfa; margin-bottom: 3px; }
+.dg-story-title { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: -.3px; margin-bottom: 4px; }
+.dg-story-sub { font-size: 12px; color: rgba(255,255,255,0.5); line-height: 1.6; }
+.dg-story-stats { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+.dg-stat-chip { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7); }
+
+/* ── DANGER METER ── */
+.dg-danger-bar { height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; margin-top: 10px; }
+.dg-danger-fill { height: 100%; border-radius: 3px; transition: width .8s ease; }
+
+/* ── MONSTER TASK CARDS ── */
+.dg-monster-card {
+  background: linear-gradient(160deg, #0f1420 0%, #131926 100%);
+  border: 1.5px solid #1e2840;
+  border-radius: 14px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: .2s;
+  cursor: default;
+}
+.dg-monster-card:hover { border-color: #2e3d60; transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.dg-monster-card.urgent { border-color: rgba(232,85,85,0.5); box-shadow: 0 0 20px rgba(232,85,85,0.08); }
+.dg-monster-card.urgent:hover { box-shadow: 0 0 30px rgba(232,85,85,0.2); }
+.dg-monster-card.medium { border-color: rgba(251,146,60,0.4); }
+.dg-monster-card.low { border-color: rgba(96,165,250,0.3); }
+.dg-monster-card.defeated { opacity: .55; border-color: rgba(72,201,138,0.3); }
+.dg-monster-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.dg-monster-card.urgent::before { background: linear-gradient(90deg, #e85555, #ff8a8a); }
+.dg-monster-card.medium::before { background: linear-gradient(90deg, #fb923c, #fcd34d); }
+.dg-monster-card.low::before { background: linear-gradient(90deg, #60a5fa, #a78bfa); }
+.dg-monster-card.defeated::before { background: linear-gradient(90deg, #48C98A, #6ee7b7); }
+
+.dg-monster-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.dg-monster-emoji { font-size: 32px; flex-shrink: 0; line-height: 1; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)); }
+.dg-monster-card.urgent .dg-monster-emoji { animation: dg-menace 2s ease-in-out infinite; }
+.dg-monster-card.defeated .dg-monster-emoji { filter: grayscale(1) opacity(.5); animation: none; }
+@keyframes dg-menace { 0%,100%{transform:scale(1) rotate(-3deg)} 50%{transform:scale(1.1) rotate(3deg)} }
+
+.dg-monster-name { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 2px; line-height: 1.3; }
+.dg-monster-type { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.dg-monster-card.urgent .dg-monster-type { color: #e85555; }
+.dg-monster-card.medium .dg-monster-type { color: #fb923c; }
+.dg-monster-card.low .dg-monster-type { color: #60a5fa; }
+.dg-monster-card.defeated .dg-monster-type { color: #48C98A; }
+
+/* HP Bar */
+.dg-hp-wrap { margin-bottom: 10px; }
+.dg-hp-label { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; }
+.dg-hp-bar { height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
+.dg-hp-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+.dg-monster-card.urgent .dg-hp-fill { background: linear-gradient(90deg, #e85555, #ff6b6b); animation: dg-hp-pulse 1.5s ease-in-out infinite; }
+.dg-monster-card.medium .dg-hp-fill { background: linear-gradient(90deg, #fb923c, #fcd34d); }
+.dg-monster-card.low .dg-hp-fill { background: linear-gradient(90deg, #60a5fa, #93c5fd); }
+.dg-monster-card.defeated .dg-hp-fill { background: linear-gradient(90deg, #48C98A, #6ee7b7); width: 0% !important; }
+@keyframes dg-hp-pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+.dg-monster-footer { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.dg-xp-badge { display: inline-flex; align-items: center; gap: 4px; background: rgba(255,184,48,0.12); border: 1px solid rgba(255,184,48,0.3); border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700; color: #FFB830; }
+.dg-defeated-badge { display: inline-flex; align-items: center; gap: 4px; background: rgba(72,201,138,0.12); border: 1px solid rgba(72,201,138,0.3); border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 700; color: #48C98A; }
+.dg-attack-btn { margin-left: auto; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; border: none; background: linear-gradient(135deg, #7c3aed, #5b21b6); color: #fff; cursor: pointer; transition: .15s; letter-spacing: .3px; }
+.dg-attack-btn:hover { background: linear-gradient(135deg, #8b5cf6, #7c3aed); transform: scale(1.04); box-shadow: 0 0 16px rgba(124,58,237,0.5); }
+.dg-attack-btn.urgent { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+.dg-attack-btn.urgent:hover { box-shadow: 0 0 16px rgba(220,38,38,0.5); }
+
+/* ── DUNGEON SECTION LABEL ── */
+.dg-section-label { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.dg-section-label span { font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: rgba(255,255,255,0.35); }
+.dg-section-label::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(255,255,255,0.1), transparent); }
+
+/* ── DUNGEON HOME WRAPPER ── */
+.dg-home { background: #0a0d14; min-height: 100vh; margin: -28px -22px; padding: 28px 22px; }
+.dg-home .hero { background: linear-gradient(135deg, #0f1730 0%, #1a1040 50%, #0f1730 100%); border-color: #2a3060; }
+.dg-home .hero .htag { color: #a78bfa; }
+.dg-home .hero .hh { color: #fff; }
+.dg-home .hero .hs { color: rgba(255,255,255,0.5); }
+.dg-home .stat { background: #0f1420; border-color: #1e2840; }
+.dg-home .stat .sl { color: rgba(255,255,255,0.35); }
+.dg-home .stat .sv { color: #fff; }
+.dg-home .stat .ss { color: rgba(255,255,255,0.3); }
+.dg-home .pts-stat { background: linear-gradient(135deg, #1a1000, #2a1800); border-color: rgba(255,184,48,0.3); }
+.dg-home .pts-stat .sv { color: #FFB830; }
+.dg-home .slbl { color: rgba(255,255,255,0.35); letter-spacing: 1px; }
+
+/* ── KING'S QUEST (roadmaps in dungeon) ── */
+.dg-quest-card { background: linear-gradient(160deg, #0f1420, #131926); border: 1.5px solid #1e2840; border-radius: 14px; padding: 18px 20px; margin-bottom: 14px; }
+.dg-quest-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 3px; }
+.dg-quest-sub { font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 12px; }
+.dg-quest-phase { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+.dg-quest-phase-name { flex: 1; font-size: 12px; color: rgba(255,255,255,0.6); }
+.dg-quest-bar { flex: 0 0 80px; height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+.dg-quest-fill { height: 100%; background: linear-gradient(90deg, #7c3aed, #a78bfa); border-radius: 3px; }
+.dg-quest-pct { font-size: 10px; color: rgba(255,255,255,0.35); width: 28px; text-align: right; }
+
+/* ── DUNGEON LEADERBOARD SIDEBAR ── */
+.dg-lb-sidebar { background: linear-gradient(160deg, #0f1420, #0d1119); border: 1.5px solid #1e2840 !important; }
+.dg-lb-sidebar > div:first-child { background: transparent !important; border-color: #1e2840 !important; }
+.dg-lb-sidebar .lb-list-row { background: rgba(255,255,255,0.03) !important; border-color: #1e2840 !important; }
+.dg-lb-sidebar .lb-list-row.me { background: rgba(124,58,237,0.1) !important; border-color: rgba(124,58,237,0.3) !important; }
+
+/* ── NARRATIVE POPUP ── */
+.dg-narrative { background: linear-gradient(135deg, #0d0f1a, #131728); border: 1.5px solid #7c3aed; border-radius: 14px; padding: 16px 20px; margin-bottom: 18px; position: relative; overflow: hidden; }
+.dg-narrative::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #7c3aed, #a78bfa, #7c3aed); }
+.dg-narrative-label { font-size: 9px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #a78bfa; margin-bottom: 5px; }
+.dg-narrative-text { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.7; font-style: italic; }
+
+/* ── STREAK / DAILY FIRE ── */
+.dg-streak-card { background: linear-gradient(135deg, #1a0800, #2d1000); border: 1.5px solid rgba(251,146,60,0.3); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
+.dg-streak-flame { font-size: 36px; animation: dg-flame 1.2s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(251,146,60,0.7)); }
+@keyframes dg-flame { 0%,100%{transform:scale(1) rotate(-3deg)} 50%{transform:scale(1.1) rotate(3deg)} }
+.dg-streak-val { font-size: 28px; font-weight: 900; color: #fb923c; letter-spacing: -1px; }
+.dg-streak-label { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef}=React;
+
+/* ─ helpers ─ */
+const DOMAINS=['AI/ML','Web Dev','DSA','Cloud & DevOps','Data Science','Cybersecurity','Mobile Dev','Game Dev','General'];
+
+function ini(n){return(n||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
+function Av({name,size=32}){
+  return<div className="av" style={{width:size,height:size,fontSize:size>34?14:11}}>{ini(name)}</div>;
+}
+function Notif({msg}){return msg?<div className="notif">{msg}</div>:null}
+function useNotif(){
+  const[n,sn]=useState(null);
+  const show=m=>{sn(m);setTimeout(()=>sn(null),3000)};
+  return[n,show];
+}
+function PBadge({p}){
+  if(p==='urgent')return<span className="badge br">● Urgent</span>;
+  if(p==='medium')return<span className="badge ba">● Medium</span>;
+  return<span className="badge bb">● Low</span>;
+}
+function Spin(){return<div className="spin">Loading EduTrack…</div>}
+function isConfigured(){
+  try{return !firebase.apps[0].options.apiKey.startsWith('PASTE')}catch{return false}
+}
+
+/* ═══════════════════════════════════════════════
+   STUDENT AUTH
+═══════════════════════════════════════════════ */
+function StudentAuth({onAuth,onAdmin}){
+  const[mode,setMode]=useState('login');
+  const[email,setEmail]=useState('');
+  const[pw,setPw]=useState('');
+  const[name,setName]=useState('');
+  const[flds,setFlds]=useState([]);
+  const[extra,setExtra]=useState([]);
+  const[addF,setAddF]=useState(false);
+  const[newF,setNewF]=useState('');
+  const[err,setErr]=useState('');
+  const[busy,setBusy]=useState(false);
+  const cfg=isConfigured();
+
+  const allF=[...DOMAINS,...extra];
+  const togF=f=>setFlds(p=>p.includes(f)?p.filter(x=>x!==f):[...p,f]);
+  const saveF=()=>{if(!newF.trim())return;setExtra(p=>[...p,newF.trim()]);setFlds(p=>[...p,newF.trim()]);setNewF('');setAddF(false)};
+
+  const go=async()=>{
+    setErr('');setBusy(true);
+    try{
+      if(mode==='signup'){
+        const r=await auth.createUserWithEmailAndPassword(email,pw);
+        await r.user.updateProfile({displayName:name});
+        await db.collection('users').doc(r.user.uid).set({
+          name,email,fields:flds,role:'student',points:0,
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        onAuth({uid:r.user.uid,displayName:name,email,fields:flds});
+      }else{
+        const r=await auth.signInWithEmailAndPassword(email,pw);
+        const snap=await db.collection('users').doc(r.user.uid).get();
+        const d=snap.data()||{};
+        onAuth({uid:r.user.uid,displayName:r.user.displayName||d.name||email,email,fields:d.fields||[]});
+      }
+    }catch(e){setErr(e.message)}
+    finally{setBusy(false)}
+  };
+
+  return(
+    <div className="aw">
+      <div className="abox">
+        <div className="alogo">Edu<em>Track</em></div>
+        {!cfg&&<div className="fbwarn">
+          ⚠️ <strong>Firebase not connected yet.</strong><br/>
+          Open this file, find <code>firebaseConfig</code> near the top, and replace each <code>PASTE_…_HERE</code> value with your real Firebase project credentials.<br/>
+          Get them at <strong>console.firebase.google.com</strong> → Project Settings → Your apps → Web.<br/>
+          Also enable <strong>Email/Password Authentication</strong> and <strong>Firestore Database</strong> in your project.
+        </div>}
+        <div className="atit">{mode==='login'?'Welcome back':'Create account'}</div>
+        <div className="asub">{mode==='login'?'Sign in to your student dashboard':'Join your cohort and start learning'}</div>
+        {mode==='signup'&&<div className="fld"><label>Full name</label>
+          <input className="fi" placeholder="Your name" value={name} onChange={e=>setName(e.target.value)}/>
+        </div>}
+        <div className="fld"><label>Email</label>
+          <input className="fi" type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)}/>
+        </div>
+        <div className="fld"><label>Password</label>
+          <input className="fi" type="password" placeholder="••••••••" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==='Enter'&&go()}/>
+        </div>
+        {mode==='signup'&&<div className="fld">
+          <label>Your learning fields</label>
+          <div className="chips">
+            {allF.map(f=><button key={f} className={`chip${flds.includes(f)?' on':''}`} onClick={()=>togF(f)}>{f}</button>)}
+            {addF?(
+              <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                <input value={newF} onChange={e=>setNewF(e.target.value)} placeholder="Field name"
+                  style={{padding:'5px 9px',border:'1.5px solid var(--bd2)',borderRadius:8,fontSize:13,width:120,outline:'none',fontFamily:'var(--fn)'}}
+                  onKeyDown={e=>e.key==='Enter'&&saveF()}/>
+                <button className="bs bacc" onClick={saveF}>Add</button>
+                <button className="bs bgh" onClick={()=>setAddF(false)}>✕</button>
+              </div>
+            ):(
+              <button className="chip dash" onClick={()=>setAddF(true)}>+ Add field</button>
+            )}
+          </div>
+        </div>}
+        {err&&<div className="ebox">{err}</div>}
+        <button className="abtn" onClick={go} disabled={busy||!email||!pw}>
+          {busy?'Please wait…':mode==='login'?'Sign in':'Create account'}
+        </button>
+        <div className="asw">
+          {mode==='login'
+            ?<>No account? <button onClick={()=>setMode('signup')}>Sign up free</button></>
+            :<>Already a member? <button onClick={()=>setMode('login')}>Sign in</button></>}
+        </div>
+        <div className="divl"/>
+        <div style={{textAlign:'center'}}>
+          <button className="bs bgh" onClick={onAdmin} style={{fontSize:12,padding:'5px 12px'}}>🔐 Admin login</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN LOGIN
+═══════════════════════════════════════════════ */
+function AdminLogin({onSuccess,onBack}){
+  const[u,setU]=useState('');
+  const[p,setP]=useState('');
+  const[err,setErr]=useState('');
+  const[busy,setBusy]=useState(false);
+
+  const go=async()=>{
+    setErr('');
+    if(u!==ADMIN_USER){setErr('Invalid admin username.');return}
+    if(p!==ADMIN_PASS){setErr('Invalid admin password.');return}
+    setBusy(true);
+    try{
+      try{
+        await auth.signInWithEmailAndPassword(ADMIN_EMAIL,ADMIN_PASS);
+      }catch(e){
+        if(e.code==='auth/user-not-found'||e.code==='auth/invalid-credential'){
+          await auth.createUserWithEmailAndPassword(ADMIN_EMAIL,ADMIN_PASS);
+        }else if(e.code!=='auth/wrong-password'){}
+      }
+      onSuccess();
+    }catch(e){setErr(e.message)}
+    finally{setBusy(false)}
+  };
+
+  return(
+    <div className="aw">
+      <div className="abox">
+        <div className="alogo">Edu<em>Track</em> <span className="bpill">Admin</span></div>
+        <div className="atit">Admin access</div>
+        <div className="asub">Restricted — authorised personnel only</div>
+        <div className="fld"><label>Username</label>
+          <input className="fi" placeholder="hceadmin" value={u} onChange={e=>setU(e.target.value)}/>
+        </div>
+        <div className="fld"><label>Password</label>
+          <input className="fi" type="password" placeholder="••••••••" value={p} onChange={e=>setP(e.target.value)} onKeyDown={e=>e.key==='Enter'&&go()}/>
+        </div>
+        {err&&<div className="ebox">{err}</div>}
+        <button className="abtn" onClick={go} disabled={busy||!u||!p}>
+          {busy?'Signing in…':'Access admin panel'}
+        </button>
+        <div className="asw"><button onClick={onBack}>← Back to student login</button></div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   ASSIGNMENT SUBMIT MODAL
+═══════════════════════════════════════════════ */
+const WHAT_DONE_OPTIONS=[
+  'Read / studied the material',
+  'Solved the sheet / problems',
+  'Completed the research',
+  'Watched the resources',
+  'Took notes & summarised',
+  'Practised the concepts',
+  'Discussed with peers',
+  'Other',
+];
+
+function AssignmentSubmitModal({assignment,uid,onClose,onSuccess}){
+  const[whatDone,setWhatDone]=useState('');
+  const[desc,setDesc]=useState('');
+  const[busy,setBusy]=useState(false);
+  const[err,setErr]=useState('');
+
+  const typeInfo={sheet:{emoji:'📄',label:'Sheet'},resource:{emoji:'📚',label:'Resource'},research:{emoji:'🔬',label:'Research'}};
+  const info=typeInfo[assignment.type]||{emoji:'📝',label:'Assignment'};
+
+  const submit=async()=>{
+    if(!whatDone){setErr('Please select what you did.');return}
+    if(!desc.trim()){setErr('Please describe your work.');return}
+    setBusy(true);setErr('');
+    try{
+      await db.collection('assignmentSubmissions').doc(`${uid}_${assignment.id}`).set({
+        uid,assignmentId:assignment.id,assignmentTitle:assignment.title,
+        assignmentType:assignment.type,whatDone,description:desc.trim(),
+        submittedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      onSuccess();
+    }catch(e){setErr(e.message)}
+    finally{setBusy(false)}
+  };
+
+  return(
+    <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal" style={{maxWidth:540}}>
+        {/* header */}
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4}}>
+          <span style={{fontSize:24}}>{info.emoji}</span>
+          <div>
+            <div className="modal-tit" style={{marginBottom:0}}>Submit Assignment</div>
+            <div style={{fontSize:12,color:'var(--tx3)',marginTop:2}}>{info.label} · {assignment.domain}</div>
+          </div>
+        </div>
+        <div style={{fontWeight:600,fontSize:15,marginBottom:18,color:'var(--tx)'}}>{assignment.title}</div>
+
+        {/* what did you do */}
+        <div className="modal-fld">
+          <label>What did you do? *</label>
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+            {WHAT_DONE_OPTIONS.map(opt=>(
+              <div key={opt} onClick={()=>setWhatDone(opt)}
+                style={{display:'flex',alignItems:'center',gap:9,padding:'9px 12px',borderRadius:8,
+                  border:`1.5px solid ${whatDone===opt?'var(--ac)':'var(--bd2)'}`,
+                  background:whatDone===opt?'var(--acl)':'var(--sf)',cursor:'pointer',transition:'.1s',userSelect:'none'}}>
+                <div style={{width:16,height:16,borderRadius:'50%',border:`2px solid ${whatDone===opt?'var(--ac)':'var(--bd2)'}`,
+                  background:whatDone===opt?'var(--ac)':'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  {whatDone===opt&&<div style={{width:6,height:6,borderRadius:'50%',background:'#fff'}}/>}
+                </div>
+                <span style={{fontSize:13,fontWeight:whatDone===opt?600:400,color:whatDone===opt?'var(--ac)':'var(--tx)'}}>{opt}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* describe your work */}
+        <div className="modal-fld" style={{marginTop:14}}>
+          <label>Describe your work *</label>
+          <textarea className="fta" style={{minHeight:90}}
+            placeholder="What exactly did you do? What did you learn or understand? Any challenges you faced?"
+            value={desc} onChange={e=>setDesc(e.target.value)}/>
+        </div>
+
+        {/* file note */}
+        <div style={{background:'#FEF3C7',border:'1px solid #F0C040',borderRadius:8,padding:'10px 14px',marginBottom:14,display:'flex',gap:10,alignItems:'flex-start'}}>
+          <span style={{fontSize:16,flexShrink:0,marginTop:1}}>📌</span>
+          <div style={{fontSize:12,color:'#78350F',lineHeight:1.6}}>
+            <strong>Have a file to share?</strong> Upload it in the <strong>Community</strong> section — not here. This form is just for your written reflection.
+          </div>
+        </div>
+
+        {err&&<div className="ebox">{err}</div>}
+        <div style={{display:'flex',gap:8}}>
+          <button className="bs bacc" onClick={submit} disabled={busy||!whatDone||!desc.trim()}>{busy?'Submitting…':'Submit'}</button>
+          <button className="bs bgh" onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   STUDENT ASSIGNMENTS TAB
+═══════════════════════════════════════════════ */
+function SAssignments({assignments,submittedIds,onSubmit}){
+  const[filter,setFilter]=useState('all');
+  const typeInfo={sheet:{emoji:'📄',label:'Sheet'},resource:{emoji:'📚',label:'Resource'},research:{emoji:'🔬',label:'Research'}};
+
+  const types=['all','sheet','resource','research'];
+  const shown=filter==='all'?assignments:assignments.filter(a=>a.type===filter);
+  const pending=assignments.filter(a=>!submittedIds.has(a.id)).length;
+
+  return(<>
+    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4,flexWrap:'wrap',gap:8}}>
+      <div>
+        <div className="ptit">📝 Assignments</div>
+        <div className="psub">{pending>0?`${pending} pending · `:'All caught up · '}{assignments.length} total assignment{assignments.length!==1?'s':''}</div>
+      </div>
+    </div>
+
+    {/* type filter */}
+    <div style={{display:'flex',gap:7,marginBottom:18,flexWrap:'wrap'}}>
+      {types.map(t=>(
+        <button key={t} className={`bs ${filter===t?'bacc':'bgh'}`} onClick={()=>setFilter(t)}>
+          {t==='all'?'All':`${typeInfo[t]?.emoji||'📝'} ${typeInfo[t]?.label||t}`}
+        </button>
+      ))}
+    </div>
+
+    {shown.length===0&&<div className="empty">{assignments.length===0?'No assignments yet — check back soon!':'No assignments of this type.'}</div>}
+
+    <div className="ac-wrap">
+      {shown.map(a=>{
+        const done=submittedIds.has(a.id);
+        const info=typeInfo[a.type]||{emoji:'📝',label:'Assignment'};
+        return(
+          <div key={a.id} className={`asgn-card ${a.type||'sheet'}`}>
+            <div className={`asgn-type-pill ${a.type||'sheet'}`}>{info.emoji} {info.label}</div>
+            <div className="asgn-title">{a.title}</div>
+            {a.description&&<div className="asgn-desc">{a.description}</div>}
+            {a.resourceUrl&&(
+              <a href={a.resourceUrl} target="_blank" rel="noreferrer" className="asgn-resource-link">
+                🔗 Open resource ↗
+              </a>
+            )}
+            <div style={{display:'flex',alignItems:'center',gap:7,flexWrap:'wrap',marginTop:4}}>
+              <span className="badge bp">{a.domain}</span>
+              {a.dueDate&&<span className="badge bgr">📅 {a.dueDate}</span>}
+              {done
+                ?<span className="asgn-done-badge">✅ Submitted</span>
+                :<button className="bs bacc" style={{fontSize:12,padding:'4px 11px',marginLeft:'auto'}} onClick={()=>onSubmit(a)}>Submit</button>
+              }
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </>);
+}
+
+/* ═══════════════════════════════════════════════
+   SUBMIT ASSIGNMENT MODAL (tasks)
+═══════════════════════════════════════════════ */
+function SubmitModal({task,uid,onClose,onSuccess}){
+  const[github,setGithub]=useState('');
+  const[preview,setPreview]=useState('');
+  const[desc,setDesc]=useState('');
+  const[usedAI,setUsedAI]=useState(false);
+  const[busy,setBusy]=useState(false);
+  const[err,setErr]=useState('');
+
+  const submit=async()=>{
+    if(!github.trim()){setErr('GitHub URL is required.');return}
+    setBusy(true);setErr('');
+    try{
+      const pts=TASK_POINTS[task.title]??DEFAULT_TASK_POINTS;
+      const subRef=db.collection('submissions').doc(`${uid}_${task.id}`);
+      await subRef.set({
+        uid,taskId:task.id,taskTitle:task.title,
+        githubUrl:github.trim(),previewUrl:preview.trim(),
+        description:desc.trim(),usedAI,points:pts,
+        submittedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      // add points to user
+      await db.collection('users').doc(uid).update({
+        points:firebase.firestore.FieldValue.increment(pts)
+      });
+      onSuccess(pts);
+    }catch(e){setErr(e.message)}
+    finally{setBusy(false)}
+  };
+
+  return(
+    <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal">
+        <div className="modal-tit">Submit Assignment</div>
+        <div className="modal-sub">
+          <span className="badge bp" style={{marginRight:6}}>{task.domain}</span>
+          {task.title}
+        </div>
+
+        <div className="modal-fld">
+          <label>GitHub Repository URL *</label>
+          <input className="fi" placeholder="https://github.com/yourusername/repo" value={github} onChange={e=>setGithub(e.target.value)}/>
+        </div>
+        <div className="modal-fld">
+          <label>Preview / Live URL <span style={{fontWeight:400,color:'var(--tx3)',textTransform:'none',fontSize:11}}>(optional)</span></label>
+          <input className="fi" placeholder="https://yourproject.vercel.app" value={preview} onChange={e=>setPreview(e.target.value)}/>
+        </div>
+        <div className="modal-fld">
+          <label>Description <span style={{fontWeight:400,color:'var(--tx3)',textTransform:'none',fontSize:11}}>(what did you build / learn?)</span></label>
+          <textarea className="fta" placeholder="Briefly describe your submission…" value={desc} onChange={e=>setDesc(e.target.value)} style={{minHeight:80}}/>
+        </div>
+        <div className="modal-fld">
+          <label>AI Usage</label>
+          <div className={`ai-toggle${usedAI?' on':''}`} onClick={()=>setUsedAI(p=>!p)}>
+            <input type="checkbox" checked={usedAI} onChange={()=>{}} onClick={e=>e.stopPropagation()}/>
+            <div className="ai-toggle-lbl">
+              I used AI assistance (ChatGPT, Claude, Copilot, etc.)
+              <small>Being honest helps your admin understand your learning better</small>
+            </div>
+          </div>
+        </div>
+
+        <div style={{background:'var(--acl)',border:'1px solid var(--acm)',borderRadius:8,padding:'9px 13px',marginBottom:14,display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:18}}>🏆</span>
+          <div style={{fontSize:13}}>
+            <strong style={{color:'var(--ac)'}}>{TASK_POINTS[task.title]??DEFAULT_TASK_POINTS} points</strong>
+            <span style={{color:'var(--tx2)'}}> will be added to your score on submission</span>
+          </div>
+        </div>
+
+        {err&&<div className="ebox">{err}</div>}
+        <div style={{display:'flex',gap:8}}>
+          <button className="bs bacc" onClick={submit} disabled={busy||!github.trim()}>{busy?'Submitting…':'Submit Assignment'}</button>
+          <button className="bs bgh" onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   STUDENT DASHBOARD
+═══════════════════════════════════════════════ */
+function StudentDash({user,onSignOut}){
+  const[tab,setTab]=useState('home');
+  const[tasks,setTasks]=useState([]);
+  const[assignments,setAssignments]=useState([]);
+  const[roadmaps,setRoadmaps]=useState([]);
+  const[submissions,setSubmissions]=useState([]);
+  const[asnSubmissions,setAsnSubmissions]=useState([]);
+  const[userData,setUserData]=useState({points:0});
+  const[allStudents,setAllStudents]=useState([]);
+  const[myWarning,setMyWarning]=useState(null);
+  const[warnDismissed,setWarnDismissed]=useState(null);
+  const[loading,setLoading]=useState(true);
+  const[submitTask,setSubmitTask]=useState(null);
+  const[submitAsn,setSubmitAsn]=useState(null);
+  const[notif,showNotif]=useNotif();
+
+  useEffect(()=>{
+    const u1=db.collection('tasks').orderBy('createdAt','desc').onSnapshot(s=>{
+      setTasks(s.docs.map(d=>({id:d.id,...d.data()})));setLoading(false);
+    },()=>setLoading(false));
+    const u2=db.collection('roadmaps').orderBy('createdAt','desc').onSnapshot(s=>{
+      setRoadmaps(s.docs.map(d=>({id:d.id,...d.data()})));
+    });
+    const u3=db.collection('submissions').where('uid','==',user.uid).onSnapshot(s=>{
+      setSubmissions(s.docs.map(d=>({id:d.id,...d.data()})));
+    });
+    const u4=db.collection('users').doc(user.uid).onSnapshot(s=>{
+      if(s.exists)setUserData(s.data());
+    });
+    const u5=db.collection('users').onSnapshot(s=>{
+      setAllStudents(s.docs.map(d=>({id:d.id,...d.data()})).filter(d=>d.role==='student'||(!d.role&&d.email)));
+    },()=>{});
+    const u6=db.collection('assignments').orderBy('createdAt','desc').onSnapshot(s=>{
+      setAssignments(s.docs.map(d=>({id:d.id,...d.data()})));
+    },()=>{});
+    const u7=db.collection('assignmentSubmissions').where('uid','==',user.uid).onSnapshot(s=>{
+      setAsnSubmissions(s.docs.map(d=>({id:d.id,...d.data()})));
+    },()=>{});
+    const u8=db.collection('warnings').doc(user.uid).onSnapshot(s=>{
+      setMyWarning(s.exists?s.data():null);
+    },()=>{});
+    return()=>{u1();u2();u3();u4();u5();u6();u7();u8()};
+  },[user.uid]);
+
+  const myF=userData.fields||user.fields||[];
+  const myT=tasks.filter(t=>{
+    if(t.assignedUids&&t.assignedUids.length>0) return t.assignedUids.includes(user.uid);
+    return myF.length?myF.includes(t.domain)||t.domain==='General':true;
+  });
+  const myA=assignments.filter(a=>{
+    if(a.assignedUids&&a.assignedUids.length>0) return a.assignedUids.includes(user.uid);
+    return myF.length?myF.includes(a.domain)||a.domain==='General':true;
+  });
+  const myR=myF.length?roadmaps.filter(r=>myF.includes(r.domain)):roadmaps;
+  const submittedIds=new Set(submissions.map(s=>s.taskId));
+  const submittedAsnIds=new Set(asnSubmissions.map(s=>s.assignmentId));
+  const hr=new Date().getHours();
+  const greet=hr<12?'Good morning':hr<18?'Good afternoon':'Good evening';
+  const totalPts=userData.points||0;
+
+  const handleSubmitSuccess=pts=>{setSubmitTask(null);showNotif(`🏆 Submitted! +${pts} points earned`)};
+  const handleAsnSubmitSuccess=()=>{setSubmitAsn(null);showNotif('✅ Assignment submitted!')};
+
+  return(<>
+    <nav>
+      <div className="brand">Edu<em>Track</em> <span className="bpill" style={{background:'linear-gradient(135deg,#7c3aed,#5b21b6)',color:'#e9d5ff',border:'none'}}>⚔️ Dungeon</span></div>
+      <button className={`nk${tab==='home'?' on':''}`} onClick={()=>setTab('home')}>Home</button>
+      <button className={`nk${tab==='tasks'?' on':''}`} onClick={()=>setTab('tasks')}>Tasks</button>
+      <button className={`nk${tab==='assignments'?' on':''}`} onClick={()=>setTab('assignments')}>
+        📝 Assignments {myA.filter(a=>!submittedAsnIds.has(a.id)).length>0&&<span style={{background:'var(--rr)',color:'#fff',borderRadius:10,fontSize:10,fontWeight:800,padding:'1px 5px',marginLeft:3}}>{myA.filter(a=>!submittedAsnIds.has(a.id)).length}</span>}
+      </button>
+      <button className={`nk${tab==='roadmap'?' on':''}`} onClick={()=>setTab('roadmap')}>Roadmap</button>
+      <button className={`nk${tab==='rank'?' on':''}`} onClick={()=>setTab('rank')}>🏅 Rank</button>
+      <div className="ml"/>
+      {(()=>{const rank=getRank(totalPts);return<span className="rank-pill" style={{color:rank.color,borderColor:rank.color,background:'rgba(0,0,0,0.04)'}}>{rank.emoji} {rank.name}</span>})()}
+      <div className="pts-badge"><span className="pts-ico">🏆</span>{totalPts} pts</div>
+      <Av name={user.displayName}/>
+      <button className="nout" onClick={onSignOut}>Sign out</button>
+    </nav>
+    <div className="main">
+      {loading?<div className="empty">Loading…</div>:<>
+        {tab==='home'&&<SHome user={user} tasks={myT} roadmaps={myR} greet={greet} points={totalPts} submittedIds={submittedIds} onSubmit={setSubmitTask} allStudents={allStudents} warning={myWarning} warnDismissed={warnDismissed} onDismissWarn={()=>setWarnDismissed(myWarning?.level)}/>}
+        {tab==='tasks'&&<STasks tasks={myT} submittedIds={submittedIds} onSubmit={setSubmitTask}/>}
+        {tab==='assignments'&&<SAssignments assignments={myA} submittedIds={submittedAsnIds} onSubmit={setSubmitAsn}/>}
+        {tab==='roadmap'&&<SRoadmap roadmaps={myR} uid={user.uid}/>}
+        {tab==='rank'&&<SRank points={totalPts}/>}
+      </>}
+    </div>
+    {submitTask&&<SubmitModal task={submitTask} uid={user.uid} onClose={()=>setSubmitTask(null)} onSuccess={handleSubmitSuccess}/>}
+    {submitAsn&&<AssignmentSubmitModal assignment={submitAsn} uid={user.uid} onClose={()=>setSubmitAsn(null)} onSuccess={handleAsnSubmitSuccess}/>}
+    <Notif msg={notif}/>
+  </>);
+}
+
+/* ── RANK PAGE (student) ── */
+function SRank({points}){
+  const currentRank=getRank(points);
+  const nextRank=getNextRank(points);
+  const currentIdx=RANKS.indexOf(currentRank);
+
+  // progress to next rank
+  const pct=nextRank
+    ?Math.round(((points-currentRank.min)/(nextRank.min-currentRank.min))*100)
+    :100;
+
+  return(
+    <div>
+      {/* Hero banner */}
+      <div style={{background:currentRank.bg,border:`2px solid ${currentRank.border}`,borderRadius:20,padding:'30px 28px',marginBottom:24,boxShadow:`0 0 40px ${currentRank.glow}`,position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',top:-30,right:-30,fontSize:120,opacity:.08,pointerEvents:'none',userSelect:'none'}}>{currentRank.emoji}</div>
+        <div style={{fontSize:11,fontWeight:700,letterSpacing:1.2,textTransform:'uppercase',color:currentRank.color,marginBottom:8}}>Your Current Rank</div>
+        <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:12}}>
+          <span style={{fontSize:52,filter:`drop-shadow(0 0 14px ${currentRank.color})`}}>{currentRank.emoji}</span>
+          <div>
+            <div style={{fontSize:28,fontWeight:900,color:currentRank.color,letterSpacing:-.5}}>{currentRank.name}</div>
+            <div style={{fontSize:14,color:'rgba(255,255,255,.55)',marginTop:2}}>🏆 {points} points earned</div>
+          </div>
+        </div>
+        {nextRank?(
+          <div style={{background:'rgba(255,255,255,.06)',borderRadius:10,padding:'12px 14px'}}>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'rgba(255,255,255,.6)',marginBottom:6}}>
+              <span>{currentRank.name} ({currentRank.min} pts)</span>
+              <span>{nextRank.name} ({nextRank.min} pts)</span>
+            </div>
+            <div className="progress-bar-wrap" style={{background:'rgba(255,255,255,.12)'}}>
+              <div className="progress-bar-fill" style={{width:pct+'%',background:currentRank.color}}/>
+            </div>
+            <div style={{fontSize:12,color:'rgba(255,255,255,.5)',marginTop:4}}>
+              {nextRank.min-points} more pts to reach <strong style={{color:nextRank.color}}>{nextRank.emoji} {nextRank.name}</strong>
+            </div>
+          </div>
+        ):(
+          <div style={{background:'rgba(255,255,255,.08)',borderRadius:10,padding:'10px 14px',fontSize:13,color:'rgba(255,255,255,.7)'}}>
+            🎉 You've reached the <strong style={{color:currentRank.color}}>highest rank</strong>! Legendary status achieved.
+          </div>
+        )}
+      </div>
+
+      {/* Rank track */}
+      <div className="ptit" style={{marginBottom:4}}>Community Ranks</div>
+      <div className="psub" style={{marginBottom:16}}>Earn points by submitting tasks to climb the leaderboard</div>
+
+      <div className="rank-track">
+        {RANKS.map((r,i)=>{
+          const isPast=points>=r.min;
+          const isCurrent=r===currentRank;
+          return(
+            <React.Fragment key={r.name}>
+              {i>0&&<div className={`rank-connector${points>=r.min?' passed':''}`}/>}
+              <div className={`rank-card${isCurrent?' current':''}`} style={{
+                background: isCurrent?r.bg:'var(--sf)',
+                borderColor: isPast?r.color:'var(--bd2)',
+                boxShadow: isCurrent?`0 0 24px ${r.glow}`:isPast?`0 0 8px ${r.glow}`:'none',
+                opacity: isPast?1:.5,
+              }}>
+                {isCurrent&&<div style={{position:'absolute',top:8,right:8,background:r.color,color:'#fff',fontSize:9,fontWeight:800,padding:'2px 6px',borderRadius:8,letterSpacing:.5}}>YOU</div>}
+                <div className="rank-emoji">{r.emoji}</div>
+                <div className="rank-name" style={{color: isPast?r.color:'var(--tx2)'}}>{r.name}</div>
+                <div className="rank-pts" style={{color: isPast?r.color:'var(--tx3)'}}>{r.min===0?'0':r.min}+ pts</div>
+              </div>
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      {/* Rank table */}
+      <div className="card" style={{marginTop:20}}>
+        <div className="slbl" style={{marginBottom:14}}>All Ranks & Requirements</div>
+        {RANKS.map((r,i)=>{
+          const isPast=points>=r.min;
+          const isCurrent=r===currentRank;
+          return(
+            <div key={r.name} style={{display:'flex',alignItems:'center',gap:14,padding:'12px 0',borderBottom:i<RANKS.length-1?'1px solid var(--bd)':'none',opacity:isPast?1:.5}}>
+              <span style={{fontSize:24,width:32,textAlign:'center'}}>{r.emoji}</span>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:700,fontSize:14,color:isPast?r.color:'var(--tx)',display:'flex',alignItems:'center',gap:7}}>
+                  {r.name}
+                  {isCurrent&&<span style={{background:r.color,color:'#fff',fontSize:9,fontWeight:800,padding:'1px 6px',borderRadius:8}}>CURRENT</span>}
+                  {isPast&&!isCurrent&&<span style={{fontSize:11,color:r.color}}>✓ Achieved</span>}
+                </div>
+                <div style={{fontSize:12,color:'var(--tx3)',marginTop:2}}>
+                  {r.max===Infinity?`${r.min}+ points`:`${r.min} – ${r.max} points`}
+                </div>
+              </div>
+              {isCurrent&&nextRank&&(
+                <div style={{fontSize:12,color:'var(--tx3)',textAlign:'right'}}>
+                  <div style={{fontWeight:600,color:r.color}}>{pct}%</div>
+                  <div>to next</div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Task card (student, with submit button) ── */
+function ImageLightbox({src,alt,onClose}){
+  useEffect(()=>{
+    const onKey=e=>{if(e.key==='Escape')onClose()};
+    document.addEventListener('keydown',onKey);
+    return()=>document.removeEventListener('keydown',onKey);
+  },[]);
+  return(
+    <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.88)',zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20,animation:'fdin .15s ease',cursor:'zoom-out'}}>
+      <button onClick={onClose} style={{position:'absolute',top:18,right:22,background:'rgba(255,255,255,.12)',border:'none',color:'#fff',fontSize:22,width:40,height:40,borderRadius:'50%',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1,transition:'.15s'}}
+        onMouseEnter={e=>e.target.style.background='rgba(255,255,255,.25)'}
+        onMouseLeave={e=>e.target.style.background='rgba(255,255,255,.12)'}>✕</button>
+      <img
+        src={src} alt={alt}
+        onClick={e=>e.stopPropagation()}
+        style={{maxWidth:'92vw',maxHeight:'88vh',objectFit:'contain',borderRadius:10,boxShadow:'0 24px 80px rgba(0,0,0,.7)',cursor:'default',animation:'mup .2s ease'}}
+      />
+    </div>
+  );
+}
+
+function TCard({t,submitted,onSubmit}){
+  const[lightbox,setLightbox]=useState(false);
+  return(
+    <div className={`tc ${t.priority||'low'}`}>
+      {t.imageUrl&&<>
+        <img
+          src={t.imageUrl} alt={t.title} className="tc-img"
+          onClick={()=>setLightbox(true)}
+          onError={e=>e.target.style.display='none'}
+          style={{cursor:'zoom-in'}}
+          title="Click to view full size"
+        />
+        {lightbox&&<ImageLightbox src={t.imageUrl} alt={t.title} onClose={()=>setLightbox(false)}/>}
+      </>}
+      <div className="tct">{t.title}</div>
+      <div className="tcd">{t.description}</div>
+      <div className="tcm">
+        <PBadge p={t.priority}/>
+        <span className="badge bp">{t.domain}</span>
+        {t.dueDate&&<span className="badge bgr">📅 {t.dueDate}</span>}
+        {TASK_POINTS[t.title]!=null&&<span className="badge" style={{background:'#FFF3CD',color:'#7A5800',border:'1px solid #F0C040'}}>🏆 {TASK_POINTS[t.title]} pts</span>}
+      </div>
+      <div style={{marginTop:10}}>
+        {submitted
+          ?<span className="sub-done">✅ Submitted</span>
+          :<button className="bs bacc" style={{fontSize:12,padding:'5px 11px'}} onClick={()=>onSubmit(t)}>Submit Assignment</button>
+        }
+      </div>
+    </div>
+  );
+}
+
+function SHome({user,tasks,roadmaps,greet,points,submittedIds,onSubmit,allStudents,warning,warnDismissed,onDismissWarn}){
+  const urg=tasks.filter(t=>t.priority==='urgent'&&!submittedIds.has(t.id)).length;
+  const pendingCount=tasks.filter(t=>!submittedIds.has(t.id)).length;
+  const dangerLevel=getDangerLevel(tasks,submittedIds);
+  const firstName=(user.displayName||'Adventurer').split(' ')[0];
+  const narrative=getDungeonNarrative(firstName,tasks,submittedIds,points);
+  const rank=getRank(points);
+  const nextRank=getNextRank(points);
+
+  /* warning config */
+  const warnConfig={
+    1:{cls:'w1',icon:'🚨',tag:'Warning 1',title:'Community Inactivity Notice',defaultMsg:'You haven\'t been active in the community recently. Please start engaging — post updates, share your work, and participate in discussions.'},
+    2:{cls:'w2',icon:'⚠️',tag:'Warning 2 — Final Notice',title:'Last Warning: Immediate Action Required',defaultMsg:'This is your final warning. Your community participation is critically low. Continued inactivity may result in removal from the program.'},
+  };
+  const showWarn=warning&&warning.level&&!(warnDismissed===warning.level);
+  const wCfg=showWarn?warnConfig[warning.level]:null;
+
+  /* leaderboard helpers */
+  const nameFrom=s=>s.name||(s.email?s.email.split('@')[0]:'Unknown');
+  const initials=n=>n.split(/[\s._-]+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'??';
+  const sorted=[...allStudents].sort((a,b)=>(b.points||0)-(a.points||0));
+  const myPos=sorted.findIndex(s=>s.id===user.uid);
+
+  const podConfig=[
+    {cls:'p1',crown:'👑',label:'1ST',confettiColors:['#48C98A','#6EE7B7','#34D399','#10B981','#A7F3D0']},
+    {cls:'p2',crown:'🥈',label:'2ND',confettiColors:['#FB923C','#FED7AA','#F97316','#EA580C','#FDE68A']},
+    {cls:'p3',crown:'🥉',label:'3RD',confettiColors:['#9CA3AF','#D1D5DB','#6B7280','#E5E7EB','#F3F4F6']},
+  ];
+
+  function Confetti({colors}){
+    const pieces=Array.from({length:8},(_,i)=>({id:i,color:colors[i%colors.length],left:6+i*11+'%',delay:(i*0.25)+'s',dur:(1.3+i%3*0.3)+'s',anim:['confetti-1','confetti-2','confetti-3'][i%3]}));
+    return(<div className="lb-pod-confetti">{pieces.map(p=>(<div key={p.id} className="cf" style={{left:p.left,background:p.color,animation:`${p.anim} ${p.dur} ${p.delay} ease-in infinite`}}/>))}</div>);
+  }
+
+  const top3=sorted.slice(0,3);
+  const podOrder=[top3[1],top3[0],top3[2]];
+  const podCfgOrder=[podConfig[1],podConfig[0],podConfig[2]];
+
+  /* danger color */
+  const dangerColor=dangerLevel>=70?'linear-gradient(90deg,#e85555,#ff6b6b)':dangerLevel>=40?'linear-gradient(90deg,#fb923c,#fcd34d)':'linear-gradient(90deg,#48C98A,#6ee7b7)';
+
+  return(
+    <div className="dg-home">
+      {/* ── WARNING BANNER ── */}
+      {showWarn&&wCfg&&(
+        <div className={`warn-banner ${wCfg.cls}`}>
+          <div className="warn-icon">{wCfg.icon}</div>
+          <div className="warn-body">
+            <div className="warn-tag">{wCfg.tag}</div>
+            <div className="warn-title">{wCfg.title}</div>
+            <div className="warn-msg">{warning.message||wCfg.defaultMsg}</div>
+            {warning.issuedAt&&<div style={{fontSize:11,opacity:.45,marginTop:8,color:'#fff'}}>Issued {warning.issuedAt?.toDate?.()?.toLocaleDateString?.()}</div>}
+          </div>
+          <button className="warn-dismiss" onClick={onDismissWarn} title="Dismiss">✕</button>
+        </div>
+      )}
+
+      {/* ── DUNGEON STORY BANNER ── */}
+      <div className="dg-story-banner">
+        <div className="dg-story-content">
+          <div className="dg-story-icon">{pendingCount===0?'🏆':urg>0?'⚔️':'🗺️'}</div>
+          <div className="dg-story-text">
+            <div className="dg-story-label">⚔️ DeadLine Dungeon — {greet}</div>
+            <div className="dg-story-title">{rank.emoji} {rank.name} {firstName}</div>
+            <div className="dg-story-sub">{narrative}</div>
+            <div className="dg-story-stats">
+              <div className="dg-stat-chip">⚔️ {pendingCount} monsters remaining</div>
+              <div className="dg-stat-chip">💀 {submittedIds.size} defeated</div>
+              <div className="dg-stat-chip">🔥 {urg} urgent threat{urg!==1?'s':''}</div>
+              {nextRank&&<div className="dg-stat-chip">🎯 {nextRank.min-points} XP to {nextRank.emoji} {nextRank.name}</div>}
+            </div>
+          </div>
+        </div>
+        {/* Dungeon danger meter */}
+        <div style={{marginTop:14}}>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.3)',marginBottom:4,textTransform:'uppercase',letterSpacing:.8}}>
+            <span>☠️ Dungeon Danger Level</span>
+            <span style={{color:dangerLevel>=70?'#e85555':dangerLevel>=40?'#fb923c':'#48C98A'}}>{dangerLevel}%</span>
+          </div>
+          <div className="dg-danger-bar">
+            <div className="dg-danger-fill" style={{width:dangerLevel+'%',background:dangerColor}}/>
+          </div>
+        </div>
+      </div>
+
+      <div className="home-grid" style={{display:'grid',gridTemplateColumns:'1fr 300px',gap:22,alignItems:'start'}}>
+
+      {/* ── LEFT ── */}
+      <div>
+        {/* Stats row */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:11,marginBottom:22}}>
+          <div className="pts-stat">
+            <div className="sl">Total XP</div>
+            <div className="sv" style={{color:'#FFB830'}}>{points}</div>
+            <div className="ss">⚔️ earned in battle</div>
+          </div>
+          {(()=>{const r=getRank(points);const nr=getNextRank(points);return(
+            <div className="stat" style={{background:r.bg,border:`1.5px solid ${r.border}`,boxShadow:`0 0 14px ${r.glow}`}}>
+              <div className="sl" style={{color:'rgba(255,255,255,.5)'}}>Rank</div>
+              <div style={{fontSize:22,fontWeight:800,color:r.color,letterSpacing:-.3}}>{r.emoji} {r.name}</div>
+              <div className="ss" style={{color:'rgba(255,255,255,.4)'}}>{nr?`${nr.min-points} XP to ${nr.name}`:'Max rank!'}</div>
+            </div>
+          )})()}
+          <div className="stat" style={{background:'#0f1420',borderColor:'#1e2840'}}>
+            <div className="sl" style={{color:'rgba(255,255,255,.35)'}}>Monsters</div>
+            <div className="sv" style={{color:'#fff'}}>{tasks.length}</div>
+            <div className="ss" style={{color:'rgba(255,255,255,.3)'}}>summoned</div>
+          </div>
+          <div className="stat" style={{background:'#1a0505',borderColor:'rgba(232,85,85,0.3)'}}>
+            <div className="sl" style={{color:'rgba(232,85,85,.5)'}}>🔥 Urgent</div>
+            <div className="sv" style={{color:'#e85555'}}>{urg}</div>
+            <div className="ss" style={{color:'rgba(232,85,85,.4)'}}>closing in</div>
+          </div>
+          <div className="stat" style={{background:'#051a10',borderColor:'rgba(72,201,138,0.3)'}}>
+            <div className="sl" style={{color:'rgba(72,201,138,.5)'}}>Defeated</div>
+            <div className="sv" style={{color:'#48C98A'}}>{submittedIds.size}</div>
+            <div className="ss" style={{color:'rgba(72,201,138,.4)'}}>of {tasks.length}</div>
+          </div>
+        </div>
+
+        {/* Monster task cards */}
+        {tasks.length>0&&(
+          <>
+            <div className="dg-section-label">
+              <span>⚔️ Active Dungeon Monsters</span>
+            </div>
+            <div className="g2" style={{marginBottom:24}}>
+              {tasks.slice(0,4).map((t,i)=>{
+                const monster=getMonster(t,i);
+                const done=submittedIds.has(t.id);
+                const pts=TASK_POINTS[t.title]??DEFAULT_TASK_POINTS;
+                const hpPct=done?0:t.priority==='urgent'?85:t.priority==='medium'?55:30;
+                return(
+                  <div key={t.id} className={`dg-monster-card ${done?'defeated':t.priority||'low'}`}>
+                    <div className="dg-monster-header">
+                      <div className="dg-monster-emoji">{monster.emoji}</div>
+                      <div style={{flex:1}}>
+                        <div className="dg-monster-name">{monster.name}</div>
+                        <div className="dg-monster-type">
+                          {done?'☠️ DEFEATED':t.priority==='urgent'?'⚠️ BOSS MONSTER':t.priority==='medium'?'⚔️ ELITE ENEMY':'🗡️ MINION'}
+                        </div>
+                        {t.domain&&<div style={{marginTop:3}}><span className="badge bp" style={{fontSize:10}}>{t.domain}</span></div>}
+                      </div>
+                    </div>
+                    <div className="dg-hp-wrap">
+                      <div className="dg-hp-label">
+                        <span>❤️ Monster HP</span>
+                        <span>{done?'0':hpPct}%</span>
+                      </div>
+                      <div className="dg-hp-bar">
+                        <div className="dg-hp-fill" style={{width:hpPct+'%'}}/>
+                      </div>
+                    </div>
+                    {t.description&&<div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginBottom:10,lineHeight:1.5,fontStyle:'italic'}}>"{t.description}"</div>}
+                    <div className="dg-monster-footer">
+                      {done
+                        ?<span className="dg-defeated-badge">✅ Quest Complete! +{pts} XP</span>
+                        :<>
+                          <span className="dg-xp-badge">⚡ +{pts} XP</span>
+                          <button className={`dg-attack-btn${t.priority==='urgent'?' urgent':''}`} onClick={()=>onSubmit(t)}>
+                            {t.priority==='urgent'?'⚔️ Fight Now!':'🗡️ Attack'}
+                          </button>
+                        </>
+                      }
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Quest roadmaps */}
+        {roadmaps.length>0&&(
+          <>
+            <div className="dg-section-label"><span>🗺️ Active Quests</span></div>
+            {roadmaps.slice(0,2).map(r=>(
+              <div key={r.id} className="dg-quest-card">
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:3}}>
+                  <div className="dg-quest-title">📜 {r.title}</div>
+                  <span className="badge bp" style={{fontSize:10}}>{r.domain}</span>
+                </div>
+                <div className="dg-quest-sub">{r.description}</div>
+                {(r.phases||[]).map(p=>(
+                  <div key={p.id} className="dg-quest-phase">
+                    <div className="dg-quest-phase-name">▸ {p.title}</div>
+                    <div className="dg-quest-bar"><div className="dg-quest-fill" style={{width:(p.progress||0)+'%'}}/></div>
+                    <div className="dg-quest-pct">{p.progress||0}%</div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </>
+        )}
+
+        {tasks.length===0&&roadmaps.length===0&&(
+          <div className="dg-narrative">
+            <div className="dg-narrative-label">🔮 Dungeon Master</div>
+            <div className="dg-narrative-text">The dungeon is eerily quiet, {firstName}. Your admin has yet to summon the monsters. Sharpen your blade and await the call to battle...</div>
+          </div>
+        )}
+      </div>
+
+      {/* ── RIGHT: leaderboard panel ── */}
+      <div className="dg-lb-sidebar" style={{background:'var(--sf)',border:'1px solid var(--bd)',borderRadius:16,overflow:'hidden',position:'sticky',top:72}}>
+        <div style={{padding:'14px 16px 10px',borderBottom:'1px solid #1e2840',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div style={{fontWeight:800,fontSize:15,letterSpacing:-.3,color:'#fff'}}>⚔️ Hall of Heroes</div>
+          {myPos>=0&&<div style={{fontSize:11,fontWeight:700,color:'#a78bfa',background:'rgba(124,58,237,0.15)',padding:'2px 8px',borderRadius:8,border:'1px solid rgba(124,58,237,0.3)'}}>#{myPos+1} of {sorted.length}</div>}
+        </div>
+
+        {sorted.length===0&&(
+          <div style={{padding:'28px 16px',textAlign:'center',color:'rgba(255,255,255,0.3)',fontSize:13}}>
+            No adventurers yet.<br/><span style={{fontSize:11,marginTop:4,display:'block'}}>You'll appear here once data loads.</span>
+          </div>
+        )}
+
+        {top3.length>0&&(
+          <div style={{display:'flex',gap:6,padding:'12px 10px 8px',justifyContent:'center',alignItems:'flex-end'}}>
+            {podOrder.map((s,i)=>{
+              if(!s)return null;
+              const cfg=podCfgOrder[i];
+              const isSelf=s.id===user.uid;
+              const name=nameFrom(s);
+              const colorMap={p1:'#48C98A',p2:'#FB923C',p3:'#9CA3AF'};
+              const bgMap={p1:'linear-gradient(160deg,#052b14,#0a3d1e)',p2:'linear-gradient(160deg,#2a1200,#3d1f00)',p3:'linear-gradient(160deg,#18181f,#22222c)'};
+              const animMap={p1:'shimmer-gold 2.2s ease-in-out infinite,float1 3.2s ease-in-out infinite',p2:'shimmer-silver 2.6s ease-in-out infinite,float2 3.8s ease-in-out infinite',p3:'shimmer-bronze 3s ease-in-out infinite,float3 4.4s ease-in-out infinite'};
+              const heightMap={p1:100,p2:82,p3:74};
+              const col=colorMap[cfg.cls];
+              return(
+                <div key={s.id} style={{flex:1,background:bgMap[cfg.cls],border:`1.5px solid ${col}`,borderRadius:12,padding:'10px 8px 8px',textAlign:'center',position:'relative',overflow:'hidden',animation:animMap[cfg.cls],minHeight:heightMap[cfg.cls],display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end'}}>
+                  <Confetti colors={cfg.confettiColors}/>
+                  <div style={{fontSize:cfg.cls==='p1'?18:14,marginBottom:2,animation:cfg.cls==='p1'?'pulse-crown 1.8s ease-in-out infinite':''}}>{cfg.crown}</div>
+                  <div style={{width:30,height:30,borderRadius:'50%',background:`rgba(255,255,255,.1)`,border:`1.5px solid ${col}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:800,color:col,margin:'0 auto 4px'}}>{initials(name)}</div>
+                  <div style={{fontSize:10,fontWeight:700,color:'#fff',maxWidth:70,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={name}>{name}</div>
+                  <div style={{fontSize:11,fontWeight:800,color:col,marginTop:2}}>⚡{s.points||0}</div>
+                  {isSelf&&<div style={{fontSize:8,fontWeight:800,background:col,color:'#fff',padding:'1px 5px',borderRadius:5,marginTop:3,letterSpacing:.4}}>YOU</div>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div style={{maxHeight:340,overflowY:'auto',padding:'6px 10px 12px'}}>
+          {sorted.map((s,i)=>{
+            const isSelf=s.id===user.uid;
+            const name=nameFrom(s);
+            const rank=getRank(s.points||0);
+            const posLabel=i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+            return(
+              <div key={s.id} className={`lb-list-row${isSelf?' me':''}`}
+                style={{padding:'9px 10px',borderRadius:9,marginBottom:5,animationDelay:(i*0.04)+'s',gap:8,background:isSelf?'rgba(124,58,237,0.1)':'rgba(255,255,255,0.02)',borderColor:isSelf?'rgba(124,58,237,0.3)':'#1e2840'}}>
+                <div style={{fontSize:12,fontWeight:800,color:i<3?['#48C98A','#FB923C','#9CA3AF'][i]:'rgba(255,255,255,0.3)',width:22,textAlign:'center',flexShrink:0}}>{posLabel}</div>
+                <div className={`lb-list-av${isSelf?' me':''}`} style={{width:30,height:30,fontSize:10,background:'rgba(255,255,255,0.05)',borderColor:'#2a3050',color:'rgba(255,255,255,0.6)'}}>{initials(name)}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:700,color:'rgba(255,255,255,0.8)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{name}</div>
+                  <div style={{fontSize:10,color:rank.color,fontWeight:600}}>{rank.emoji} {rank.name}</div>
+                </div>
+                <div style={{fontSize:12,fontWeight:800,color:'#FFB830',flexShrink:0}}>⚡{s.points||0}</div>
+                {isSelf&&<div className="lb-me-tag" style={{fontSize:8,padding:'1px 5px',background:'#7c3aed'}}>YOU</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+    </div>
+    </div>
+  );
+}
+
+function STasks({tasks,submittedIds,onSubmit}){
+  const[f,setF]=useState('all');
+  const[view,setView]=useState('dungeon'); // 'dungeon' | 'classic'
+  const shown=f==='all'?tasks:tasks.filter(t=>t.priority===f);
+  const pending=shown.filter(t=>!submittedIds.has(t.id));
+  const defeated=shown.filter(t=>submittedIds.has(t.id));
+  return(
+    <div style={{background:'#0a0d14',margin:'-28px -22px',padding:'28px 22px',minHeight:'100vh'}}>
+      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4,flexWrap:'wrap',gap:8}}>
+        <div>
+          <div style={{fontSize:20,fontWeight:800,letterSpacing:-.4,color:'#fff',marginBottom:3}}>⚔️ Dungeon Map</div>
+          <div style={{color:'rgba(255,255,255,0.4)',fontSize:13,marginBottom:18}}>
+            {pending.length} monster{pending.length!==1?'s':''} remaining · {defeated.length} defeated · submit to earn XP
+          </div>
+        </div>
+        <div style={{display:'flex',gap:7}}>
+          <button className={`bs ${view==='dungeon'?'bacc':'bgh'}`} style={{fontSize:12}} onClick={()=>setView('dungeon')}>🐉 Dungeon View</button>
+          <button className={`bs ${view==='classic'?'bacc':'bgh'}`} style={{fontSize:12}} onClick={()=>setView('classic')}>📋 Classic</button>
+        </div>
+      </div>
+
+      <div style={{display:'flex',gap:7,marginBottom:18,flexWrap:'wrap'}}>
+        {['all','urgent','medium','low'].map(x=>(
+          <button key={x} className={`bs ${f===x?'bacc':'bgh'}`} onClick={()=>setF(x)} style={{fontSize:12,
+            background:f===x?(x==='urgent'?'#dc2626':x==='medium'?'#b45309':x==='low'?'#1d4ed8':'var(--ac)'):'rgba(255,255,255,0.05)',
+            color:f===x?'#fff':'rgba(255,255,255,0.5)',
+            border:`1px solid ${f===x?'transparent':'rgba(255,255,255,0.1)'}`}}>
+            {x==='all'?'⚔️ All':x==='urgent'?'🔥 Boss':x==='medium'?'⚔️ Elite':'🗡️ Minion'}
+          </button>
+        ))}
+      </div>
+
+      {shown.length===0?<div style={{textAlign:'center',padding:38,color:'rgba(255,255,255,0.3)',fontSize:13}}>No monsters in this tier.</div>
+      :view==='dungeon'?(
+        <>
+          {pending.length>0&&(
+            <>
+              <div className="dg-section-label"><span>⚔️ Active Threats ({pending.length})</span></div>
+              <div className="g2" style={{marginBottom:28}}>
+                {pending.map((t,i)=>{
+                  const monster=getMonster(t,i);
+                  const pts=TASK_POINTS[t.title]??DEFAULT_TASK_POINTS;
+                  const hpPct=t.priority==='urgent'?85:t.priority==='medium'?55:30;
+                  return(
+                    <div key={t.id} className={`dg-monster-card ${t.priority||'low'}`}>
+                      <div className="dg-monster-header">
+                        <div className="dg-monster-emoji">{monster.emoji}</div>
+                        <div style={{flex:1}}>
+                          <div className="dg-monster-name">{monster.name}</div>
+                          <div className="dg-monster-type">
+                            {t.priority==='urgent'?'⚠️ BOSS MONSTER':t.priority==='medium'?'⚔️ ELITE ENEMY':'🗡️ MINION'}
+                          </div>
+                          {t.domain&&<div style={{marginTop:3}}><span className="badge bp" style={{fontSize:10}}>{t.domain}</span></div>}
+                        </div>
+                      </div>
+                      <div className="dg-hp-wrap">
+                        <div className="dg-hp-label"><span>❤️ HP</span><span>{hpPct}%</span></div>
+                        <div className="dg-hp-bar"><div className="dg-hp-fill" style={{width:hpPct+'%'}}/></div>
+                      </div>
+                      {t.description&&<div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginBottom:10,lineHeight:1.5,fontStyle:'italic'}}>"{t.description}"</div>}
+                      <div className="dg-monster-footer">
+                        <span className="dg-xp-badge">⚡ +{pts} XP</span>
+                        <button className={`dg-attack-btn${t.priority==='urgent'?' urgent':''}`} onClick={()=>onSubmit(t)}>
+                          {t.priority==='urgent'?'⚔️ Fight Now!':'🗡️ Attack'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+          {defeated.length>0&&(
+            <>
+              <div className="dg-section-label"><span>☠️ Defeated ({defeated.length})</span></div>
+              <div className="g2">
+                {defeated.map((t,i)=>{
+                  const monster=getMonster(t,i+pending.length);
+                  const pts=TASK_POINTS[t.title]??DEFAULT_TASK_POINTS;
+                  return(
+                    <div key={t.id} className="dg-monster-card defeated">
+                      <div className="dg-monster-header">
+                        <div className="dg-monster-emoji">{monster.emoji}</div>
+                        <div style={{flex:1}}>
+                          <div className="dg-monster-name">{monster.name}</div>
+                          <div className="dg-monster-type">☠️ SLAIN</div>
+                        </div>
+                      </div>
+                      <div className="dg-hp-wrap">
+                        <div className="dg-hp-label"><span>❤️ HP</span><span>0%</span></div>
+                        <div className="dg-hp-bar"><div className="dg-hp-fill" style={{width:'0%'}}/></div>
+                      </div>
+                      <div className="dg-monster-footer">
+                        <span className="dg-defeated-badge">✅ Quest Complete! +{pts} XP</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </>
+      ):(
+        <div className="g2">{shown.map(t=><TCard key={t.id} t={t} submitted={submittedIds.has(t.id)} onSubmit={onSubmit}/>)}</div>
+      )}
+    </div>
+  );
+}
+
+/* ── Roadmap with interactive status per item ── */
+function SRoadmap({roadmaps,uid}){
+  const[open,setOpen]=useState({});
+  // local status overrides stored in Firestore under users/{uid}/roadmapProgress/{roadmapId_phaseId_itemIdx}
+  const[progress,setProgress]=useState({});
+  const[saving,setSaving]=useState({});
+
+  useEffect(()=>{
+    if(!uid)return;
+    const unsub=db.collection('roadmapProgress').where('uid','==',uid).onSnapshot(s=>{
+      const map={};
+      s.docs.forEach(d=>{map[d.id]=d.data().status});
+      setProgress(map);
+    });
+    return()=>unsub();
+  },[uid]);
+
+  const tog=id=>setOpen(p=>({...p,[id]:!p[id]}));
+
+  const setStatus=async(roadmapId,phaseId,itemIdx,status)=>{
+    const key=`${uid}_${roadmapId}_${phaseId}_${itemIdx}`;
+    setSaving(p=>({...p,[key]:true}));
+    try{
+      await db.collection('roadmapProgress').doc(key).set({uid,roadmapId,phaseId,itemIdx,status,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    }catch(e){console.error(e)}
+    finally{setSaving(p=>({...p,[key]:false}))}
+  };
+
+  const getStatus=(roadmapId,phaseId,itemIdx)=>{
+    const key=`${uid}_${roadmapId}_${phaseId}_${itemIdx}`;
+    return progress[key]||'not-started';
+  };
+
+  const phaseProgress=(roadmapId,phase)=>{
+    const items=phase.items||[];
+    if(!items.length)return 0;
+    const done=items.filter((_,i)=>getStatus(roadmapId,phase.id,i)==='done').length;
+    return Math.round((done/items.length)*100);
+  };
+
+  const statusInfo={
+    'not-started':{label:'Not Started',emoji:'🔜',cls:'act-ns'},
+    'in-progress':{label:'In Progress',emoji:'🔄',cls:'act-ip'},
+    'done':{label:'Done',emoji:'✅',cls:'act-dn'},
+  };
+
+  return(<>
+    <div className="ptit">Roadmap</div>
+    <div className="psub">Your step-by-step learning journey — update your status on each topic</div>
+    {roadmaps.length===0?<div className="empty">No roadmaps published for your fields yet.</div>
+     :roadmaps.map(r=>(
+      <div key={r.id} style={{marginBottom:26}}>
+        <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:10}}>
+          <div style={{fontWeight:700,fontSize:16}}>{r.title}</div>
+          <span className="badge bg">{r.domain}</span>
+        </div>
+        <div style={{fontSize:13,color:'var(--tx2)',marginBottom:12}}>{r.description}</div>
+        {(r.phases||[]).map(p=>{
+          const pct=phaseProgress(r.id,p);
+          return(
+          <div key={p.id} className="rm">
+            <div className="rmh" onClick={()=>tog(p.id)}>
+              <div style={{flex:1}}>
+                <div className="rmht">{p.title}</div>
+                <div style={{fontSize:11,color:'var(--tx3)',marginTop:1}}>{pct}% complete · {(p.items||[]).length} topic{(p.items||[]).length!==1?'s':''}</div>
+              </div>
+              <div className="pbar" style={{marginRight:10}}><div className="pfill" style={{width:pct+'%'}}/></div>
+              <span style={{color:'var(--tx3)',fontSize:11}}>{open[p.id]?'▲':'▼'}</span>
+            </div>
+            {open[p.id]&&<div className="rmb">
+              {(p.items||[]).map((it,i)=>{
+                const st=getStatus(r.id,p.id,i);
+                const key=`${uid}_${r.id}_${p.id}_${i}`;
+                const isSaving=saving[key];
+                return(
+                <div key={i} className="ri" style={{alignItems:'center'}}>
+                  <div className={`dot ${st==='done'?'done':st==='in-progress'?'active':'upcoming'}`} style={{marginTop:0,flexShrink:0}}/>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:500}}>{it.text}</div>
+                  </div>
+                  <div className="status-sel" style={{opacity:isSaving?.6:1}}>
+                    {['not-started','in-progress','done'].map(s=>(
+                      <button key={s}
+                        className={st===s?statusInfo[s].cls:''}
+                        onClick={()=>!isSaving&&setStatus(r.id,p.id,i,s)}
+                        title={statusInfo[s].label}>
+                        {statusInfo[s].emoji} {statusInfo[s].label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )})}
+            </div>}
+          </div>
+        )})}
+      </div>
+    ))}
+  </>);
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN PANEL
+═══════════════════════════════════════════════ */
+function AdminPanel({onSignOut}){
+  const[tab,setTab]=useState('overview');
+  const[tasks,setTasks]=useState([]);
+  const[assignments,setAssignments]=useState([]);
+  const[asnSubmissions,setAsnSubmissions]=useState([]);
+  const[roadmaps,setRoadmaps]=useState([]);
+  const[students,setStudents]=useState([]);
+  const[submissions,setSubmissions]=useState([]);
+  const[warnings,setWarnings]=useState({});
+  const[notif,showNotif]=useNotif();
+
+  useEffect(()=>{
+    const u1=db.collection('tasks').orderBy('createdAt','desc').onSnapshot(s=>{setTasks(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    const u2=db.collection('roadmaps').orderBy('createdAt','desc').onSnapshot(s=>{setRoadmaps(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    const u3=db.collection('users').where('role','==','student').onSnapshot(s=>{setStudents(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    const u4=db.collection('submissions').orderBy('submittedAt','desc').onSnapshot(s=>{setSubmissions(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    const u5=db.collection('assignments').orderBy('createdAt','desc').onSnapshot(s=>{setAssignments(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    const u6=db.collection('assignmentSubmissions').orderBy('submittedAt','desc').onSnapshot(s=>{setAsnSubmissions(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    const u7=db.collection('warnings').onSnapshot(s=>{
+      const map={};s.docs.forEach(d=>{map[d.id]=d.data()});setWarnings(map);
+    },()=>{});
+    return()=>{u1();u2();u3();u4();u5();u6();u7()};
+  },[]);
+
+  const addTask=async f=>{await db.collection('tasks').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Task published')};
+  const delTask=async id=>{await db.collection('tasks').doc(id).delete();showNotif('🗑️ Task deleted')};
+  const addRM=async f=>{await db.collection('roadmaps').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Roadmap published')};
+  const delRM=async id=>{await db.collection('roadmaps').doc(id).delete();showNotif('🗑️ Roadmap deleted')};
+  const addAsn=async f=>{await db.collection('assignments').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Assignment published')};
+  const delAsn=async id=>{await db.collection('assignments').doc(id).delete();showNotif('🗑️ Assignment deleted')};
+
+  const TABS=[['overview','📊','Overview'],['tasks','📋','Tasks'],['assignments','📝','Assignments'],['roadmaps','🗺️','Roadmaps'],['students','👥','Students'],['warnings','⚠️','Warnings'],['submissions','📥','Submissions'],['asn-submissions','📨','Asn. Responses'],['points','🏆','Points']];
+
+  return(<>
+    <nav>
+      <div className="brand">Edu<em>Track</em> <span className="bpill">Admin</span></div>
+      <div className="ml"/><Av name="Admin"/>
+      <button className="nout" onClick={onSignOut}>Sign out</button>
+    </nav>
+    <div className="adw">
+      <div className="ads">
+        <div className="ads-lbl">Menu</div>
+        {TABS.map(([k,ico,lbl])=>(
+          <button key={k} className={`si${tab===k?' on':''}`} onClick={()=>setTab(k)}>
+            <span className="sico">{ico}</span>{lbl}
+            {k==='warnings'&&Object.values(warnings).filter(w=>w.level).length>0&&(
+              <span style={{marginLeft:'auto',background:'#B32B2B',color:'#fff',borderRadius:10,fontSize:10,fontWeight:800,padding:'1px 5px'}}>
+                {Object.values(warnings).filter(w=>w.level).length}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+      <div className="adm">
+        {tab==='overview'&&<AOv tasks={tasks} roadmaps={roadmaps} students={students} submissions={submissions}/>}
+        {tab==='tasks'&&<ATasks tasks={tasks} onAdd={addTask} onDel={delTask} students={students}/>}
+        {tab==='assignments'&&<AAssignments assignments={assignments} onAdd={addAsn} onDel={delAsn} students={students}/>}
+        {tab==='roadmaps'&&<ARMs roadmaps={roadmaps} onAdd={addRM} onDel={delRM}/>}
+        {tab==='students'&&<AStudents students={students} warnings={warnings}/>}
+        {tab==='warnings'&&<AWarnings students={students} warnings={warnings} showNotif={showNotif}/>}
+        {tab==='submissions'&&<ASubmissions submissions={submissions} students={students}/>}
+        {tab==='asn-submissions'&&<AAsnSubmissions submissions={asnSubmissions} students={students}/>}
+        {tab==='points'&&<APoints students={students} showNotif={showNotif}/>}
+      </div>
+    </div>
+    <Notif msg={notif}/>
+  </>);
+}
+
+/* ─── ADMIN: ASSIGNMENT RESPONSES ─────────────────────────── */
+function AAsnSubmissions({submissions,students}){
+  const nameFrom=s=>s?.name||(s?.email?s.email.split('@')[0]:'Unknown');
+  const typeInfo={sheet:{emoji:'📄',label:'Sheet'},resource:{emoji:'📚',label:'Resource'},research:{emoji:'🔬',label:'Research'}};
+  return(<>
+    <div className="ptit">📨 Assignment Responses</div>
+    <div className="psub">{submissions.length} response{submissions.length!==1?'s':''} received</div>
+    {submissions.length===0&&<div className="empty">No assignment responses yet.</div>}
+    {submissions.map(s=>{
+      const stu=students.find(x=>x.id===s.uid);
+      const info=typeInfo[s.assignmentType]||{emoji:'📝',label:'Assignment'};
+      return(
+        <div key={s.id} className="sub-card">
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8,flexWrap:'wrap'}}>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:700,fontSize:14}}>{nameFrom(stu)}</div>
+              <div style={{fontSize:11,color:'var(--tx3)'}}>{stu?.email||s.uid}</div>
+            </div>
+            <span className={`asgn-type-pill ${s.assignmentType||'sheet'}`}>{info.emoji} {info.label}</span>
+            <div style={{fontSize:11,color:'var(--tx3)'}}>{s.submittedAt?.toDate?.()?.toLocaleDateString?.()||'—'}</div>
+          </div>
+          <div style={{fontWeight:600,fontSize:13,marginBottom:6,color:'var(--tx)'}}>{s.assignmentTitle}</div>
+          <div style={{fontSize:12,background:'var(--acl)',border:'1px solid var(--acm)',borderRadius:7,padding:'6px 10px',marginBottom:6,color:'var(--ac)',fontWeight:600}}>
+            ✅ {s.whatDone}
+          </div>
+          {s.description&&<div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.6,background:'var(--sf2)',borderRadius:7,padding:'8px 11px'}}>{s.description}</div>}
+        </div>
+      );
+    })}
+  </>);
+}
+
+/* ─── ADMIN: CREATE ASSIGNMENTS ───────────────────────────── */
+function AAssignments({assignments,onAdd,onDel,students}){
+  const TYPES=[['sheet','📄','Sheet / Problem Set'],['resource','📚','Resource / Study Material'],['research','🔬','Research Topic']];
+  const blank={title:'',description:'',type:'sheet',domain:'AI/ML',dueDate:'',resourceUrl:'',assignedUids:[]};
+  const[show,setShow]=useState(false);
+  const[form,setForm]=useState(blank);
+  const[saving,setSaving]=useState(false);
+  const[err,setErr]=useState('');
+  const[assignMode,setAssignMode]=useState('all');
+  const[stuSearch,setStuSearch]=useState('');
+  const[filterType,setFilterType]=useState('all');
+  const set=k=>v=>setForm(p=>({...p,[k]:v}));
+
+  const nameFrom=s=>s.name||(s.email?s.email.split('@')[0]:'Unknown');
+  const filteredStu=students.filter(s=>{
+    const q=stuSearch.toLowerCase();
+    return !q||(s.email||'').toLowerCase().includes(q)||(s.name||'').toLowerCase().includes(q);
+  });
+  const toggleUid=uid=>setForm(p=>({...p,assignedUids:p.assignedUids.includes(uid)?p.assignedUids.filter(u=>u!==uid):[...p.assignedUids,uid]}));
+
+  const submit=async()=>{
+    if(!form.title.trim()){setErr('Title is required.');return}
+    if(assignMode==='specific'&&form.assignedUids.length===0){setErr('Select at least one student.');return}
+    setSaving(true);setErr('');
+    const payload={...form,assignedUids:assignMode==='all'?[]:form.assignedUids};
+    try{await onAdd(payload);setForm(blank);setAssignMode('all');setStuSearch('');setShow(false)}
+    catch(e){setErr(e.message)}
+    finally{setSaving(false)}
+  };
+
+  const typeInfo={sheet:{emoji:'📄',label:'Sheet'},resource:{emoji:'📚',label:'Resource'},research:{emoji:'🔬',label:'Research'}};
+  const shown=filterType==='all'?assignments:assignments.filter(a=>a.type===filterType);
+
+  return(<>
+    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
+      <div><div className="ptit">📝 Assignments</div><div className="psub">Learning tasks — sheets, resources, research topics</div></div>
+      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'✕ Cancel':'+ New assignment'}</button>
+    </div>
+
+    {show&&<div className="card" style={{marginBottom:20}}>
+      <div className="slbl">Create assignment</div>
+
+      {/* type selector */}
+      <div style={{marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--tx2)',textTransform:'uppercase',letterSpacing:.4,marginBottom:8}}>Type *</div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          {TYPES.map(([val,ico,lbl])=>(
+            <div key={val} onClick={()=>set('type')(val)}
+              style={{display:'flex',alignItems:'center',gap:7,padding:'8px 14px',borderRadius:9,cursor:'pointer',userSelect:'none',
+                border:`1.5px solid ${form.type===val?'var(--ac)':'var(--bd2)'}`,
+                background:form.type===val?'var(--acl)':'var(--sf)',transition:'.12s'}}>
+              <span style={{fontSize:16}}>{ico}</span>
+              <span style={{fontSize:13,fontWeight:form.type===val?700:500,color:form.type===val?'var(--ac)':'var(--tx)'}}>{lbl}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Title *</label>
+          <input className="fi" placeholder="Assignment title" value={form.title} onChange={e=>set('title')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Domain</label>
+          <select className="fi" value={form.domain} onChange={e=>set('domain')(e.target.value)}>
+            {DOMAINS.map(d=><option key={d}>{d}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Instructions / Description</label>
+          <textarea className="fta" placeholder="What should students do? What to study, what questions to solve, what topic to research…" value={form.description} onChange={e=>set('description')(e.target.value)}/>
+        </div>
+      </div>
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>🔗 Resource URL <span style={{fontWeight:400,textTransform:'none',fontSize:10,color:'var(--tx3)'}}>optional</span></label>
+          <input className="fi" placeholder="https://docs.google.com/… or any link" value={form.resourceUrl||''} onChange={e=>set('resourceUrl')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Due date</label>
+          <input type="date" className="fi" value={form.dueDate} onChange={e=>set('dueDate')(e.target.value)}/>
+        </div>
+      </div>
+
+      {/* assign to */}
+      <div style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:10,padding:'14px 16px',marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--tx2)',textTransform:'uppercase',letterSpacing:.4,marginBottom:10}}>👥 Assign To</div>
+        <div style={{display:'flex',gap:8,marginBottom:assignMode==='specific'?14:0}}>
+          {[['all','🌐 Everyone'],['specific','🎯 Specific students']].map(([m,lbl])=>(
+            <button key={m} onClick={()=>{setAssignMode(m);if(m==='all')setForm(p=>({...p,assignedUids:[]}));}}
+              style={{padding:'7px 16px',borderRadius:8,border:`1.5px solid ${assignMode===m?'var(--ac)':'var(--bd2)'}`,
+                background:assignMode===m?'var(--acl)':'var(--sf)',color:assignMode===m?'var(--ac)':'var(--tx2)',
+                fontWeight:700,fontSize:13,cursor:'pointer',transition:'.15s'}}>{lbl}</button>
+          ))}
+        </div>
+        {assignMode==='specific'&&(
+          <div>
+            {students.length===0?<div style={{fontSize:13,color:'var(--tx3)',fontStyle:'italic'}}>No students registered yet.</div>:<>
+              <input className="fi" placeholder="🔍 Search by name or email…" value={stuSearch} onChange={e=>setStuSearch(e.target.value)} style={{marginBottom:10,fontSize:13}}/>
+              {form.assignedUids.length>0&&(
+                <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:10}}>
+                  {form.assignedUids.map(uid=>{
+                    const s=students.find(x=>x.id===uid);if(!s)return null;
+                    const r=getRank(s.points||0);
+                    return<div key={uid} style={{display:'flex',alignItems:'center',gap:5,background:r.bg||'var(--acl)',border:`1.5px solid ${r.border||'var(--acm)'}`,borderRadius:20,padding:'3px 10px 3px 8px',fontSize:12,fontWeight:600,color:r.color||'var(--ac)'}}>
+                      {r.emoji} {nameFrom(s)}<span onClick={()=>toggleUid(uid)} style={{cursor:'pointer',marginLeft:3,opacity:.6,fontWeight:900,fontSize:14,lineHeight:1}}>×</span>
+                    </div>;
+                  })}
+                </div>
+              )}
+              <div style={{maxHeight:200,overflowY:'auto',display:'flex',flexDirection:'column',gap:6}}>
+                {filteredStu.map(s=>{
+                  const sel=form.assignedUids.includes(s.id);const r=getRank(s.points||0);const name=nameFrom(s);
+                  return<div key={s.id} onClick={()=>toggleUid(s.id)}
+                    style={{display:'flex',alignItems:'center',gap:11,padding:'9px 12px',borderRadius:9,
+                      border:`1.5px solid ${sel?r.border||'var(--acm)':'var(--bd)'}`,
+                      background:sel?r.bg||'var(--acl)':'var(--sf)',cursor:'pointer',transition:'.12s',userSelect:'none'}}>
+                    <div style={{width:18,height:18,borderRadius:5,border:`2px solid ${sel?r.color||'var(--ac)':'var(--bd2)'}`,
+                      background:sel?r.color||'var(--ac)':'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#fff'}}>{sel&&'✓'}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:sel?r.color||'var(--ac)':'var(--tx)'}}>{name}</div>
+                      <div style={{fontSize:11,color:'var(--tx3)'}}>{s.email||'—'}</div>
+                    </div>
+                    <div style={{flexShrink:0,textAlign:'right'}}>
+                      <div style={{fontSize:11,fontWeight:700,color:r.color}}>{r.emoji} {r.name}</div>
+                      <div style={{fontSize:11,color:'var(--tx3)'}}>🏆 {s.points||0} pts</div>
+                    </div>
+                  </div>;
+                })}
+              </div>
+              <div style={{fontSize:11,color:'var(--tx3)',marginTop:8}}>{form.assignedUids.length} student{form.assignedUids.length!==1?'s':''} selected</div>
+            </>}
+          </div>
+        )}
+      </div>
+
+      {err&&<div className="ebox" style={{marginBottom:10}}>{err}</div>}
+      <div style={{display:'flex',gap:8}}>
+        <button className="bs bacc" onClick={submit} disabled={saving}>{saving?'Publishing…':'Publish assignment'}</button>
+        <button className="bs bgh" onClick={()=>{setShow(false);setErr('');setForm(blank);setAssignMode('all');setStuSearch('')}}>Cancel</button>
+      </div>
+    </div>}
+
+    {/* filter */}
+    <div style={{display:'flex',gap:7,marginBottom:14,flexWrap:'wrap'}}>
+      {['all','sheet','resource','research'].map(t=>(
+        <button key={t} className={`bs ${filterType===t?'bacc':'bgh'}`} onClick={()=>setFilterType(t)}>
+          {t==='all'?'All types':`${typeInfo[t]?.emoji||'📝'} ${typeInfo[t]?.label||t}`}
+        </button>
+      ))}
+    </div>
+
+    {shown.length===0
+      ?<div className="empty">{assignments.length===0?'No assignments yet. Create one above!':'No assignments of this type.'}</div>
+      :shown.map(a=>{
+        const info=typeInfo[a.type]||{emoji:'📝',label:'Assignment'};
+        const isSpecific=a.assignedUids&&a.assignedUids.length>0;
+        const nameFrom2=s=>s?.name||(s?.email?s.email.split('@')[0]:'?');
+        const assignedNames=isSpecific?a.assignedUids.map(uid=>{const s=students.find(x=>x.id===uid);return s?nameFrom2(s):null}).filter(Boolean):[];
+        return(
+          <div key={a.id} className="li">
+            <div style={{flex:1}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3,flexWrap:'wrap'}}>
+                <span className={`asgn-type-pill ${a.type||'sheet'}`}>{info.emoji} {info.label}</span>
+                <div className="lit">{a.title}</div>
+                {isSpecific
+                  ?<span style={{fontSize:10,fontWeight:700,background:'#EEF2FF',color:'#4338CA',border:'1px solid #C7D2FE',padding:'2px 7px',borderRadius:8}}>🎯 {a.assignedUids.length} student{a.assignedUids.length!==1?'s':''}</span>
+                  :<span style={{fontSize:10,fontWeight:700,background:'var(--acl)',color:'var(--ac)',border:'1px solid var(--acm)',padding:'2px 7px',borderRadius:8}}>🌐 Everyone</span>
+                }
+              </div>
+              <div className="lis" style={{marginBottom:6}}>{(a.description||'').slice(0,90)}{(a.description||'').length>90?'…':''}</div>
+              {isSpecific&&assignedNames.length>0&&(
+                <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+                  {assignedNames.slice(0,4).map(n=><span key={n} style={{fontSize:10,background:'var(--sf2)',border:'1px solid var(--bd)',padding:'1px 7px',borderRadius:10,color:'var(--tx2)',fontWeight:600}}>{n}</span>)}
+                  {assignedNames.length>4&&<span style={{fontSize:10,color:'var(--tx3)',alignSelf:'center'}}>+{assignedNames.length-4} more</span>}
+                </div>
+              )}
+              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                <span className="badge bp">{a.domain}</span>
+                {a.dueDate&&<span className="badge bgr">📅 {a.dueDate}</span>}
+                {a.resourceUrl&&<span className="badge bb">🔗 Has resource link</span>}
+              </div>
+            </div>
+            <div className="la"><button className="bs bdg" onClick={()=>onDel(a.id)}>Delete</button></div>
+          </div>
+        );
+      })}
+  </>);
+}
+
+function AOv({tasks,roadmaps,students,submissions}){
+  const fc=students.reduce((a,s)=>{(s.fields||[]).forEach(f=>{a[f]=(a[f]||0)+1});return a},{});
+  const mx=Math.max(1,...Object.values(fc));
+  const totalPts=students.reduce((a,s)=>a+(s.points||0),0);
+  return(<>
+    <div className="ptit">Overview</div><div className="psub">Platform stats at a glance</div>
+    <div className="g4" style={{marginBottom:24}}>
+      {[['Students',students.length,'enrolled'],['Tasks',tasks.length,'published'],['Submissions',submissions.length,'received'],['Points Awarded',totalPts,'total']].map(([l,v,s])=>(
+        <div key={l} className="stat"><div className="sl">{l}</div><div className="sv">{v}</div><div className="ss">{s}</div></div>
+      ))}
+    </div>
+    <div className="g2">
+      <div className="card">
+        <div className="slbl">Recent tasks</div>
+        {tasks.length===0?<div className="empty" style={{padding:'16px 0'}}>No tasks yet</div>
+         :tasks.slice(0,5).map(t=>(
+          <div key={t.id} style={{display:'flex',alignItems:'center',gap:9,padding:'8px 0',borderBottom:'1px solid var(--bd)'}}>
+            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600}}>{t.title}</div><div style={{fontSize:11,color:'var(--tx3)'}}>{t.domain}</div></div>
+            <PBadge p={t.priority}/>
+          </div>
+        ))}
+      </div>
+      <div className="card">
+        <div className="slbl">Student fields</div>
+        {Object.keys(fc).length===0?<div className="empty" style={{padding:'16px 0'}}>No students yet</div>
+         :Object.entries(fc).sort((a,b)=>b[1]-a[1]).map(([f,c])=>(
+          <div key={f} style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+            <div style={{flex:1,fontSize:13}}>{f}</div>
+            <div style={{width:90,height:5,background:'var(--sf3)',borderRadius:3,overflow:'hidden'}}>
+              <div style={{height:'100%',background:'var(--ac)',borderRadius:3,width:(c/mx)*100+'%'}}/>
+            </div>
+            <div style={{fontSize:12,color:'var(--tx3)',width:16,textAlign:'right'}}>{c}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </>);
+}
+
+function ATasks({tasks,onAdd,onDel,students}){
+  const blank={title:'',description:'',priority:'medium',domain:'AI/ML',dueDate:'',points:DEFAULT_TASK_POINTS,imageUrl:'',assignedUids:[]};
+  const[show,setShow]=useState(false);
+  const[form,setForm]=useState(blank);
+  const[saving,setSaving]=useState(false);
+  const[err,setErr]=useState('');
+  const[fd,setFd]=useState('all');
+  const[assignMode,setAssignMode]=useState('all'); // 'all' | 'specific'
+  const[stuSearch,setStuSearch]=useState('');
+  const set=k=>v=>setForm(p=>({...p,[k]:v}));
+
+  const nameFrom=s=>s.name||(s.email?s.email.split('@')[0]:'Unknown');
+
+  const filteredStu=students.filter(s=>{
+    const q=stuSearch.toLowerCase();
+    return !q||(s.email||'').toLowerCase().includes(q)||(s.name||'').toLowerCase().includes(q);
+  });
+
+  const toggleUid=uid=>setForm(p=>({
+    ...p,
+    assignedUids: p.assignedUids.includes(uid)
+      ?p.assignedUids.filter(u=>u!==uid)
+      :[...p.assignedUids,uid]
+  }));
+
+  const submit=async()=>{
+    if(!form.title.trim()){setErr('Task title is required.');return}
+    if(assignMode==='specific'&&form.assignedUids.length===0){setErr('Select at least one student, or switch to "Everyone".');return}
+    setSaving(true);setErr('');
+    const payload={...form, assignedUids: assignMode==='all'?[]:form.assignedUids};
+    try{await onAdd(payload);setForm(blank);setAssignMode('all');setStuSearch('');setShow(false)}
+    catch(e){setErr(e.message)}
+    finally{setSaving(false)}
+  };
+
+  const doms=['all',...[...new Set(tasks.map(t=>t.domain))]];
+  const shown=fd==='all'?tasks:tasks.filter(t=>t.domain===fd);
+
+  return(<>
+    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
+      <div><div className="ptit">Tasks</div><div className="psub">Assign tasks by domain or to specific students</div></div>
+      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'✕ Cancel':'+ New task'}</button>
+    </div>
+
+    {show&&<div className="card" style={{marginBottom:20}}>
+      <div className="slbl">Create task</div>
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Title *</label>
+          <input className="fi" placeholder="Task title" value={form.title} onChange={e=>set('title')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Domain</label>
+          <select className="fi" value={form.domain} onChange={e=>set('domain')(e.target.value)}>
+            {DOMAINS.map(d=><option key={d}>{d}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Description</label>
+          <textarea className="fta" placeholder="What should students do?" value={form.description} onChange={e=>set('description')(e.target.value)}/>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>🖼️ Task Image URL <span style={{fontWeight:400,color:'var(--tx3)',textTransform:'none',fontSize:10}}>(optional — paste any image link)</span></label>
+          <input className="fi" placeholder="https://example.com/image.png" value={form.imageUrl||''} onChange={e=>set('imageUrl')(e.target.value)}/>
+          {form.imageUrl&&<img src={form.imageUrl} alt="preview" className="task-img-preview" onError={e=>e.target.style.display='none'} onLoad={e=>e.target.style.display='block'}/>}
+        </div>
+      </div>
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Priority</label>
+          <select className="fi" value={form.priority} onChange={e=>set('priority')(e.target.value)}>
+            <option value="low">Low</option><option value="medium">Medium</option><option value="urgent">Urgent</option>
+          </select>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Due date</label>
+          <input type="date" className="fi" value={form.dueDate} onChange={e=>set('dueDate')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>🏆 Points</label>
+          <input type="number" className="fi" min="0" max="1000" placeholder="20" value={form.points} onChange={e=>set('points')(Number(e.target.value))}/>
+        </div>
+      </div>
+
+      {/* ── ASSIGN TO SECTION ── */}
+      <div style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:10,padding:'14px 16px',marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--tx2)',textTransform:'uppercase',letterSpacing:.4,marginBottom:10}}>👥 Assign To</div>
+        <div style={{display:'flex',gap:8,marginBottom:assignMode==='specific'?14:0}}>
+          {[['all','🌐 Everyone'],['specific','🎯 Specific students']].map(([m,lbl])=>(
+            <button key={m}
+              onClick={()=>{setAssignMode(m);if(m==='all')setForm(p=>({...p,assignedUids:[]}));}}
+              style={{padding:'7px 16px',borderRadius:8,border:`1.5px solid ${assignMode===m?'var(--ac)':'var(--bd2)'}`,
+                background:assignMode===m?'var(--acl)':'var(--sf)',color:assignMode===m?'var(--ac)':'var(--tx2)',
+                fontWeight:700,fontSize:13,cursor:'pointer',transition:'.15s'}}>
+              {lbl}
+            </button>
+          ))}
+        </div>
+
+        {assignMode==='specific'&&(
+          <div>
+            {students.length===0
+              ?<div style={{fontSize:13,color:'var(--tx3)',fontStyle:'italic'}}>No students registered yet.</div>
+              :<>
+                <input className="fi" placeholder="🔍 Search by name or email…" value={stuSearch}
+                  onChange={e=>setStuSearch(e.target.value)}
+                  style={{marginBottom:10,fontSize:13}}/>
+
+                {/* selected chips */}
+                {form.assignedUids.length>0&&(
+                  <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:10}}>
+                    {form.assignedUids.map(uid=>{
+                      const s=students.find(x=>x.id===uid);
+                      if(!s)return null;
+                      const r=getRank(s.points||0);
+                      return(
+                        <div key={uid} style={{display:'flex',alignItems:'center',gap:5,background:r.bg||'var(--acl)',border:`1.5px solid ${r.border||'var(--acm)'}`,borderRadius:20,padding:'3px 10px 3px 8px',fontSize:12,fontWeight:600,color:r.color||'var(--ac)'}}>
+                          {r.emoji} {nameFrom(s)}
+                          <span onClick={()=>toggleUid(uid)} style={{cursor:'pointer',marginLeft:3,opacity:.6,fontWeight:900,fontSize:14,lineHeight:1}}>×</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* student list */}
+                <div style={{maxHeight:220,overflowY:'auto',display:'flex',flexDirection:'column',gap:6}}>
+                  {filteredStu.length===0&&<div style={{fontSize:13,color:'var(--tx3)'}}>No students match your search.</div>}
+                  {filteredStu.map(s=>{
+                    const sel=form.assignedUids.includes(s.id);
+                    const r=getRank(s.points||0);
+                    const name=nameFrom(s);
+                    return(
+                      <div key={s.id} onClick={()=>toggleUid(s.id)}
+                        style={{display:'flex',alignItems:'center',gap:11,padding:'9px 12px',borderRadius:9,
+                          border:`1.5px solid ${sel?r.border||'var(--acm)':'var(--bd)'}`,
+                          background:sel?r.bg||'var(--acl)':'var(--sf)',cursor:'pointer',transition:'.12s',userSelect:'none'}}>
+                        {/* checkbox */}
+                        <div style={{width:18,height:18,borderRadius:5,border:`2px solid ${sel?r.color||'var(--ac)':'var(--bd2)'}`,
+                          background:sel?r.color||'var(--ac)':'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#fff'}}>
+                          {sel&&'✓'}
+                        </div>
+                        {/* avatar */}
+                        <div style={{width:32,height:32,borderRadius:'50%',background:sel?'rgba(255,255,255,.12)':'var(--sf2)',
+                          border:`1.5px solid ${sel?r.color||'var(--acm)':'var(--bd2)'}`,
+                          display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,
+                          color:sel?r.color||'var(--ac)':'var(--tx2)',flexShrink:0}}>
+                          {name.slice(0,2).toUpperCase()}
+                        </div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:13,fontWeight:700,color:sel?r.color||'var(--ac)':'var(--tx)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{name}</div>
+                          <div style={{fontSize:11,color:'var(--tx3)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{s.email||'—'}</div>
+                        </div>
+                        <div style={{flexShrink:0,textAlign:'right'}}>
+                          <div style={{fontSize:11,fontWeight:700,color:r.color}}>{r.emoji} {r.name}</div>
+                          <div style={{fontSize:11,color:'var(--tx3)',marginTop:1}}>🏆 {s.points||0} pts</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{fontSize:11,color:'var(--tx3)',marginTop:8}}>{form.assignedUids.length} student{form.assignedUids.length!==1?'s':''} selected</div>
+              </>
+            }
+          </div>
+        )}
+      </div>
+
+      {err&&<div className="ebox" style={{marginBottom:10}}>{err}</div>}
+      <div style={{display:'flex',gap:8}}>
+        <button className="bs bacc" onClick={submit} disabled={saving}>{saving?'Publishing…':'Publish task'}</button>
+        <button className="bs bgh" onClick={()=>{setShow(false);setErr('');setForm(blank);setAssignMode('all');setStuSearch('')}}>Cancel</button>
+      </div>
+    </div>}
+
+    {tasks.length>0&&<div style={{display:'flex',gap:7,marginBottom:14,flexWrap:'wrap'}}>
+      {doms.map(d=><button key={d} className={`bs ${fd===d?'bacc':'bgh'}`} onClick={()=>setFd(d)}>{d==='all'?'All domains':d}</button>)}
+    </div>}
+
+    {shown.length===0
+      ?<div className="empty">{tasks.length===0?'No tasks yet. Create one above!':'No tasks for this domain.'}</div>
+      :shown.map(t=>{
+        const isSpecific=t.assignedUids&&t.assignedUids.length>0;
+        const assignedNames=isSpecific
+          ?t.assignedUids.map(uid=>{const s=students.find(x=>x.id===uid);return s?nameFrom(s):null}).filter(Boolean)
+          :[];
+        return(
+        <div key={t.id} className="li">
+          <div style={{flex:1}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
+              <div className="lit">{t.title}</div>
+              {isSpecific
+                ?<span style={{fontSize:10,fontWeight:700,background:'#EEF2FF',color:'#4338CA',border:'1px solid #C7D2FE',padding:'2px 7px',borderRadius:8,flexShrink:0}}>🎯 {t.assignedUids.length} student{t.assignedUids.length!==1?'s':''}</span>
+                :<span style={{fontSize:10,fontWeight:700,background:'var(--acl)',color:'var(--ac)',border:'1px solid var(--acm)',padding:'2px 7px',borderRadius:8,flexShrink:0}}>🌐 Everyone</span>
+              }
+            </div>
+            <div className="lis" style={{marginBottom:6}}>{(t.description||'').slice(0,90)}{(t.description||'').length>90?'…':''}</div>
+            {isSpecific&&assignedNames.length>0&&(
+              <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+                {assignedNames.slice(0,4).map(n=>(
+                  <span key={n} style={{fontSize:10,background:'var(--sf2)',border:'1px solid var(--bd)',padding:'1px 7px',borderRadius:10,color:'var(--tx2)',fontWeight:600}}>{n}</span>
+                ))}
+                {assignedNames.length>4&&<span style={{fontSize:10,color:'var(--tx3)',alignSelf:'center'}}>+{assignedNames.length-4} more</span>}
+              </div>
+            )}
+            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+              <PBadge p={t.priority}/><span className="badge bp">{t.domain}</span>
+              {t.dueDate&&<span className="badge bgr">📅 {t.dueDate}</span>}
+              <span className="badge" style={{background:'#FFF3CD',color:'#7A5800',border:'1px solid #F0C040'}}>🏆 {t.points??DEFAULT_TASK_POINTS} pts</span>
+            </div>
+          </div>
+          <div className="la"><button className="bs bdg" onClick={()=>onDel(t.id)}>Delete</button></div>
+        </div>
+      );})}
+  </>);
+}
+
+function ARMs({roadmaps,onAdd,onDel}){
+  const blank={title:'',description:'',domain:'AI/ML',phases:[]};
+  const[show,setShow]=useState(false);
+  const[form,setForm]=useState(blank);
+  const[pTit,setPTit]=useState('');
+  const[pItm,setPItm]=useState('');
+  const[saving,setSaving]=useState(false);
+  const[err,setErr]=useState('');
+  const[fd,setFd]=useState('all');
+  const set=k=>v=>setForm(p=>({...p,[k]:v}));
+
+  const addPhase=()=>{
+    if(!pTit.trim()){setErr('Phase title required.');return}
+    const items=pItm.split('\n').map(s=>s.trim()).filter(Boolean).map(text=>({text}));
+    if(!items.length){setErr('Add at least one topic (one per line).');return}
+    setErr('');
+    setForm(p=>({...p,phases:[...p.phases,{id:'ph'+Date.now(),title:pTit.trim(),items}]}));
+    setPTit('');setPItm('');
+  };
+
+  const submit=async()=>{
+    if(!form.title.trim()){setErr('Roadmap title required.');return}
+    if(!form.phases.length){setErr('Add at least one phase.');return}
+    setSaving(true);setErr('');
+    try{await onAdd(form);setForm(blank);setPTit('');setPItm('');setShow(false)}
+    catch(e){setErr(e.message)}
+    finally{setSaving(false)}
+  };
+
+  const uD=['all',...[...new Set(roadmaps.map(r=>r.domain))]];
+  const shown=fd==='all'?roadmaps:roadmaps.filter(r=>r.domain===fd);
+
+  return(<>
+    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
+      <div><div className="ptit">Roadmaps</div><div className="psub">Build step-by-step learning paths per domain</div></div>
+      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'✕ Cancel':'+ New roadmap'}</button>
+    </div>
+
+    {show&&<div className="card" style={{marginBottom:20}}>
+      <div className="slbl">Create roadmap</div>
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Title *</label>
+          <input className="fi" placeholder="e.g. AI & ML Complete Path" value={form.title} onChange={e=>set('title')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Domain</label>
+          <select className="fi" value={form.domain} onChange={e=>set('domain')(e.target.value)}>
+            {DOMAINS.map(d=><option key={d}>{d}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Short description</label>
+          <input className="fi" placeholder="What will students learn?" value={form.description} onChange={e=>set('description')(e.target.value)}/>
+        </div>
+      </div>
+
+      <div className="divl"/>
+      <div className="slbl">Phases added ({form.phases.length})</div>
+
+      {form.phases.map((ph,i)=>(
+        <div key={ph.id} style={{background:'var(--acl)',border:'1px solid var(--acm)',borderRadius:8,padding:'10px 14px',marginBottom:8,display:'flex',alignItems:'flex-start',gap:10}}>
+          <div style={{width:22,height:22,borderRadius:'50%',background:'var(--ac)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,flexShrink:0,marginTop:1}}>{i+1}</div>
+          <div style={{flex:1}}>
+            <div style={{fontWeight:700,fontSize:13,color:'var(--ac)',marginBottom:4}}>{ph.title}</div>
+            {ph.items.map((it,j)=>(
+              <div key={j} style={{fontSize:12,color:'var(--tx2)',display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
+                <span style={{width:4,height:4,borderRadius:'50%',background:'var(--bd2)',display:'inline-block',flexShrink:0}}/>
+                {it.text}
+              </div>
+            ))}
+          </div>
+          <button style={{background:'none',border:'none',color:'var(--rr)',fontSize:16,cursor:'pointer',flexShrink:0,lineHeight:1}} onClick={()=>setForm(p=>({...p,phases:p.phases.filter(x=>x.id!==ph.id)}))}>✕</button>
+        </div>
+      ))}
+
+      <div style={{background:'var(--sf2)',border:'1.5px dashed var(--bd2)',borderRadius:10,padding:'14px 16px',marginTop:6,marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:.5,marginBottom:10}}>+ Add a phase</div>
+        <div style={{marginBottom:10}}>
+          <label style={{fontSize:11,fontWeight:600,color:'var(--tx2)',display:'block',marginBottom:4}}>Phase title *</label>
+          <input className="fi" placeholder="e.g. Phase 1 — Python Foundations" value={pTit} onChange={e=>setPTit(e.target.value)}/>
+        </div>
+        <div style={{marginBottom:10}}>
+          <label style={{fontSize:11,fontWeight:600,color:'var(--tx2)',display:'block',marginBottom:4}}>
+            Topics <span style={{fontWeight:400,color:'var(--tx3)'}}>— one per line</span>
+          </label>
+          <textarea className="fta" placeholder={"Variables & Data Types\nLoops and Functions\nOOP Concepts"} value={pItm} onChange={e=>setPItm(e.target.value)} style={{minHeight:90}}/>
+        </div>
+        <button className="bs bacc" onClick={addPhase}>+ Save this phase</button>
+      </div>
+
+      {err&&<div className="ebox" style={{marginBottom:10}}>{err}</div>}
+      <div style={{display:'flex',gap:8}}>
+        <button className="bs bacc" onClick={submit} disabled={saving||!form.phases.length}>{saving?'Publishing…':'Publish roadmap'}</button>
+        <button className="bs bgh" onClick={()=>{setShow(false);setErr('');setForm(blank);setPTit('');setPItm('')}}>Cancel</button>
+      </div>
+    </div>}
+
+    {roadmaps.length>0&&<div style={{display:'flex',gap:7,marginBottom:14,flexWrap:'wrap'}}>
+      {uD.map(d=><button key={d} className={`bs ${fd===d?'bacc':'bgh'}`} onClick={()=>setFd(d)}>{d==='all'?'All domains':d}</button>)}
+    </div>}
+
+    {shown.length===0
+      ?<div className="empty">{roadmaps.length===0?'No roadmaps yet. Build one above!':'No roadmaps for this domain.'}</div>
+      :shown.map(r=>(
+      <div key={r.id} className="li" style={{alignItems:'flex-start'}}>
+        <div style={{flex:1}}>
+          <div className="lit">{r.title}</div>
+          <div className="lis" style={{marginBottom:8}}>{r.description}</div>
+          <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8}}>
+            <span className="badge bg">{r.domain}</span>
+            <span className="badge bgr">{(r.phases||[]).length} phase{(r.phases||[]).length!==1?'s':''}</span>
+            <span className="badge bb">{(r.phases||[]).reduce((a,p)=>a+(p.items?.length||0),0)} topics</span>
+          </div>
+          {(r.phases||[]).map(p=>(
+            <div key={p.id} style={{fontSize:12,color:'var(--tx3)',marginBottom:2,paddingLeft:4}}>
+              ↳ {p.title} · {p.items?.length||0} item{p.items?.length!==1?'s':''}
+            </div>
+          ))}
+        </div>
+        <div className="la"><button className="bs bdg" onClick={()=>onDel(r.id)}>Delete</button></div>
+      </div>
+    ))}
+  </>);
+}
+
+/* ─── ADMIN: WARNINGS ─────────────────────────────────────── */
+function AWarnings({students,warnings,showNotif}){
+  const[saving,setSaving]=useState({});
+  const[customMsg,setCustomMsg]=useState({});
+  const nameFrom=s=>s.name||(s.email?s.email.split('@')[0]:'Unknown');
+
+  const setWarning=async(uid,level)=>{
+    setSaving(p=>({...p,[uid]:true}));
+    try{
+      if(level===0){
+        await db.collection('warnings').doc(uid).delete();
+        showNotif('✅ Warning cleared');
+      } else {
+        await db.collection('warnings').doc(uid).set({
+          level,message:customMsg[uid]||'',
+          issuedAt:firebase.firestore.FieldValue.serverTimestamp(),uid,
+        });
+        showNotif(`⚠️ Warning ${level} issued`);
+      }
+      setCustomMsg(p=>({...p,[uid]:''}));
+    }catch(e){showNotif('Error: '+e.message)}
+    finally{setSaving(p=>({...p,[uid]:false}))}
+  };
+
+  const warnCount=students.filter(s=>warnings[s.id]?.level).length;
+
+  return(<>
+    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
+      <div>
+        <div className="ptit">⚠️ Warnings</div>
+        <div className="psub">Issue community activity warnings to specific students · {warnCount} active warning{warnCount!==1?'s':''}</div>
+      </div>
+    </div>
+    <div style={{display:'flex',gap:10,marginBottom:20,flexWrap:'wrap'}}>
+      <div style={{display:'flex',alignItems:'center',gap:8,background:'#1A0505',border:'1.5px solid #7A1A1A',borderRadius:10,padding:'8px 14px'}}>
+        <span style={{fontSize:16}}>🚨</span>
+        <div><div style={{fontSize:12,fontWeight:700,color:'#FF6B6B'}}>Warning 1</div><div style={{fontSize:11,color:'rgba(255,150,150,.6)'}}>First notice — low engagement</div></div>
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:8,background:'#2D1A00',border:'1.5px solid #7A4A00',borderRadius:10,padding:'8px 14px'}}>
+        <span style={{fontSize:16}}>⚠️</span>
+        <div><div style={{fontSize:12,fontWeight:700,color:'#FFB830'}}>Warning 2</div><div style={{fontSize:11,color:'rgba(255,200,100,.6)'}}>Final notice — action required</div></div>
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:8,background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:10,padding:'8px 14px'}}>
+        <span style={{fontSize:16}}>✅</span>
+        <div><div style={{fontSize:12,fontWeight:700,color:'var(--ac)'}}>Clear</div><div style={{fontSize:11,color:'var(--tx3)'}}>Remove all warnings</div></div>
+      </div>
+    </div>
+    {students.length===0&&<div className="empty">No students registered yet.</div>}
+    {students.map(s=>{
+      const w=warnings[s.id];
+      const activeLevel=w?.level||0;
+      const rank=getRank(s.points||0);
+      const name=nameFrom(s);
+      return(
+        <div key={s.id} style={{background:'var(--sf)',border:`1px solid ${activeLevel===1?'#7A1A1A':activeLevel===2?'#7A4A00':'var(--bd)'}`,borderRadius:12,padding:'16px 18px',marginBottom:10,transition:'.2s'}}>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:activeLevel&&w?.message?10:0}}>
+            <Av name={s.name||s.email} size={38}/>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:700,fontSize:14,display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                {name}
+                {activeLevel===1&&<span style={{fontSize:10,fontWeight:800,background:'#FCEAEA',color:'#B32B2B',border:'1px solid #F5A0A0',padding:'2px 7px',borderRadius:6}}>🚨 Warning 1</span>}
+                {activeLevel===2&&<span style={{fontSize:10,fontWeight:800,background:'#FEF2D9',color:'#9B6710',border:'1px solid #F0C040',padding:'2px 7px',borderRadius:6}}>⚠️ Warning 2</span>}
+              </div>
+              <div style={{fontSize:12,color:'var(--tx3)'}}>{s.email} · <span style={{color:rank.color,fontWeight:600}}>{rank.emoji} {rank.name}</span> · 🏆 {s.points||0} pts</div>
+            </div>
+            <div style={{display:'flex',gap:6,flexShrink:0,flexWrap:'wrap',justifyContent:'flex-end'}}>
+              <button onClick={()=>setWarning(s.id,1)} disabled={saving[s.id]||activeLevel===1}
+                style={{padding:'6px 12px',borderRadius:8,border:'1.5px solid #B32B2B',background:activeLevel===1?'#B32B2B':'transparent',color:activeLevel===1?'#fff':'#B32B2B',fontWeight:700,fontSize:12,cursor:'pointer',opacity:saving[s.id]?.55:1,transition:'.15s'}}>
+                🚨 Warn 1
+              </button>
+              <button onClick={()=>setWarning(s.id,2)} disabled={saving[s.id]||activeLevel===2}
+                style={{padding:'6px 12px',borderRadius:8,border:'1.5px solid #9B6710',background:activeLevel===2?'#9B6710':'transparent',color:activeLevel===2?'#fff':'#9B6710',fontWeight:700,fontSize:12,cursor:'pointer',opacity:saving[s.id]?.55:1,transition:'.15s'}}>
+                ⚠️ Warn 2
+              </button>
+              {activeLevel>0&&<button onClick={()=>setWarning(s.id,0)} disabled={saving[s.id]}
+                style={{padding:'6px 12px',borderRadius:8,border:'1.5px solid var(--ac)',background:'transparent',color:'var(--ac)',fontWeight:700,fontSize:12,cursor:'pointer',transition:'.15s'}}>
+                ✅ Clear
+              </button>}
+            </div>
+          </div>
+          {/* custom message input when no active warning */}
+          {activeLevel===0&&(
+            <div style={{marginTop:10}}>
+              <input className="fi" style={{fontSize:12}} placeholder="Optional custom message for the student (leave blank for default)…"
+                value={customMsg[s.id]||''} onChange={e=>setCustomMsg(p=>({...p,[s.id]:e.target.value}))}/>
+            </div>
+          )}
+          {activeLevel>0&&w?.message&&(
+            <div style={{fontSize:12,color:activeLevel===1?'#FF6B6B':'#FFB830',background:'rgba(255,255,255,.05)',borderRadius:8,padding:'8px 12px',lineHeight:1.6,marginTop:8}}>
+              "{w.message}"
+            </div>
+          )}
+          {activeLevel>0&&w?.issuedAt&&(
+            <div style={{fontSize:11,color:'var(--tx3)',marginTop:5}}>Issued {w.issuedAt?.toDate?.()?.toLocaleDateString?.()}</div>
+          )}
+        </div>
+      );
+    })}
+  </>);
+}
+
+function AStudents({students,warnings}){
+  const nameFrom=s=>s.name||(s.email?s.email.split('@')[0]:'Unknown');
+  return(<>
+    <div className="ptit">Students</div>
+    <div className="psub">{students.length} registered student{students.length!==1?'s':''}</div>
+    {students.length===0?<div className="empty">No students registered yet.</div>
+     :students.map(s=>{
+      const w=warnings[s.id];
+      return(
+      <div key={s.id} className="li">
+        <Av name={s.name||s.email} size={38}/>
+        <div style={{flex:1}}>
+          <div className="lit">{s.name||'—'}</div>
+          <div className="lis">{s.email}</div>
+          {(s.fields||[]).length>0&&<div style={{marginTop:6,display:'flex',gap:5,flexWrap:'wrap'}}>
+            {(s.fields||[]).map(f=><span key={f} className="badge bp">{f}</span>)}
+          </div>}
+          {w?.level&&<div style={{marginTop:6}}>
+            {w.level===1&&<span style={{fontSize:10,fontWeight:800,background:'#FCEAEA',color:'#B32B2B',border:'1px solid #F5A0A0',padding:'2px 8px',borderRadius:6,letterSpacing:.3}}>🚨 Warning 1 Active</span>}
+            {w.level===2&&<span style={{fontSize:10,fontWeight:800,background:'#FEF2D9',color:'#9B6710',border:'1px solid #F0C040',padding:'2px 8px',borderRadius:6,letterSpacing:.3}}>⚠️ Warning 2 Active</span>}
+          </div>}
+        </div>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4}}>
+          <div className="pts-badge" style={{fontSize:12}}><span>🏆</span>{s.points||0} pts</div>
+          {(()=>{const r=getRank(s.points||0);return<span style={{fontSize:11,fontWeight:700,color:r.color}}>{r.emoji} {r.name}</span>})()}
+          <div style={{fontSize:11,color:'var(--tx3)'}}>{s.createdAt?.toDate?.()?.toLocaleDateString?.()||'—'}</div>
+        </div>
+      </div>
+    );})}
+  </>);
+}
+
+/* ── NEW: Submissions panel (admin) ── */
+function ASubmissions({submissions,students}){
+  const studentMap=students.reduce((a,s)=>{a[s.id]=s;return a},{});
+  const[f,setF]=useState('all');
+  const domains=[...new Set(submissions.map(s=>s.taskId&&students.length?'all':s.taskTitle).filter(Boolean))];
+
+  return(<>
+    <div className="ptit">Submissions</div>
+    <div className="psub">{submissions.length} assignment{submissions.length!==1?'s':''} submitted</div>
+    {submissions.length===0?<div className="empty">No submissions yet.</div>
+     :submissions.map(sub=>{
+      const st=studentMap[sub.uid];
+      return(
+        <div key={sub.id} className="sub-card">
+          <div style={{display:'flex',alignItems:'flex-start',gap:10,marginBottom:10}}>
+            <Av name={st?.name||sub.uid} size={36}/>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:700,fontSize:14}}>{st?.name||sub.uid}</div>
+              <div style={{fontSize:12,color:'var(--tx3)'}}>{st?.email||''}</div>
+            </div>
+            <div style={{textAlign:'right'}}>
+              <div className="pts-badge" style={{fontSize:12}}>🏆 +{sub.points||0} pts</div>
+              <div style={{fontSize:11,color:'var(--tx3)',marginTop:3}}>{sub.submittedAt?.toDate?.()?.toLocaleDateString?.()||'—'}</div>
+            </div>
+          </div>
+          <div style={{background:'var(--sf2)',borderRadius:8,padding:'10px 12px',marginBottom:8}}>
+            <div style={{fontSize:12,fontWeight:700,color:'var(--tx2)',marginBottom:2}}>Task</div>
+            <div style={{fontSize:13,fontWeight:600}}>{sub.taskTitle}</div>
+          </div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:8}}>
+            <a href={sub.githubUrl} target="_blank" rel="noreferrer">🔗 GitHub Repo</a>
+            {sub.previewUrl&&<a href={sub.previewUrl} target="_blank" rel="noreferrer">🌐 Live Preview</a>}
+            {sub.usedAI&&<span className="badge ba">🤖 Used AI</span>}
+          </div>
+          {sub.description&&<div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.5}}>{sub.description}</div>}
+        </div>
+      );
+    })}
+  </>);
+}
+
+/* ── NEW: Manual points panel (admin) ── */
+function APoints({students,showNotif}){
+  const[amounts,setAmounts]=useState({});
+  const[reasons,setReasons]=useState({});
+  const[saving,setSaving]=useState({});
+
+  const setAmt=(id,v)=>setAmounts(p=>({...p,[id]:v}));
+  const setReason=(id,v)=>setReasons(p=>({...p,[id]:v}));
+
+  const award=async(student,isDeduct=false)=>{
+    const raw=amounts[student.id];
+    const pts=parseInt(raw)||0;
+    if(!pts){showNotif('Enter a point amount first');return}
+    const delta=isDeduct?-Math.abs(pts):Math.abs(pts);
+    setSaving(p=>({...p,[student.id]:true}));
+    try{
+      await db.collection('users').doc(student.id).update({
+        points:firebase.firestore.FieldValue.increment(delta)
+      });
+      // log the manual adjustment
+      await db.collection('pointsLog').add({
+        uid:student.id,studentName:student.name||student.email,
+        delta,reason:reasons[student.id]||'Manual adjustment by admin',
+        awardedAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+      setAmounts(p=>({...p,[student.id]:''}));
+      setReasons(p=>({...p,[student.id]:''}));
+      showNotif(`${isDeduct?'Deducted':'Awarded'} ${Math.abs(pts)} pts ${isDeduct?'from':'to'} ${student.name||student.email}`);
+    }catch(e){showNotif('Error: '+e.message)}
+    finally{setSaving(p=>({...p,[student.id]:false}))}
+  };
+
+  const sorted=[...students].sort((a,b)=>(b.points||0)-(a.points||0));
+
+  return(<>
+    <div className="ptit">Points Management</div>
+    <div className="psub">Manually award or deduct points based on student performance</div>
+
+    <div className="card" style={{marginBottom:20,background:'#FFFBEA',border:'1.5px solid #F0C040'}}>
+      <div style={{fontSize:13,color:'#7A5800',lineHeight:1.6}}>
+        💡 <strong>Tip:</strong> Points are also awarded automatically when students submit assignments. Use this panel to award <strong>bonus points</strong> for participation, presentations, or exceptional work — or deduct for missed deadlines.
+      </div>
+    </div>
+
+    {students.length===0?<div className="empty">No students registered yet.</div>
+     :sorted.map((s,rank)=>(
+      <div key={s.id} className="pts-row">
+        <div style={{fontSize:13,fontWeight:700,color:'var(--tx3)',width:22,textAlign:'center'}}>#{rank+1}</div>
+        <Av name={s.name||s.email} size={36}/>
+        <div style={{flex:1}}>
+          <div style={{fontSize:14,fontWeight:600}}>{s.name||'—'}</div>
+          <div style={{fontSize:12,color:'var(--tx3)'}}>{s.email}</div>
+          <input
+            placeholder="Reason (optional)"
+            value={reasons[s.id]||''}
+            onChange={e=>setReason(s.id,e.target.value)}
+            style={{marginTop:6,width:'100%',maxWidth:260,padding:'4px 8px',border:'1.5px solid var(--bd2)',borderRadius:6,fontSize:12,outline:'none',fontFamily:'var(--fn)'}}
+          />
+        </div>
+        <div className="pts-val">{s.points||0}</div>
+        <input
+          type="number"
+          className="pts-inp"
+          placeholder="pts"
+          min="0"
+          value={amounts[s.id]||''}
+          onChange={e=>setAmt(s.id,e.target.value)}
+        />
+        <button
+          className="bs bacc"
+          style={{fontSize:12,padding:'5px 10px'}}
+          disabled={saving[s.id]||!amounts[s.id]}
+          onClick={()=>award(s,false)}>
+          {saving[s.id]?'…':'+ Award'}
+        </button>
+        <button
+          className="bs bdg"
+          style={{fontSize:12,padding:'5px 10px'}}
+          disabled={saving[s.id]||!amounts[s.id]}
+          onClick={()=>award(s,true)}>
+          − Deduct
+        </button>
+      </div>
+    ))}
+  </>);
+}
+
+/* ═══════════════════════════════════════════════
+   ROOT
+═══════════════════════════════════════════════ */
+function App(){
+  const[screen,setScreen]=useState('loading');
+  const[user,setUser]=useState(null);
+
+  useEffect(()=>{
+    const unsub=auth.onAuthStateChanged(async u=>{
+      if(u){
+        if(u.email===ADMIN_EMAIL){setScreen('admin')}
+        else{
+          const snap=await db.collection('users').doc(u.uid).get();
+          const d=snap.data()||{};
+          setUser({uid:u.uid,displayName:u.displayName||d.name||u.email,email:u.email,fields:d.fields||[]});
+          setScreen('student');
+        }
+      }else{setScreen('student-auth')}
+    },()=>setScreen('student-auth'));
+    return()=>unsub();
+  },[]);
+
+  const out=async()=>{try{await auth.signOut()}catch{}setUser(null);setScreen('student-auth')};
+
+  if(screen==='loading')       return<Spin/>;
+  if(screen==='student-auth')  return<StudentAuth onAuth={u=>{setUser(u);setScreen('student')}} onAdmin={()=>setScreen('admin-login')}/>;
+  if(screen==='admin-login')   return<AdminLogin onSuccess={()=>setScreen('admin')} onBack={()=>setScreen('student-auth')}/>;
+  if(screen==='admin')         return<AdminPanel onSignOut={out}/>;
+  if(screen==='student')       return user?<StudentDash user={user} onSignOut={out}/>:<Spin/>;
+  return null;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
