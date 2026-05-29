@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Admin Panel</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f0f2f7;
+  --surface:  #ffffff;
+  --card:     #ffffff;
+  --border:   #e2e6ef;
+  --sidebar:  #0f172a;
+  --accent:   #6366f1;
+  --accent2:  #06b6d4;
+  --green:    #10b981;
+  --red:      #f43f5e;
+  --warn:     #f59e0b;
+  --text:     #1e293b;
+  --muted:    #94a3b8;
+  --heading:  #0f172a;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+
+body{
+  font-family:'Outfit',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+}
+
+/* ── LOGIN ── */
+#login-screen{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  min-height:100vh;
+  background: linear-gradient(135deg,#0f172a 0%,#1e1b4b 60%,#0c4a6e 100%);
+  position:fixed;inset:0;z-index:999;
+}
+
+.login-box{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:20px;
+  backdrop-filter:blur(20px);
+  padding:2.5rem;
+  width:100%;max-width:380px;
+  text-align:center;
+}
+
+.login-logo{
+  width:52px;height:52px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;
+  margin:0 auto 1.25rem;
+  box-shadow:0 8px 32px rgba(99,102,241,0.4);
+}
+
+.login-box h2{color:#fff;font-size:1.5rem;font-weight:700;margin-bottom:.25rem;}
+.login-box p{color:rgba(255,255,255,0.45);font-size:.85rem;margin-bottom:1.75rem;}
+
+.login-box input{
+  width:100%;
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:10px;
+  color:#fff;
+  font-family:'Outfit',sans-serif;
+  font-size:.95rem;
+  padding:.75rem 1rem;
+  margin-bottom:.75rem;
+  outline:none;
+  transition:border-color .2s;
+}
+.login-box input:focus{border-color:var(--accent);}
+.login-box input::placeholder{color:rgba(255,255,255,0.3);}
+
+.btn-login{
+  width:100%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;border-radius:10px;
+  color:#fff;cursor:pointer;
+  font-family:'Outfit',sans-serif;
+  font-size:1rem;font-weight:700;
+  padding:.8rem;
+  transition:opacity .2s,transform .1s;
+  margin-top:.25rem;
+}
+.btn-login:hover{opacity:.9;transform:translateY(-1px);}
+.login-err{color:var(--red);font-size:.82rem;margin-top:.5rem;min-height:1.2em;}
+
+/* ── LAYOUT ── */
+#app{display:flex;width:100%;display:none;}
+
+/* Sidebar */
+.sidebar{
+  width:240px;min-height:100vh;
+  background:var(--sidebar);
+  display:flex;flex-direction:column;
+  padding:1.5rem 1rem;
+  flex-shrink:0;
+  position:sticky;top:0;height:100vh;
+}
+
+.sidebar-logo{
+  display:flex;align-items:center;gap:.75rem;
+  margin-bottom:2rem;padding-bottom:1.25rem;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.s-icon{
+  width:36px;height:36px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;
+}
+.s-title{color:#fff;font-weight:700;font-size:1rem;line-height:1.2;}
+.s-sub{color:rgba(255,255,255,0.3);font-size:.7rem;}
+
+.nav-item{
+  display:flex;align-items:center;gap:.75rem;
+  padding:.65rem .9rem;
+  border-radius:10px;
+  color:rgba(255,255,255,0.45);
+  font-size:.88rem;font-weight:500;
+  cursor:pointer;
+  transition:background .15s,color .15s;
+  margin-bottom:.25rem;
+  border:none;background:transparent;width:100%;text-align:left;
+}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:#fff;}
+.nav-item.active{background:rgba(99,102,241,0.2);color:var(--accent);}
+.nav-icon{font-size:1.1rem;width:22px;text-align:center;}
+
+.sidebar-footer{
+  margin-top:auto;
+  padding-top:1rem;
+  border-top:1px solid rgba(255,255,255,0.08);
+}
+.admin-badge{
+  background:rgba(255,255,255,0.06);
+  border-radius:10px;padding:.65rem .9rem;
+  display:flex;align-items:center;gap:.75rem;
+}
+.admin-avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;color:#fff;font-weight:700;
+}
+.admin-name{color:#fff;font-size:.82rem;font-weight:600;}
+.admin-role{color:rgba(255,255,255,0.3);font-size:.7rem;}
+
+/* Main */
+.main{flex:1;padding:2rem;overflow-y:auto;}
+
+.page{display:none;}
+.page.active{display:block;}
+
+/* Top bar */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:2rem;flex-wrap:wrap;gap:1rem;
+}
+.topbar h1{font-size:1.6rem;font-weight:800;color:var(--heading);}
+.topbar p{color:var(--muted);font-size:.875rem;margin-top:.2rem;}
+
+.actions-row{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;}
+
+.btn{
+  border:none;border-radius:9px;cursor:pointer;
+  font-family:'Outfit',sans-serif;font-size:.875rem;font-weight:600;
+  padding:.55rem 1.15rem;transition:opacity .2s,transform .1s;
+  display:flex;align-items:center;gap:.5rem;
+}
+.btn:hover{opacity:.87;transform:translateY(-1px);}
+.btn-accent{background:var(--accent);color:#fff;}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-outline{background:#fff;border:1px solid var(--border);color:var(--text);}
+.btn-sm{padding:.4rem .85rem;font-size:.8rem;}
+.btn-green{background:var(--green);color:#fff;}
+
+/* Stats grid */
+.stats-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:1rem;margin-bottom:2rem;
+}
+
+.stat-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:1.25rem;
+  position:relative;overflow:hidden;
+}
+.stat-card::before{
+  content:'';position:absolute;top:0;right:0;
+  width:80px;height:80px;border-radius:50%;
+  opacity:.06;transform:translate(20px,-20px);
+}
+.stat-card:nth-child(1)::before{background:var(--accent);}
+.stat-card:nth-child(2)::before{background:var(--green);}
+.stat-card:nth-child(3)::before{background:var(--red);}
+.stat-card:nth-child(4)::before{background:var(--warn);}
+
+.stat-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem;}
+.stat-value{font-size:2rem;font-weight:800;color:var(--heading);line-height:1;}
+.stat-sub{font-size:.78rem;color:var(--muted);margin-top:.35rem;}
+.stat-icon{
+  position:absolute;top:1.25rem;right:1.25rem;
+  font-size:1.4rem;opacity:.4;
+}
+
+/* Search & filters */
+.toolbar{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:1rem 1.25rem;
+  margin-bottom:1.25rem;
+  display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+}
+
+.search-wrap{position:relative;flex:1;min-width:200px;}
+.search-wrap input{
+  width:100%;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  font-family:'Outfit',sans-serif;
+  font-size:.88rem;
+  padding:.6rem 1rem .6rem 2.5rem;
+  outline:none;
+  transition:border-color .2s;
+}
+.search-wrap input:focus{border-color:var(--accent);}
+.search-icon{position:absolute;left:.8rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.95rem;}
+
+select{
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  font-family:'Outfit',sans-serif;
+  font-size:.85rem;
+  padding:.6rem 1rem;
+  outline:none;cursor:pointer;
+}
+
+/* Table */
+.table-wrap{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+}
+
+table{width:100%;border-collapse:collapse;}
+
+thead th{
+  background:#f8fafc;
+  color:var(--muted);
+  font-size:.72rem;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  padding:.85rem 1.1rem;
+  text-align:left;
+  font-weight:600;
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;cursor:pointer;
+  user-select:none;
+}
+thead th:hover{color:var(--accent);}
+
+tbody tr{
+  border-bottom:1px solid var(--border);
+  transition:background .12s;
+}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#f8fafc;}
+
+td{padding:.8rem 1.1rem;font-size:.875rem;vertical-align:middle;}
+
+.student-cell{display:flex;align-items:center;gap:.75rem;}
+.student-av{
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0;
+}
+.student-name{font-weight:600;color:var(--heading);}
+.student-time{font-size:.72rem;color:var(--muted);}
+
+.score-pill{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:42px;height:42px;border-radius:50%;
+  font-weight:700;font-size:.95rem;
+}
+
+.badge-grade{
+  display:inline-block;
+  border-radius:999px;
+  font-size:.72rem;font-weight:700;
+  padding:.2rem .65rem;
+  text-transform:uppercase;letter-spacing:.05em;
+}
+
+.tag{
+  display:inline-block;border-radius:6px;
+  font-size:.72rem;font-weight:600;
+  padding:.15rem .5rem;
+  font-family:'DM Mono',monospace;
+}
+
+.row-actions{display:flex;gap:.5rem;}
+
+/* Detail modal */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(15,23,42,0.65);
+  z-index:500;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.open{display:flex;}
+
+.modal{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:2rem;
+  width:100%;max-width:620px;
+  max-height:90vh;overflow-y:auto;
+  animation:popIn .25s ease;
+}
+@keyframes popIn{from{opacity:0;transform:scale(.95);}to{opacity:1;transform:scale(1);}}
+
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;}
+.modal-header h2{font-size:1.2rem;font-weight:800;}
+.modal-close{
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;cursor:pointer;
+  width:32px;height:32px;font-size:1rem;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);transition:color .15s;
+}
+.modal-close:hover{color:var(--text);}
+
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem;}
+.detail-item{
+  background:var(--bg);border-radius:10px;padding:.85rem 1rem;
+}
+.detail-key{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.25rem;}
+.detail-val{font-size:1rem;font-weight:700;color:var(--heading);}
+
+.q-review{display:flex;flex-direction:column;gap:.5rem;}
+.q-row{
+  background:var(--bg);border-radius:9px;
+  padding:.7rem 1rem;
+  display:flex;align-items:flex-start;gap:.75rem;
+  font-size:.82rem;
+}
+.q-num{
+  background:var(--border);border-radius:6px;
+  padding:.1rem .45rem;
+  font-family:'DM Mono',monospace;
+  font-size:.72rem;color:var(--muted);
+  flex-shrink:0;margin-top:.1rem;
+}
+.q-correct{border-left:3px solid var(--green);}
+.q-wrong{border-left:3px solid var(--red);}
+.q-skipped{border-left:3px solid var(--warn);}
+.q-info{flex:1;}
+.q-selected{font-weight:600;color:var(--heading);}
+.q-hint{color:var(--muted);font-size:.75rem;margin-top:.15rem;}
+
+/* Notes area */
+.notes-area{
+  width:100%;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:10px;
+  color:var(--text);
+  font-family:'Outfit',sans-serif;
+  font-size:.875rem;
+  padding:.75rem 1rem;
+  resize:vertical;
+  outline:none;
+  margin-top:.5rem;
+  transition:border-color .2s;
+}
+.notes-area:focus{border-color:var(--accent);}
+
+/* Chart bars */
+.bar-chart{display:flex;flex-direction:column;gap:.5rem;margin-top:1rem;}
+.bar-row{display:flex;align-items:center;gap:.75rem;}
+.bar-label{font-size:.8rem;color:var(--muted);width:60px;text-align:right;flex-shrink:0;}
+.bar-track{flex:1;background:var(--bg);border-radius:999px;height:10px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:999px;transition:width .8s ease;}
+.bar-count{font-size:.8rem;font-weight:600;color:var(--heading);width:24px;}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:2rem;right:2rem;
+  background:var(--heading);color:#fff;
+  border-radius:10px;padding:.75rem 1.25rem;
+  font-size:.875rem;font-weight:600;
+  z-index:999;
+  opacity:0;transform:translateY(12px);
+  transition:all .3s;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateY(0);}
+
+/* Empty */
+.empty-state{
+  text-align:center;padding:3rem;
+  color:var(--muted);
+}
+.empty-state .e-icon{font-size:3rem;margin-bottom:1rem;opacity:.4;}
+.empty-state p{font-size:.95rem;}
+
+/* Loading */
+.spinner{
+  width:36px;height:36px;
+  border:3px solid var(--border);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+  margin:3rem auto;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.loading-wrap{text-align:center;padding:2rem;color:var(--muted);font-size:.875rem;}
+
+/* Charts page */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem;margin-top:1.5rem;}
+.chart-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:1.5rem;
+}
+.chart-title{font-size:.95rem;font-weight:700;margin-bottom:1.25rem;color:var(--heading);}
+
+.dist-bar{
+  display:flex;flex-direction:column;gap:.5rem;
+}
+.dist-row{display:flex;align-items:center;gap:.75rem;}
+.dist-label{font-size:.82rem;width:70px;color:var(--text);font-weight:600;}
+.dist-track{flex:1;background:var(--bg);border-radius:999px;height:14px;overflow:hidden;position:relative;}
+.dist-fill{height:100%;border-radius:999px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;}
+.dist-fill span{font-size:.65rem;font-weight:700;color:rgba(255,255,255,.8);}
+.dist-count{font-size:.8rem;font-weight:700;width:24px;text-align:right;color:var(--heading);}
+
+/* ── LEADERBOARD ── */
+.podium-wrap{
+  display:flex;align-items:flex-end;justify-content:center;
+  gap:1rem;margin:2rem 0 2.5rem;
+}
+.podium-item{
+  display:flex;flex-direction:column;align-items:center;
+  flex:1;max-width:180px;
+}
+.podium-avatar{
+  width:64px;height:64px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:1.4rem;color:#fff;
+  margin-bottom:.6rem;position:relative;
+  box-shadow:0 6px 20px rgba(0,0,0,.15);
+}
+.podium-crown{
+  position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+  font-size:1.4rem;
+}
+.podium-name{font-weight:700;font-size:.9rem;color:var(--heading);text-align:center;margin-bottom:.25rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.podium-score{font-weight:800;font-size:1.4rem;}
+.podium-block{
+  width:100%;border-radius:12px 12px 0 0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.6rem;font-weight:900;color:rgba(255,255,255,.7);
+  margin-top:.75rem;
+}
+.podium-item:nth-child(1) .podium-block{height:90px;background:linear-gradient(160deg,#c0a040,#f5d060);}
+.podium-item:nth-child(2) .podium-block{height:130px;background:linear-gradient(160deg,#6366f1,#818cf8);}
+.podium-item:nth-child(3) .podium-block{height:70px;background:linear-gradient(160deg,#b45309,#d97706);}
+
+.lb-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.lb-row{
+  display:flex;align-items:center;gap:1rem;
+  padding:.85rem 1.25rem;
+  border-bottom:1px solid var(--border);
+  transition:background .12s;
+}
+.lb-row:last-child{border-bottom:none;}
+.lb-row:hover{background:#f8fafc;}
+.lb-rank{
+  width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:.9rem;flex-shrink:0;
+}
+.lb-rank.gold  {background:#fef08a;color:#a16207;}
+.lb-rank.silver{background:#e2e8f0;color:#475569;}
+.lb-rank.bronze{background:#fed7aa;color:#9a3412;}
+.lb-rank.other {background:var(--bg);color:var(--muted);}
+.lb-info{flex:1;}
+.lb-name{font-weight:700;color:var(--heading);font-size:.92rem;}
+.lb-meta{font-size:.73rem;color:var(--muted);}
+.lb-score{font-weight:800;font-size:1.15rem;}
+.lb-bar-wrap{flex:1;max-width:160px;}
+.lb-bar-track{background:var(--bg);border-radius:999px;height:8px;overflow:hidden;}
+.lb-bar-fill{height:100%;border-radius:999px;transition:width .8s ease;}
+.lb-time{font-size:.78rem;color:var(--muted);width:50px;text-align:right;font-family:'DM Mono',monospace;}
+
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .main{padding:1rem;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .detail-grid{grid-template-columns:1fr;}
+  .podium-wrap{gap:.5rem;}
+  .lb-bar-wrap{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🛡️</div>
+    <h2>Admin Panel</h2>
+    <p>Python Quiz · Section 1 · Instructor Access</p>
+    <input type="text" id="login-user" placeholder="Username" value="admin"/>
+    <input type="password" id="login-pass" placeholder="Password" />
+    <button class="btn-login" onclick="doLogin()">Sign In →</button>
+    <div class="login-err" id="login-err"></div>
+    <p style="color:rgba(255,255,255,.2);font-size:.72rem;margin-top:1rem;">Default: admin / admin123</p>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="s-icon">🎓</div>
+      <div>
+        <div class="s-title">QuizAdmin</div>
+        <div class="s-sub">Section 1 · Python</div>
+      </div>
+    </div>
+
+    <button class="nav-item active" onclick="nav('dashboard')" id="nav-dashboard">
+      <span class="nav-icon">📊</span> Dashboard
+    </button>
+    <button class="nav-item" onclick="nav('students')" id="nav-students">
+      <span class="nav-icon">👥</span> All Students
+    </button>
+    <button class="nav-item" onclick="nav('leaderboard')" id="nav-leaderboard">
+      <span class="nav-icon">🏆</span> Leaderboard
+    </button>
+    <button class="nav-item" onclick="nav('analytics')" id="nav-analytics">
+      <span class="nav-icon">📈</span> Analytics
+    </button>
+    <button class="nav-item" onclick="nav('settings')" id="nav-settings">
+      <span class="nav-icon">⚙️</span> Settings
+    </button>
+
+    <div class="sidebar-footer">
+      <div class="admin-badge">
+        <div class="admin-avatar">A</div>
+        <div>
+          <div class="admin-name">Admin</div>
+          <div class="admin-role">Instructor</div>
+        </div>
+      </div>
+      <button class="nav-item" style="margin-top:.5rem;" onclick="logout()">
+        <span class="nav-icon">🚪</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="topbar">
+        <div>
+          <h1>Dashboard</h1>
+          <p id="dash-subtitle">Loading results…</p>
+        </div>
+        <div class="actions-row">
+          <button class="btn btn-outline" onclick="loadData()">🔄 Refresh</button>
+          <button class="btn btn-accent" onclick="exportCSV()">⬇️ Export CSV</button>
+        </div>
+      </div>
+
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-label">Total Students</div><div class="stat-value" id="s-total">—</div><div class="stat-sub">Attempted the quiz</div></div>
+        <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-label">Average Score</div><div class="stat-value" id="s-avg">—</div><div class="stat-sub">Out of 10</div></div>
+        <div class="stat-card"><div class="stat-icon">🏆</div><div class="stat-label">Pass Rate</div><div class="stat-value" id="s-pass">—</div><div class="stat-sub">Score ≥ 5</div></div>
+        <div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-label">Top Score</div><div class="stat-value" id="s-top">—</div><div class="stat-sub" id="s-top-name">—</div></div>
+      </div>
+
+      <div class="table-wrap">
+        <div id="dash-loading" class="loading-wrap"><div class="spinner"></div><p>Fetching results from Firebase…</p></div>
+        <div id="dash-table" style="display:none;">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="sortTable('name')">#  Student</th>
+                <th onclick="sortTable('score')">Score ↕</th>
+                <th onclick="sortTable('correct')">Correct</th>
+                <th onclick="sortTable('wrong')">Wrong</th>
+                <th>Skipped</th>
+                <th onclick="sortTable('timestamp')">Time ↕</th>
+                <th>Grade</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody"></tbody>
+          </table>
+        </div>
+        <div id="dash-empty" class="empty-state" style="display:none;">
+          <div class="e-icon">📭</div>
+          <p>No quiz results yet. Students haven't taken the test.</p>
+        </div>
+        <div id="dash-error" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- STUDENTS (full list + search) -->
+    <div class="page" id="page-students">
+      <div class="topbar">
+        <div><h1>All Students</h1><p>Search, filter and manage every attempt.</p></div>
+        <div class="actions-row">
+          <button class="btn btn-accent" onclick="exportCSV()">⬇️ Export CSV</button>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" placeholder="Search by name…" oninput="filterTable()"/>
+        </div>
+        <select id="filter-grade" onchange="filterTable()">
+          <option value="">All Grades</option>
+          <option value="Excellent">🏆 Excellent (9-10)</option>
+          <option value="Great">🎯 Great (7-8)</option>
+          <option value="Good">📚 Good (5-6)</option>
+          <option value="Poor">🔁 Needs Work (&lt;5)</option>
+        </select>
+        <select id="sort-select" onchange="filterTable()">
+          <option value="timestamp-desc">Newest First</option>
+          <option value="timestamp-asc">Oldest First</option>
+          <option value="score-desc">Score High→Low</option>
+          <option value="score-asc">Score Low→High</option>
+          <option value="name-asc">Name A→Z</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Score</th>
+              <th>Correct</th>
+              <th>Wrong</th>
+              <th>Skipped</th>
+              <th>Avg Time/Q</th>
+              <th>Grade</th>
+              <th>Decision</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="students-tbody"></tbody>
+        </table>
+        <div id="students-empty" class="empty-state" style="display:none;">
+          <div class="e-icon">🔍</div><p>No students match your filters.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div class="page" id="page-leaderboard">
+      <div class="topbar">
+        <div>
+          <h1>🏆 Leaderboard</h1>
+          <p id="lb-subtitle">Top performers ranked by score</p>
+        </div>
+        <div class="actions-row">
+          <button class="btn btn-outline" onclick="loadData()">🔄 Refresh</button>
+          <button class="btn btn-accent" onclick="exportCSV()">⬇️ Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Podium (top 3) -->
+      <div id="podium-section">
+        <div class="podium-wrap" id="podium-wrap"></div>
+      </div>
+
+      <!-- Full ranked list -->
+      <div class="lb-table-wrap" id="lb-list"></div>
+      <div id="lb-empty" class="empty-state" style="display:none;">
+        <div class="e-icon">📭</div>
+        <p>No quiz results yet.</p>
+      </div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div class="page" id="page-analytics">
+      <div class="topbar"><div><h1>Analytics</h1><p>Score distributions and question insights.</p></div></div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">Score Distribution</div>
+          <div class="dist-bar" id="chart-dist"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Grade Breakdown</div>
+          <div class="dist-bar" id="chart-grades"></div>
+        </div>
+        <div class="chart-card" style="grid-column:1/-1;">
+          <div class="chart-title">Questions — Correct Answer Rate</div>
+          <div class="bar-chart" id="chart-questions"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="topbar"><div><h1>Settings</h1><p>Firebase config & admin preferences.</p></div></div>
+      <div style="max-width:520px;">
+        <div class="chart-card" style="margin-bottom:1.25rem;">
+          <div class="chart-title" style="margin-bottom:1rem;">🔥 Firebase Configuration</div>
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem;">Paste your Firebase project config below. This updates the connection used by both the quiz and admin panel.</p>
+          <div style="display:flex;flex-direction:column;gap:.75rem;">
+            <input id="cfg-apiKey"    type="text" placeholder="apiKey"            style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.65rem 1rem;font-family:'DM Mono',monospace;font-size:.82rem;color:var(--text);outline:none;"/>
+            <input id="cfg-projectId" type="text" placeholder="projectId"         style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.65rem 1rem;font-family:'DM Mono',monospace;font-size:.82rem;color:var(--text);outline:none;"/>
+            <input id="cfg-appId"     type="text" placeholder="appId"             style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.65rem 1rem;font-family:'DM Mono',monospace;font-size:.82rem;color:var(--text);outline:none;"/>
+          </div>
+          <button class="btn btn-accent" style="margin-top:1rem;" onclick="saveCfg()">Save & Reconnect</button>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title" style="margin-bottom:1rem;">🗑️ Danger Zone</div>
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem;">Permanently delete all quiz results from Firestore. This cannot be undone.</p>
+          <button class="btn btn-danger" onclick="confirmDeleteAll()">Delete All Results</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal" id="modal-content">
+    <div class="modal-header">
+      <h2 id="modal-title">Student Detail</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp, getApps, deleteApp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── CONFIG — replace with your project ──
+let firebaseConfig = {
+apiKey: "AIzaSyBHtrURZbzpt184b5reOmxTkAKO2IbGCfA",
+
+  authDomain: "ylrapp.firebaseapp.com",
+
+  databaseURL: "https://ylrapp-default-rtdb.firebaseio.com",
+
+  projectId: "ylrapp",
+
+  storageBucket: "ylrapp.firebasestorage.app",
+
+  messagingSenderId: "527524126516",
+
+  appId: "1:527524126516:web:e79f9bd77a716b28e94f61"
+
+};
+
+let app, db;
+
+function initFB(cfg){
+  getApps().forEach(a=>deleteApp(a));
+  app = initializeApp(cfg||firebaseConfig);
+  db  = getFirestore(app);
+}
+initFB();
+
+// expose to global
+window._fb = {
+  async getResults(){
+    try{
+      const q = query(collection(db,'quiz_results'), orderBy('timestamp','desc'));
+      const snap = await getDocs(q);
+      return snap.docs.map(d=>({id:d.id,...d.data()}));
+    } catch(e){
+      // If no timestamp index yet, fallback
+      try{
+        const snap = await getDocs(collection(db,'quiz_results'));
+        return snap.docs.map(d=>({id:d.id,...d.data()}));
+      } catch(e2){ return {error: e2.message}; }
+    }
+  },
+  async updateNote(id, note){
+    await updateDoc(doc(db,'quiz_results',id),{adminNote:note});
+  },
+  async updateDecision(id, decision){
+    await updateDoc(doc(db,'quiz_results',id),{decision});
+  },
+  async deleteResult(id){
+    await deleteDoc(doc(db,'quiz_results',id));
+  },
+  async deleteAll(ids){
+    for(const id of ids) await deleteDoc(doc(db,'quiz_results',id));
+  },
+  reinit(cfg){
+    firebaseConfig = {...firebaseConfig,...cfg};
+    initFB(firebaseConfig);
+  }
+};
+</script>
+
+<script>
+// ════════════════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════════════════
+const ADMIN_USER = "admin", ADMIN_PASS = "admin123";
+
+function doLogin(){
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  if(u===ADMIN_USER && p===ADMIN_PASS){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    loadData();
+  } else {
+    document.getElementById('login-err').textContent = '❌ Invalid credentials';
+  }
+}
+document.getElementById('login-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+function logout(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-pass').value='';
+}
+
+// ════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════
+let allResults = [];
+let sortKey = 'timestamp', sortDir = 'desc';
+
+// ════════════════════════════════════════════════
+//  DATA
+// ════════════════════════════════════════════════
+async function loadData(){
+  showLoading(true);
+  allResults = [];
+
+  // Hide error div on each attempt
+  const errDiv = document.getElementById('dash-error');
+  if(errDiv) errDiv.style.display = 'none';
+
+  const data = await window._fb.getResults();
+
+  if(data && data.error){
+    showFirebaseError(data.error);
+    return;
+  }
+
+  allResults = data || [];
+  showLoading(false);
+
+  renderDashboard();
+  renderStudents();
+  renderAnalytics();
+  renderLeaderboard();
+
+  document.getElementById('dash-subtitle').textContent =
+    `${allResults.length} student${allResults.length!==1?'s':''} · Last refreshed just now`;
+}
+
+function showFirebaseError(msg){
+  document.getElementById('dash-loading').style.display = 'none';
+  document.getElementById('dash-table').style.display   = 'none';
+  document.getElementById('dash-empty').style.display   = 'none';
+  const errDiv = document.getElementById('dash-error');
+  errDiv.style.display = 'block';
+  errDiv.innerHTML = `
+    <div class="empty-state" style="padding:2.5rem;">
+      <div class="e-icon">🔥</div>
+      <p style="font-weight:700;color:var(--red);margin-bottom:.5rem;">Firebase connection failed</p>
+      <p style="font-size:.82rem;color:var(--muted);max-width:380px;margin:0 auto .75rem;">${msg}</p>
+      <p style="font-size:.78rem;color:var(--muted);">Go to <strong>⚙️ Settings</strong> tab, enter your Firebase credentials, then click <strong>🔄 Refresh</strong>.</p>
+    </div>`;
+  document.getElementById('dash-subtitle').textContent = 'Firebase not configured';
+}
+
+function showLoading(v){
+  document.getElementById('dash-loading').style.display = v ? 'block' : 'none';
+  if(v) document.getElementById('dash-table').style.display = 'none';
+}
+
+// ════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════
+function grade(score){
+  if(score>=9) return {label:'Excellent',color:'#10b981'};
+  if(score>=7) return {label:'Great',    color:'#6366f1'};
+  if(score>=5) return {label:'Good',     color:'#f59e0b'};
+  return              {label:'Poor',     color:'#f43f5e'};
+}
+
+function avatarColor(name){
+  const colors=['#6366f1','#10b981','#f59e0b','#f43f5e','#06b6d4','#8b5cf6','#ec4899','#14b8a6'];
+  let h=0; for(const c of name) h=(h<<5)-h+c.charCodeAt(0);
+  return colors[Math.abs(h)%colors.length];
+}
+
+function initials(name){
+  return name.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2);
+}
+
+function fmtTime(r){
+  if(!r.timestamp) return '—';
+  const ts = r.timestamp.seconds ? new Date(r.timestamp.seconds*1000) : new Date(r.timestamp);
+  return ts.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+
+function avgTime(r){
+  if(!r.totalTimeSec) return '—';
+  return Math.round(r.totalTimeSec/10)+'s';
+}
+
+// ════════════════════════════════════════════════
+//  RENDER DASHBOARD TABLE
+// ════════════════════════════════════════════════
+function renderDashboard(){
+  // Stats
+  const total = allResults.length;
+  const avg   = total ? (allResults.reduce((s,r)=>s+(r.score||0),0)/total).toFixed(1) : '—';
+  const pass  = total ? Math.round(allResults.filter(r=>r.score>=5).length/total*100)+'%' : '—';
+  const top   = total ? allResults.reduce((a,b)=>b.score>a.score?b:a) : null;
+
+  const sTotal = document.getElementById('s-total');
+  const sAvg   = document.getElementById('s-avg');
+  const sPass  = document.getElementById('s-pass');
+  const sTop   = document.getElementById('s-top');
+  const sTopN  = document.getElementById('s-top-name');
+  if(sTotal) sTotal.textContent = total;
+  if(sAvg)   sAvg.textContent   = avg;
+  if(sPass)  sPass.textContent  = pass;
+  if(sTop)   sTop.textContent   = top ? top.score : '—';
+  if(sTopN)  sTopN.textContent  = top ? top.name  : '';
+
+  const empty    = document.getElementById('dash-empty');
+  const tableWrap= document.getElementById('dash-table');
+  const tbody    = document.getElementById('results-tbody');
+
+  if(!total){
+    if(empty)     empty.style.display    = 'block';
+    if(tableWrap) tableWrap.style.display = 'none';
+    return;
+  }
+
+  if(empty)     empty.style.display    = 'none';
+  if(tableWrap) tableWrap.style.display = 'block';
+  if(tbody)     tbody.innerHTML = allResults.slice(0,8).map((r,i)=>rowHTML(r,i+1,'dash')).join('');
+}
+
+function rowHTML(r, i, ctx){
+  const g = grade(r.score||0);
+  const dec = r.decision||'';
+  const decColor = dec==='Pass'?'var(--green)':dec==='Fail'?'var(--red)':dec==='Review'?'var(--warn)':'var(--muted)';
+
+  return `<tr>
+    <td>
+      <div class="student-cell">
+        <div class="student-av" style="background:${avatarColor(r.name||'?')}">${initials(r.name||'?')}</div>
+        <div>
+          <div class="student-name">${r.name||'Unknown'}</div>
+          <div class="student-time">${fmtTime(r)}</div>
+        </div>
+      </div>
+    </td>
+    <td>
+      <div class="score-pill" style="background:${g.color}22;color:${g.color}">${r.score??'—'}</div>
+    </td>
+    <td><span class="tag" style="background:#10b98120;color:#10b981">${r.correct??'—'} ✓</span></td>
+    <td><span class="tag" style="background:#f43f5e20;color:#f43f5e">${r.wrong??'—'} ✗</span></td>
+    <td><span class="tag" style="background:#f59e0b20;color:#f59e0b">${r.skipped??'—'}</span></td>
+    ${ctx==='students'?`<td style="font-family:'DM Mono',monospace;font-size:.82rem;">${avgTime(r)}</td>`:''}
+    <td><span class="badge-grade" style="background:${g.color}22;color:${g.color}">${g.label}</span></td>
+    ${ctx==='students'?`<td>
+      <select onchange="setDecision('${r.id}',this.value)" style="font-size:.75rem;padding:.3rem .6rem;border-radius:6px;border-color:${decColor};color:${decColor};">
+        <option value="" ${!dec?'selected':''}>— Pending —</option>
+        <option value="Pass"   ${dec==='Pass'?'selected':''}>✅ Pass</option>
+        <option value="Fail"   ${dec==='Fail'?'selected':''}>❌ Fail</option>
+        <option value="Review" ${dec==='Review'?'selected':''}>🔍 Review</option>
+      </select>
+    </td>`:''}
+    <td>
+      <div class="row-actions">
+        <button class="btn btn-outline btn-sm" onclick="openDetail('${r.id}')">👁 View</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteResult('${r.id}')">🗑</button>
+      </div>
+    </td>
+  </tr>`;
+}
+
+// ════════════════════════════════════════════════
+//  STUDENTS PAGE
+// ════════════════════════════════════════════════
+function renderStudents(filtered){
+  const data  = filtered || allResults;
+  const tbody = document.getElementById('students-tbody');
+  const empty = document.getElementById('students-empty');
+  if(!tbody || !empty) return;
+  if(!data.length){
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = data.map((r,i)=>rowHTML(r,i+1,'students')).join('');
+}
+
+function filterTable(){
+  const q     = document.getElementById('search-input').value.toLowerCase();
+  const grade = document.getElementById('filter-grade').value;
+  const sort  = document.getElementById('sort-select').value;
+
+  let data = allResults.filter(r=>{
+    const nameMatch = (r.name||'').toLowerCase().includes(q);
+    const gradeMatch = !grade || gradeLabel(r.score)===grade;
+    return nameMatch && gradeMatch;
+  });
+
+  const [sk, sd] = sort.split('-');
+  data.sort((a,b)=>{
+    let av = sk==='timestamp'?(a.timestamp?.seconds||0):sk==='name'?(a.name||'').toLowerCase():(a[sk]||0);
+    let bv = sk==='timestamp'?(b.timestamp?.seconds||0):sk==='name'?(b.name||'').toLowerCase():(b[sk]||0);
+    return sd==='desc'? (av<bv?1:-1) : (av>bv?1:-1);
+  });
+
+  renderStudents(data);
+}
+
+function gradeLabel(s){
+  if(s>=9) return 'Excellent';
+  if(s>=7) return 'Great';
+  if(s>=5) return 'Good';
+  return 'Poor';
+}
+
+// ════════════════════════════════════════════════
+//  ANALYTICS
+// ════════════════════════════════════════════════
+function renderAnalytics(){
+  if(!allResults.length) return;
+
+  // Score distribution (0-10)
+  const scoreDist = Array(11).fill(0);
+  allResults.forEach(r=>{ if(r.score!=null) scoreDist[r.score]++; });
+  const maxSD = Math.max(...scoreDist,1);
+  document.getElementById('chart-dist').innerHTML = scoreDist.map((c,s)=>`
+    <div class="dist-row">
+      <div class="dist-label">${s}/10</div>
+      <div class="dist-track">
+        <div class="dist-fill" style="width:${c/maxSD*100}%;background:${s>=7?'#10b981':s>=5?'#f59e0b':'#f43f5e'}">
+          ${c>0?`<span>${c}</span>`:''}
+        </div>
+      </div>
+      <div class="dist-count">${c}</div>
+    </div>`).join('');
+
+  // Grade breakdown
+  const grades = {Excellent:0,Great:0,Good:0,Poor:0};
+  allResults.forEach(r=>{ grades[gradeLabel(r.score)]++; });
+  const maxG = Math.max(...Object.values(grades),1);
+  const gColors = {Excellent:'#10b981',Great:'#6366f1',Good:'#f59e0b',Poor:'#f43f5e'};
+  document.getElementById('chart-grades').innerHTML = Object.entries(grades).map(([k,v])=>`
+    <div class="dist-row">
+      <div class="dist-label">${k}</div>
+      <div class="dist-track">
+        <div class="dist-fill" style="width:${v/maxG*100}%;background:${gColors[k]}">
+          ${v>0?`<span>${v}</span>`:''}
+        </div>
+      </div>
+      <div class="dist-count">${v}</div>
+    </div>`).join('');
+
+  // Per-question correct rates
+  const qCorr = Array(10).fill(0), qTotal = Array(10).fill(0);
+  allResults.forEach(r=>{
+    if(!r.answers) return;
+    r.answers.forEach(a=>{
+      const qi = (a.question||1)-1;
+      if(qi>=0&&qi<10){ qTotal[qi]++; if(a.isCorrect) qCorr[qi]++; }
+    });
+  });
+
+  document.getElementById('chart-questions').innerHTML = qCorr.map((c,i)=>{
+    const pct = qTotal[i]?Math.round(c/qTotal[i]*100):0;
+    const col = pct>=70?'var(--green)':pct>=40?'var(--warn)':'var(--red)';
+    return `<div class="bar-row">
+      <div class="bar-label" style="color:var(--text);font-weight:600;">Q${i+1}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${pct}%;background:${col}"></div>
+      </div>
+      <div class="bar-count">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════
+//  DETAIL MODAL
+// ════════════════════════════════════════════════
+function openDetail(id){
+  const r = allResults.find(x=>x.id===id);
+  if(!r) return;
+  const g = grade(r.score||0);
+
+  document.getElementById('modal-title').innerHTML =
+    `${r.name} &nbsp;<span style="font-size:.85rem;color:${g.color}">${g.label}</span>`;
+
+  const qRows = (r.answers||[]).map(a=>{
+    const cls = a.isCorrect?'q-correct':a.selected?'q-wrong':'q-skipped';
+    const icon = a.isCorrect?'✅':a.selected?'❌':'⏭';
+    return `<div class="q-row ${cls}">
+      <span class="q-num">Q${a.question}</span>
+      <div class="q-info">
+        <div class="q-selected">${icon} ${a.selected||'(skipped)'}</div>
+        ${!a.isCorrect&&a.selected?`<div class="q-hint">Correct: ${a.correct}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-key">Score</div><div class="detail-val" style="color:${g.color}">${r.score??'—'} / 10</div></div>
+      <div class="detail-item"><div class="detail-key">Correct</div><div class="detail-val" style="color:var(--green)">${r.correct??'—'}</div></div>
+      <div class="detail-item"><div class="detail-key">Wrong</div><div class="detail-val" style="color:var(--red)">${r.wrong??'—'}</div></div>
+      <div class="detail-item"><div class="detail-key">Skipped</div><div class="detail-val" style="color:var(--warn)">${r.skipped??'—'}</div></div>
+      <div class="detail-item"><div class="detail-key">Total Time</div><div class="detail-val">${r.totalTimeSec??'—'}s</div></div>
+      <div class="detail-item"><div class="detail-key">Attempted</div><div class="detail-val" style="font-size:.85rem;">${fmtTime(r)}</div></div>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <div style="font-size:.85rem;font-weight:700;margin-bottom:.75rem;">Per-Question Review</div>
+      <div class="q-review">${qRows||'<p style="color:var(--muted);font-size:.85rem;">No answer breakdown available.</p>'}</div>
+    </div>
+
+    <div style="margin-bottom:1.25rem;">
+      <div style="font-size:.85rem;font-weight:700;margin-bottom:.5rem;">📝 Admin Note</div>
+      <textarea class="notes-area" id="note-${r.id}" rows="3" placeholder="Add a note for this student…">${r.adminNote||''}</textarea>
+      <button class="btn btn-outline btn-sm" style="margin-top:.5rem;" onclick="saveNote('${r.id}')">Save Note</button>
+    </div>
+
+    <div>
+      <div style="font-size:.85rem;font-weight:700;margin-bottom:.5rem;">🏛️ Decision</div>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+        <button class="btn btn-green btn-sm" onclick="setDecision('${r.id}','Pass');closeModal()">✅ Pass</button>
+        <button class="btn btn-danger btn-sm" onclick="setDecision('${r.id}','Fail');closeModal()">❌ Fail</button>
+        <button class="btn btn-outline btn-sm" onclick="setDecision('${r.id}','Review');closeModal()">🔍 Mark for Review</button>
+      </div>
+    </div>`;
+
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('modal').classList.remove('open');
+}
+
+document.getElementById('modal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('modal')) closeModal();
+});
+
+// ════════════════════════════════════════════════
+//  ACTIONS
+// ════════════════════════════════════════════════
+async function saveNote(id){
+  const note = document.getElementById('note-'+id).value;
+  try{
+    await window._fb.updateNote(id, note);
+    const r = allResults.find(x=>x.id===id);
+    if(r) r.adminNote = note;
+    showToast('✅ Note saved');
+  } catch(e){ showToast('⚠️ Save failed: '+e.message); }
+}
+
+async function setDecision(id, decision){
+  try{
+    await window._fb.updateDecision(id, decision);
+    const r = allResults.find(x=>x.id===id);
+    if(r) r.decision = decision;
+    renderDashboard();
+    renderStudents();
+    showToast(`Decision set: ${decision}`);
+  } catch(e){ showToast('⚠️ '+e.message); }
+}
+
+async function deleteResult(id){
+  if(!confirm('Delete this student\'s result?')) return;
+  try{
+    await window._fb.deleteResult(id);
+    allResults = allResults.filter(x=>x.id!==id);
+    renderDashboard();
+    renderStudents();
+    renderAnalytics();
+    showToast('🗑 Result deleted');
+  } catch(e){ showToast('⚠️ '+e.message); }
+}
+
+async function confirmDeleteAll(){
+  if(!confirm('DELETE ALL results from Firebase? This cannot be undone!')) return;
+  try{
+    await window._fb.deleteAll(allResults.map(r=>r.id));
+    allResults = [];
+    renderDashboard();
+    renderStudents();
+    renderAnalytics();
+    showToast('🗑 All results deleted');
+  } catch(e){ showToast('⚠️ '+e.message); }
+}
+
+// ════════════════════════════════════════════════
+//  EXPORT CSV
+// ════════════════════════════════════════════════
+function exportCSV(){
+  const rows = [['Name','Score','Correct','Wrong','Skipped','Total Time(s)','Grade','Decision','Timestamp']];
+  allResults.forEach(r=>{
+    rows.push([r.name,r.score,r.correct,r.wrong,r.skipped,r.totalTimeSec,gradeLabel(r.score),r.decision||'Pending',fmtTime(r)]);
+  });
+  const csv = rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'quiz_results_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  showToast('⬇️ CSV downloaded');
+}
+
+// ════════════════════════════════════════════════
+//  SETTINGS
+// ════════════════════════════════════════════════
+function saveCfg(){
+  const cfg = {
+    apiKey:    document.getElementById('cfg-apiKey').value.trim(),
+    projectId: document.getElementById('cfg-projectId').value.trim(),
+    appId:     document.getElementById('cfg-appId').value.trim()
+  };
+  window._fb.reinit(cfg);
+  showToast('🔥 Firebase reconnected');
+  loadData();
+}
+
+// ════════════════════════════════════════════════
+//  SORT (dashboard table)
+// ════════════════════════════════════════════════
+function sortTable(key){
+  if(sortKey===key) sortDir=sortDir==='asc'?'desc':'asc';
+  else { sortKey=key; sortDir='desc'; }
+  allResults.sort((a,b)=>{
+    let av = key==='name'?(a.name||'').toLowerCase():(a[key]||0);
+    let bv = key==='name'?(b.name||'').toLowerCase():(b[key]||0);
+    return sortDir==='desc'?(av<bv?1:-1):(av>bv?1:-1);
+  });
+  renderDashboard();
+}
+
+// ════════════════════════════════════════════════
+//  NAV
+// ════════════════════════════════════════════════
+function nav(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page).classList.add('active');
+}
+
+// ════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ════════════════════════════════════════════════
+//  LEADERBOARD
+// ════════════════════════════════════════════════
+function renderLeaderboard(){
+  const lbEmpty  = document.getElementById('lb-empty');
+  const lbList   = document.getElementById('lb-list');
+  const podium   = document.getElementById('podium-wrap');
+  const lbSub    = document.getElementById('lb-subtitle');
+
+  if(!allResults.length){
+    if(lbEmpty) lbEmpty.style.display='block';
+    if(lbList)  lbList.style.display='none';
+    if(podium)  podium.innerHTML='';
+    return;
+  }
+
+  if(lbEmpty) lbEmpty.style.display='none';
+  if(lbList)  lbList.style.display='block';
+
+  // Sort by score desc, then by time asc as tiebreaker
+  const ranked = [...allResults].sort((a,b)=>{
+    if((b.score||0)!==(a.score||0)) return (b.score||0)-(a.score||0);
+    return (a.totalTimeSec||999)-(b.totalTimeSec||999);
+  });
+
+  if(lbSub) lbSub.textContent = `${ranked.length} student${ranked.length!==1?'s':''} · Ties broken by fastest time`;
+
+  // ── Podium (top 3) ──
+  if(podium){
+    const top3 = ranked.slice(0,3);
+    // Reorder: 2nd, 1st, 3rd
+    const display = top3.length===1 ? top3 :
+                    top3.length===2 ? [top3[1], top3[0]] :
+                    [top3[1], top3[0], top3[2]];
+
+    const medals = top3.length===1?['🥇']:top3.length===2?['🥈','🥇']:['🥈','🥇','🥉'];
+    const podiumIdx = top3.length===1?[0]:top3.length===2?[1,0]:[1,0,2];
+
+    podium.innerHTML = display.map((r,i)=>{
+      const rank = podiumIdx[i];
+      const g    = grade(r.score||0);
+      const blockH = [90,130,70];
+      const blockBg = [
+        'linear-gradient(160deg,#c0a040,#f5d060)',
+        'linear-gradient(160deg,#6366f1,#818cf8)',
+        'linear-gradient(160deg,#b45309,#d97706)'
+      ];
+      return `<div class="podium-item" style="cursor:pointer;" onclick="openDetail('${r.id}')">
+        <div class="podium-avatar" style="background:${avatarColor(r.name||'?')}">
+          ${rank===0?`<span class="podium-crown">👑</span>`:''}
+          ${initials(r.name||'?')}
+        </div>
+        <div class="podium-name">${r.name||'Unknown'}</div>
+        <div class="podium-score" style="color:${g.color}">${r.score??'—'}<span style="font-size:.75rem;font-weight:500;color:var(--muted)">/10</span></div>
+        <div class="podium-block" style="height:${[90,130,70][rank]}px;background:${blockBg[rank]}">
+          ${['🥈','🥇','🥉'][rank]}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── Ranked list ──
+  const maxScore = ranked[0]?.score||10;
+  if(lbList){
+    lbList.innerHTML = ranked.map((r,i)=>{
+      const rankClass = i===0?'gold':i===1?'silver':i===2?'bronze':'other';
+      const g = grade(r.score||0);
+      const barPct = Math.round((r.score||0)/10*100);
+      const barCol = g.color;
+      return `<div class="lb-row" onclick="openDetail('${r.id}')" style="cursor:pointer;">
+        <div class="lb-rank ${rankClass}">${i+1}</div>
+        <div class="student-av" style="background:${avatarColor(r.name||'?')};width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0;">${initials(r.name||'?')}</div>
+        <div class="lb-info">
+          <div class="lb-name">${r.name||'Unknown'}</div>
+          <div class="lb-meta">${fmtTime(r)} · ${r.correct??'—'} correct · ${r.totalTimeSec??'—'}s total</div>
+        </div>
+        <div class="lb-bar-wrap">
+          <div class="lb-bar-track"><div class="lb-bar-fill" style="width:${barPct}%;background:${barCol}"></div></div>
+        </div>
+        <div class="lb-score" style="color:${g.color}">${r.score??'—'}<span style="font-size:.7rem;font-weight:500;color:var(--muted)">/10</span></div>
+        <span class="badge-grade" style="background:${g.color}22;color:${g.color};border-radius:999px;font-size:.7rem;font-weight:700;padding:.2rem .6rem;white-space:nowrap;">${g.label}</span>
+        <div class="lb-time">${r.totalTimeSec??'—'}s</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// expose globals
+window.renderLeaderboard=renderLeaderboard;
+window.nav=nav;
+window.doLogin=doLogin;
+window.logout=logout;
+window.openDetail=openDetail;
+window.closeModal=closeModal;
+window.saveNote=saveNote;
+window.setDecision=setDecision;
+window.deleteResult=deleteResult;
+window.confirmDeleteAll=confirmDeleteAll;
+window.exportCSV=exportCSV;
+window.filterTable=filterTable;
+window.sortTable=sortTable;
+window.loadData=loadData;
+window.saveCfg=saveCfg;
+</script>
+</body>
+</html>
