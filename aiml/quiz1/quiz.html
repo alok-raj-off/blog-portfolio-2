@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python Quiz — Section 1</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --card: #1a2235;
+    --border: #2a3a55;
+    --accent: #00e5ff;
+    --accent2: #7c3aed;
+    --green: #22c55e;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --warn: #f59e0b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .screen { display: none; position: relative; z-index: 1; }
+  .screen.active { display: flex; }
+
+  /* ── INSTRUCTIONS SCREEN ── */
+  #screen-intro {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .intro-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    max-width: 700px;
+    width: 100%;
+    padding: 2.5rem;
+    box-shadow: 0 0 60px rgba(0,229,255,0.06);
+  }
+
+  .badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    margin-bottom: 1rem;
+  }
+
+  h1 { font-size: 2.2rem; font-weight: 800; line-height: 1.15; margin-bottom: 0.5rem; }
+  h1 span { color: var(--accent); }
+
+  .subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 2rem; }
+
+  .rules-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .rule-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .rule-icon {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+  }
+
+  .rule-text { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
+  .rule-text strong { color: var(--accent); display: block; margin-bottom: 0.2rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .name-row {
+    display: flex; gap: 1rem; margin-bottom: 1.5rem;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="text"]::placeholder { color: var(--muted); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent2) 0%, var(--accent) 100%);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 0.75rem 2rem;
+    letter-spacing: 0.03em;
+    transition: opacity 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* ── QUIZ SCREEN ── */
+  #screen-quiz {
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 1.5rem;
+    align-items: center;
+  }
+
+  .quiz-header {
+    width: 100%; max-width: 800px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .progress-wrap { flex: 1; min-width: 200px; }
+  .progress-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.4rem; letter-spacing: 0.05em; text-transform: uppercase; }
+  .progress-bar {
+    background: var(--border);
+    border-radius: 999px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.4s ease;
+  }
+
+  .timer-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.6rem 1.2rem;
+    text-align: center;
+    min-width: 100px;
+  }
+  .timer-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+  .timer-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    transition: color 0.3s;
+  }
+  .timer-value.warn { color: var(--warn); }
+  .timer-value.danger { color: var(--red); animation: pulse 0.5s infinite alternate; }
+
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.5; } }
+
+  .q-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    max-width: 800px;
+    width: 100%;
+    padding: 2rem;
+    box-shadow: 0 0 40px rgba(0,229,255,0.04);
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-number {
+    font-size: 0.75rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
+  }
+
+  .q-text {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+    color: var(--text);
+  }
+
+  .code-block {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+    color: #c9d1d9;
+  }
+
+  .code-block .kw   { color: #ff7b72; }
+  .code-block .str  { color: #a5d6ff; }
+  .code-block .num  { color: #79c0ff; }
+  .code-block .fn   { color: #d2a8ff; }
+  .code-block .var  { color: #ffa657; }
+  .code-block .cmt  { color: #8b949e; }
+  .code-block .op   { color: #ff7b72; }
+
+  .options { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .option-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1.2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    width: 100%;
+  }
+
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.05);
+    transform: translateX(4px);
+  }
+
+  .option-btn.selected {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.1);
+  }
+
+  .option-btn.correct { border-color: var(--green); background: rgba(34,197,94,0.1); }
+  .option-btn.wrong   { border-color: var(--red);   background: rgba(239,68,68,0.1);  }
+
+  .opt-label {
+    background: var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    flex-shrink: 0;
+  }
+
+  .option-btn.selected .opt-label { background: var(--accent); color: #000; }
+
+  .q-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+  }
+
+  /* ── RESULTS SCREEN ── */
+  #screen-result {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .result-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    max-width: 600px;
+    width: 100%;
+    padding: 2.5rem;
+    text-align: center;
+    box-shadow: 0 0 80px rgba(124,58,237,0.12);
+    animation: slideIn 0.4s ease;
+  }
+
+  .score-ring {
+    width: 140px; height: 140px;
+    margin: 0 auto 1.5rem;
+    position: relative;
+  }
+
+  .score-ring svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--border); stroke-width: 10; }
+  .ring-fill { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+
+  .score-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .score-num { font-size: 2.2rem; font-weight: 800; }
+  .score-denom { font-size: 0.8rem; color: var(--muted); }
+
+  .result-grade {
+    font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem;
+  }
+  .result-msg { color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem; }
+
+  .stats-row {
+    display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem; flex-wrap: wrap;
+  }
+
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1.25rem;
+    min-width: 100px;
+  }
+
+  .stat-val { font-size: 1.4rem; font-weight: 800; }
+  .stat-key { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+
+  .review-list { text-align: left; margin-bottom: 2rem; }
+  .review-item {
+    background: var(--surface);
+    border-left: 3px solid var(--border);
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 0.5rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.82rem;
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .review-item.ok  { border-color: var(--green); }
+  .review-item.bad { border-color: var(--red); }
+  .review-icon { font-size: 1rem; flex-shrink: 0; }
+  .review-q { flex: 1; color: var(--muted); }
+  .review-ans { font-family: 'JetBrains Mono', monospace; color: var(--text); }
+
+  .firebase-note {
+    background: rgba(0,229,255,0.06);
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 0.78rem;
+    margin-bottom: 1.5rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .firebase-note strong { color: var(--accent); }
+
+  .btn-secondary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 0.65rem 1.5rem;
+    transition: border-color 0.2s;
+    margin-right: 0.75rem;
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  @media (max-width: 600px) {
+    .rules-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 1.6rem; }
+    .name-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ INTRO SCREEN ═══ -->
+<section id="screen-intro" class="screen active">
+  <div class="intro-card">
+    <div class="badge">Section Quiz 1 · Python</div>
+    <h1>Dictionary <span>Fundamentals</span></h1>
+    <p class="subtitle">Test your knowledge of Python dictionaries — 10 questions, 2 minutes each.</p>
+
+    <div class="rules-grid">
+      <div class="rule-item">
+        <span class="rule-icon">⏱️</span>
+        <div class="rule-text"><strong>Time Per Question</strong>2 minutes per question. Auto-submits when time expires.</div>
+      </div>
+      <div class="rule-item">
+        <span class="rule-icon">📋</span>
+        <div class="rule-text"><strong>Total Questions</strong>10 MCQs covering Python dictionary operations.</div>
+      </div>
+      <div class="rule-item">
+        <span class="rule-icon">💾</span>
+        <div class="rule-text"><strong>Auto-Save</strong>Answers are saved. Review status shown on palette.</div>
+      </div>
+      <div class="rule-item">
+        <span class="rule-icon">🏆</span>
+        <div class="rule-text"><strong>Results</strong>Score & review sent to Firebase after completion.</div>
+      </div>
+      <div class="rule-item">
+        <span class="rule-icon">🔄</span>
+        <div class="rule-text"><strong>Navigation</strong>Each question moves forward. No going back once answered.</div>
+      </div>
+      <div class="rule-item">
+        <span class="rule-icon">✅</span>
+        <div class="rule-text"><strong>Scoring</strong>+1 for each correct answer. No negative marking.</div>
+      </div>
+    </div>
+
+    <div class="name-row">
+      <input type="text" id="candidate-name" placeholder="Enter your full name…" autocomplete="off" />
+      <button class="btn-primary" onclick="startQuiz()">Start Test →</button>
+    </div>
+    <p style="font-size:0.78rem;color:var(--muted)">Your results will be saved to Firebase and visible to the instructor.</p>
+  </div>
+</section>
+
+<!-- ═══ QUIZ SCREEN ═══ -->
+<section id="screen-quiz" class="screen">
+  <div class="quiz-header">
+    <div class="progress-wrap">
+      <div class="progress-label" id="progress-label">Question 1 of 10</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:10%"></div></div>
+    </div>
+    <div class="timer-box">
+      <div class="timer-label">Time Left</div>
+      <div class="timer-value" id="timer-val">2:00</div>
+    </div>
+  </div>
+
+  <div class="q-card" id="q-card">
+    <!-- injected by JS -->
+  </div>
+</section>
+
+<!-- ═══ RESULT SCREEN ═══ -->
+<section id="screen-result" class="screen">
+  <div class="result-card">
+    <div class="score-ring">
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        <circle class="ring-bg" cx="70" cy="70" r="60"/>
+        <circle class="ring-fill" id="ring-fill" cx="70" cy="70" r="60"
+          stroke-dasharray="376.99"
+          stroke-dashoffset="376.99"/>
+      </svg>
+      <div class="score-center">
+        <div class="score-num" id="score-num">—</div>
+        <div class="score-denom">out of 10</div>
+      </div>
+    </div>
+
+    <div class="result-grade" id="result-grade"></div>
+    <div class="result-msg" id="result-msg"></div>
+
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-val" id="stat-correct" style="color:var(--green)">—</div><div class="stat-key">Correct</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-wrong" style="color:var(--red)">—</div><div class="stat-key">Wrong</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-skipped" style="color:var(--warn)">—</div><div class="stat-key">Skipped</div></div>
+      <div class="stat-box"><div class="stat-val" id="stat-time" style="color:var(--accent)">—</div><div class="stat-key">Avg Time</div></div>
+    </div>
+
+    <div class="review-list" id="review-list"></div>
+
+    <div class="firebase-note" id="firebase-status">
+      ⏳ Saving your results to <strong>Firebase</strong>…
+    </div>
+
+    <div>
+      <button class="btn-secondary" onclick="location.reload()">Retake Quiz</button>
+      <button class="btn-primary" onclick="window.print()">Print Results</button>
+    </div>
+  </div>
+</section>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── CONFIGURE YOUR FIREBASE PROJECT HERE ──
+const firebaseConfig = {
+apiKey: "AIzaSyBHtrURZbzpt184b5reOmxTkAKO2IbGCfA",
+
+  authDomain: "ylrapp.firebaseapp.com",
+
+  databaseURL: "https://ylrapp-default-rtdb.firebaseio.com",
+
+  projectId: "ylrapp",
+
+  storageBucket: "ylrapp.firebasestorage.app",
+
+  messagingSenderId: "527524126516",
+
+  appId: "1:527524126516:web:e79f9bd77a716b28e94f61"
+
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+window._saveToFirebase = async (payload) => {
+  try {
+    const ref = await addDoc(collection(db, "quiz_results"), {
+      ...payload,
+      timestamp: serverTimestamp()
+    });
+    document.getElementById("firebase-status").innerHTML =
+      `✅ Results saved to <strong>Firebase</strong>. Record ID: <code style="font-family:monospace;color:var(--accent)">${ref.id}</code>`;
+  } catch (e) {
+    document.getElementById("firebase-status").innerHTML =
+      `⚠️ Firebase save failed: <strong>${e.message}</strong><br>
+       <small style="color:var(--muted)">Replace the firebaseConfig placeholders with your real project credentials.</small>`;
+  }
+};
+</script>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  QUIZ DATA  (10 questions — all from the screenshots)
+// ════════════════════════════════════════════════════════
+const QUESTIONS = [
+  {
+    text: "Which of the following statements create a dictionary?",
+    code: null,
+    options: [
+      "d = {}",
+      'd = {"john":40, "peter":45}',
+      'd = {40:"john", 45:"peter"}',
+      "All of the mentioned"
+    ],
+    answer: 3
+  },
+  {
+    text: "What will be the output of the following Python code snippet?",
+    code: `d = {"john":40, "peter":45}\n"john" in d`,
+    options: ["True", "False", "None", "Error"],
+    answer: 0
+  },
+  {
+    text: "What will be the output of the following Python code snippet?",
+    code: `d1 = {"john":40, "peter":45}\nd2 = {"john":466, "peter":45}\nd1 > d2`,
+    options: ["True", "False", "Error", "None"],
+    answer: 2
+  },
+  {
+    text: 'Suppose d = {"john":40, "peter":45}, to delete the entry for "john" what command do we use?',
+    code: null,
+    options: [
+      'd.delete("john":40)',
+      'd.delete("john")',
+      'del d["john"]',
+      'd("john":40)'
+    ],
+    answer: 2
+  },
+  {
+    text: 'Suppose d = {"john":40, "peter":45}, what happens when we try to retrieve a value using the expression d["susan"]?',
+    code: null,
+    options: [
+      'Since "susan" is not a value in the set, Python raises a KeyError exception',
+      'It is executed fine and no exception is raised, and it returns None',
+      'Since "susan" is not a key in the set, Python raises a KeyError exception',
+      'Since "susan" is not a key in the set, Python raises a syntax error'
+    ],
+    answer: 2
+  },
+  {
+    text: "What will be the output of the following Python code snippet?",
+    code: `a={1:"A",2:"B",3:"C"}\nprint(a.get(1,4))`,
+    options: ["1", "A", "4", "Invalid syntax for get method"],
+    answer: 1
+  },
+  {
+    text: "Find the output of the following program:",
+    code: `D = {1 : [1, 2, 3], 2: (4, 6, 8)}\nD[1].append(4)\nprint(D[1], end = " ")\nL = [D[2]]\nL.append(10)\nD[2] = tuple(L)\nprint(D[2])`,
+    options: [
+      "[1, 2, 3, 4] ((4, 6, 8), 10)",
+      "[1, 2, 3, 4] (4, 6, 8, 10)",
+      "[1, 2, 3, 4] TypeError: tuples are immutable",
+      "[1, 2, 3, 4] [4, 6, 8, 10]"
+    ],
+    answer: 0
+  },
+  {
+    text: "Find the output of the following program:",
+    code: `a ={}\na.fromkeys(['a', 'b', 'c', 'd'], 98)\nprint (a)`,
+    options: [
+      "Syntax error",
+      "{'a':98, 'b':98, 'c':98, 'd':98}",
+      "{'a':None, 'b':None, 'c':None,'d':None}",
+      "{}"
+    ],
+    answer: 3
+  },
+  {
+    text: "Find the output of the following program:",
+    code: `dict ={}\nprint (all(dict))`,
+    options: ["{}", "False", "True", "An exception is thrown"],
+    answer: 2
+  },
+  {
+    text: "Find the output of the following program:",
+    code: `a = {"hey": 1, 'gfg' : 2}\nb = {"hey" : 2, 'gfg' : 1}\nprint (a == b)`,
+    options: ["{}", "False", "True", "An exception is thrown"],
+    answer: 1
+  }
+];
+
+// ════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════
+let candidateName = "";
+let current = 0;
+let answers  = new Array(QUESTIONS.length).fill(null);
+let timers   = new Array(QUESTIONS.length).fill(120);
+let timeTaken = new Array(QUESTIONS.length).fill(0);
+let timerInterval = null;
+let qStartTime = null;
+let secondsLeft = 120;
+
+// ════════════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════════════
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+function startQuiz() {
+  const nameEl = document.getElementById('candidate-name');
+  candidateName = nameEl.value.trim();
+  if (!candidateName) { nameEl.focus(); nameEl.style.borderColor = 'var(--red)'; return; }
+  show('quiz');
+  loadQuestion(0);
+}
+
+// ════════════════════════════════════════════════════════
+//  RENDER QUESTION
+// ════════════════════════════════════════════════════════
+function loadQuestion(idx) {
+  current = idx;
+  const q = QUESTIONS[idx];
+  secondsLeft = 120;
+  qStartTime = Date.now();
+
+  // header
+  document.getElementById('progress-label').textContent = `Question ${idx+1} of ${QUESTIONS.length}`;
+  document.getElementById('progress-fill').style.width = `${(idx+1)/QUESTIONS.length*100}%`;
+
+  // build card
+  const card = document.getElementById('q-card');
+  let html = `<div class="q-number">Q. ${idx+1} of ${QUESTIONS.length}</div>
+    <div class="q-text">${q.text}</div>`;
+
+  if (q.code) {
+    html += `<div class="code-block">${syntaxHL(q.code)}</div>`;
+  }
+
+  html += `<div class="options">` + q.options.map((opt, i) => {
+    const lbl = ['A','B','C','D'][i];
+    const sel = answers[idx] === i ? 'selected' : '';
+    return `<button class="option-btn ${sel}" onclick="selectOption(${i})" id="opt-${i}">
+      <span class="opt-label">${lbl}</span>${opt}
+    </button>`;
+  }).join('') + `</div>`;
+
+  html += `<div class="q-footer">
+    <button class="btn-primary" id="next-btn" onclick="nextQuestion()">
+      ${idx < QUESTIONS.length-1 ? 'Save & Next →' : 'Submit Quiz ✓'}
+    </button>
+  </div>`;
+
+  card.innerHTML = html;
+  card.style.animation = 'none';
+  card.offsetHeight; // reflow
+  card.style.animation = '';
+
+  startTimer();
+}
+
+// ════════════════════════════════════════════════════════
+//  SYNTAX HIGHLIGHT (tiny)
+// ════════════════════════════════════════════════════════
+function syntaxHL(code) {
+  return code
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\b(print|del|in|append|tuple|fromkeys|all|end)\b/g, '<span class="fn">$1</span>')
+    .replace(/\b(True|False|None)\b/g, '<span class="kw">$1</span>')
+    .replace(/"([^"]*)"/g, '<span class="str">"$1"</span>')
+    .replace(/'([^']*)'/g, '<span class="str">\'$1\'</span>')
+    .replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+}
+
+// ════════════════════════════════════════════════════════
+//  TIMER
+// ════════════════════════════════════════════════════════
+function startTimer() {
+  clearInterval(timerInterval);
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    secondsLeft--;
+    updateTimerDisplay();
+    if (secondsLeft <= 0) {
+      clearInterval(timerInterval);
+      nextQuestion();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timer-val');
+  const m = Math.floor(secondsLeft / 60);
+  const s = secondsLeft % 60;
+  el.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  el.className = 'timer-value' + (secondsLeft <= 10 ? ' danger' : secondsLeft <= 30 ? ' warn' : '');
+}
+
+// ════════════════════════════════════════════════════════
+//  INTERACTION
+// ════════════════════════════════════════════════════════
+function selectOption(i) {
+  answers[current] = i;
+  document.querySelectorAll('.option-btn').forEach((btn, idx) => {
+    btn.classList.toggle('selected', idx === i);
+    document.querySelectorAll('.option-btn')[idx].querySelector('.opt-label').style.background =
+      idx === i ? 'var(--accent)' : '';
+    document.querySelectorAll('.option-btn')[idx].querySelector('.opt-label').style.color =
+      idx === i ? '#000' : '';
+  });
+}
+
+function nextQuestion() {
+  clearInterval(timerInterval);
+  timeTaken[current] = Math.round((Date.now() - qStartTime) / 1000);
+
+  if (current < QUESTIONS.length - 1) {
+    loadQuestion(current + 1);
+  } else {
+    showResults();
+  }
+}
+
+// ════════════════════════════════════════════════════════
+//  RESULTS
+// ════════════════════════════════════════════════════════
+function showResults() {
+  show('result');
+
+  let correct = 0, wrong = 0, skipped = 0;
+  QUESTIONS.forEach((q, i) => {
+    if (answers[i] === null) skipped++;
+    else if (answers[i] === q.answer) correct++;
+    else wrong++;
+  });
+
+  const score = correct;
+  document.getElementById('score-num').textContent = score;
+  document.getElementById('stat-correct').textContent = correct;
+  document.getElementById('stat-wrong').textContent = wrong;
+  document.getElementById('stat-skipped').textContent = skipped;
+
+  const avgTime = Math.round(timeTaken.reduce((a,b)=>a+b,0) / QUESTIONS.length);
+  document.getElementById('stat-time').textContent = `${avgTime}s`;
+
+  // grade
+  let grade, msg, color;
+  if      (score >= 9) { grade = '🏆 Excellent!'; msg = 'Outstanding performance!';      color = 'var(--green)'; }
+  else if (score >= 7) { grade = '🎯 Great Job!'; msg = 'You have solid dictionary skills.'; color = 'var(--accent)'; }
+  else if (score >= 5) { grade = '📚 Good';       msg = 'Keep practicing — you\'re getting there.'; color = 'var(--warn)'; }
+  else                 { grade = '🔁 Keep Going'; msg = 'Review dictionaries and try again.'; color = 'var(--red)'; }
+
+  document.getElementById('result-grade').textContent = grade;
+  document.getElementById('result-grade').style.color = color;
+  document.getElementById('result-msg').textContent = msg;
+
+  // animated ring
+  const circ = 376.99;
+  const offset = circ - (score / 10) * circ;
+  const ring = document.getElementById('ring-fill');
+  ring.style.stroke = color;
+  setTimeout(() => { ring.style.strokeDashoffset = offset; }, 100);
+
+  // review list
+  const rl = document.getElementById('review-list');
+  rl.innerHTML = QUESTIONS.map((q, i) => {
+    const userAns = answers[i];
+    const ok = userAns === q.answer;
+    const ansText = userAns !== null ? q.options[userAns] : '(skipped)';
+    const correctText = q.options[q.answer];
+    return `<div class="review-item ${ok ? 'ok' : 'bad'}">
+      <span class="review-icon">${ok ? '✅' : '❌'}</span>
+      <span class="review-q">Q${i+1}. ${q.text.slice(0,45)}…</span>
+      <span class="review-ans">${ok ? ansText.slice(0,30) : `✗ ${ansText.slice(0,20)} → ${correctText.slice(0,20)}`}</span>
+    </div>`;
+  }).join('');
+
+  // Firebase
+  const payload = {
+    name: candidateName,
+    score, correct, wrong, skipped,
+    answers: answers.map((a,i) => ({
+      question: i+1,
+      selected: a !== null ? QUESTIONS[i].options[a] : null,
+      correct: QUESTIONS[i].options[QUESTIONS[i].answer],
+      isCorrect: a === QUESTIONS[i].answer
+    })),
+    timeTakenPerQ: timeTaken,
+    totalTimeSec: timeTaken.reduce((a,b)=>a+b,0)
+  };
+
+  if (window._saveToFirebase) {
+    window._saveToFirebase(payload);
+  }
+}
+
+// expose globals
+window.startQuiz    = startQuiz;
+window.selectOption = selectOption;
+window.nextQuestion = nextQuestion;
+</script>
+</body>
+</html>
