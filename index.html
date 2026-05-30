@@ -37,6 +37,7 @@ apiKey: "AIzaSyDjLuWLhH6sT13VoP690BYRKzxKjb9HGeQ",
   measurementId: "G-YGRC5ZHBMQ"
 
 
+
 };
 /* ════════════════════════════════════════════════════════════ */
 
@@ -319,7 +320,43 @@ nav{background:var(--sf);border-bottom:1px solid var(--bd);height:56px;display:f
 .progress-bar-wrap{height:10px;background:var(--sf3);border-radius:5px;overflow:hidden;margin:10px 0}
 .progress-bar-fill{height:100%;border-radius:5px;transition:width .6s ease}
 
-@media(max-width:680px){.g4,.g2{grid-template-columns:1fr}.ads{display:none}.modal{padding:20px 18px}.rank-track{gap:0}.rank-card{min-width:110px;padding:14px 10px 12px}}
+/* ── QUIZ CARDS ── */
+.quiz-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl2);padding:18px 20px;margin-bottom:12px;position:relative;overflow:hidden;transition:.15s}
+.quiz-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#7C3AED,#C084FC)}
+.quiz-card:hover{border-color:var(--bd2);box-shadow:var(--sh)}
+.quiz-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.quiz-badge.open{background:#EDE9FE;color:#5B21B6;border:1px solid #C4B5FD}
+.quiz-badge.closed{background:var(--rl);color:var(--rr);border:1px solid #FCA5A5}
+.quiz-badge.upcoming{background:var(--wl);color:var(--wr);border:1px solid #FCD34D}
+.quiz-domain{background:#EDE9FE;color:#5B21B6;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700}
+.quiz-link-btn{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#7C3AED,#9333EA);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;transition:.15s}
+.quiz-link-btn:hover{background:linear-gradient(135deg,#6D28D9,#7C3AED);transform:translateY(-1px)}
+
+/* ── EVENT CARDS ── */
+.event-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl2);padding:18px 20px;margin-bottom:12px;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:flex-start;transition:.15s;position:relative;overflow:hidden}
+.event-card:hover{border-color:var(--bd2);box-shadow:var(--sh)}
+.event-date-box{background:linear-gradient(135deg,#1A5C39,#13492D);border-radius:10px;padding:10px 14px;text-align:center;min-width:60px;flex-shrink:0}
+.event-date-box .ed-day{font-size:22px;font-weight:900;color:#fff;line-height:1}
+.event-date-box .ed-mon{font-size:10px;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.8px;margin-top:3px}
+.event-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.event-tag.workshop{background:#DBEAFE;color:#1D4ED8}
+.event-tag.seminar{background:#FCE7F3;color:#9D174D}
+.event-tag.hackathon{background:#D1FAE5;color:#065F46}
+.event-tag.meetup{background:#FEF3C7;color:#92400E}
+.event-tag.other{background:var(--sf2);color:var(--tx2)}
+
+/* ── CLASS CARDS ── */
+.class-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl2);padding:18px 20px;margin-bottom:12px;transition:.15s;position:relative;overflow:hidden}
+.class-card:hover{border-color:var(--bd2);box-shadow:var(--sh)}
+.class-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#0369A1,#38BDF8)}
+.video-thumb{width:100%;aspect-ratio:16/9;border-radius:8px;background:#000;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;cursor:pointer;margin-bottom:12px}
+.video-thumb iframe{width:100%;height:100%;border:none;border-radius:8px}
+.doc-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--sf2);border:1px solid var(--bd);border-radius:8px;margin-bottom:7px;text-decoration:none;color:var(--tx);transition:.1s}
+.doc-item:hover{background:var(--sf3);border-color:var(--bd2)}
+.doc-icon{font-size:20px;flex-shrink:0}
+.class-domain-pill{display:inline-flex;align-items:center;gap:4px;background:#E0F2FE;color:#0369A1;border:1px solid #BAE6FD;border-radius:6px;padding:2px 9px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+
+@media(max-width:680px){.g4,.g2{grid-template-columns:1fr}.ads{display:none}.modal{padding:20px 18px}.rank-track{gap:0}.rank-card{min-width:110px;padding:14px 10px 12px}.event-card{grid-template-columns:1fr}}
 @media(max-width:900px){.home-grid{grid-template-columns:1fr!important}}
 </style>
 </head>
@@ -749,6 +786,9 @@ function StudentDash({user,onSignOut}){
   const[loading,setLoading]=useState(true);
   const[submitTask,setSubmitTask]=useState(null);
   const[submitAsn,setSubmitAsn]=useState(null);
+  const[quizzes,setQuizzes]=useState([]);
+  const[events,setEvents]=useState([]);
+  const[classes,setClasses]=useState([]);
   const[notif,showNotif]=useNotif();
 
   useEffect(()=>{
@@ -773,7 +813,16 @@ function StudentDash({user,onSignOut}){
     const u7=db.collection('assignmentSubmissions').where('uid','==',user.uid).onSnapshot(s=>{
       setAsnSubmissions(s.docs.map(d=>({id:d.id,...d.data()})));
     },()=>{});
-    return()=>{u1();u2();u3();u4();u5();u6();u7()};
+    const u8=db.collection('quizzes').orderBy('createdAt','desc').onSnapshot(s=>{
+      setQuizzes(s.docs.map(d=>({id:d.id,...d.data()})));
+    },()=>{});
+    const u9=db.collection('events').orderBy('date','asc').onSnapshot(s=>{
+      setEvents(s.docs.map(d=>({id:d.id,...d.data()})));
+    },()=>{});
+    const u10=db.collection('classes').orderBy('createdAt','desc').onSnapshot(s=>{
+      setClasses(s.docs.map(d=>({id:d.id,...d.data()})));
+    },()=>{});
+    return()=>{u1();u2();u3();u4();u5();u6();u7();u8();u9();u10()};
   },[user.uid]);
 
   const myF=userData.fields||user.fields||[];
@@ -804,6 +853,9 @@ function StudentDash({user,onSignOut}){
         📝 Assignments {myA.filter(a=>!submittedAsnIds.has(a.id)).length>0&&<span style={{background:'var(--rr)',color:'#fff',borderRadius:10,fontSize:10,fontWeight:800,padding:'1px 5px',marginLeft:3}}>{myA.filter(a=>!submittedAsnIds.has(a.id)).length}</span>}
       </button>
       <button className={`nk${tab==='roadmap'?' on':''}`} onClick={()=>setTab('roadmap')}>Roadmap</button>
+      <button className={`nk${tab==='quiz'?' on':''}`} onClick={()=>setTab('quiz')}>🧠 Quiz</button>
+      <button className={`nk${tab==='events'?' on':''}`} onClick={()=>setTab('events')}>📅 Events</button>
+      <button className={`nk${tab==='classes'?' on':''}`} onClick={()=>setTab('classes')}>🎬 Classes</button>
       <button className={`nk${tab==='rank'?' on':''}`} onClick={()=>setTab('rank')}>🏅 Rank</button>
       <div className="ml"/>
       {(()=>{const rank=getRank(totalPts);return<span className="rank-pill" style={{color:rank.color,borderColor:rank.color,background:'rgba(0,0,0,0.04)'}}>{rank.emoji} {rank.name}</span>})()}
@@ -817,6 +869,9 @@ function StudentDash({user,onSignOut}){
         {tab==='tasks'&&<STasks tasks={myT} submittedIds={submittedIds} onSubmit={setSubmitTask}/>}
         {tab==='assignments'&&<SAssignments assignments={myA} submittedIds={submittedAsnIds} onSubmit={setSubmitAsn}/>}
         {tab==='roadmap'&&<SRoadmap roadmaps={myR} uid={user.uid}/>}
+        {tab==='quiz'&&<SQuizzes quizzes={quizzes}/>}
+        {tab==='events'&&<SEvents events={events}/>}
+        {tab==='classes'&&<SClasses classes={classes}/>}
         {tab==='rank'&&<SRank points={totalPts}/>}
       </>}
     </div>
@@ -1279,6 +1334,9 @@ function AdminPanel({onSignOut}){
   const[roadmaps,setRoadmaps]=useState([]);
   const[students,setStudents]=useState([]);
   const[submissions,setSubmissions]=useState([]);
+  const[quizzes,setQuizzes]=useState([]);
+  const[events,setEvents]=useState([]);
+  const[classes,setClasses]=useState([]);
   const[notif,showNotif]=useNotif();
 
   useEffect(()=>{
@@ -1288,7 +1346,10 @@ function AdminPanel({onSignOut}){
     const u4=db.collection('submissions').orderBy('submittedAt','desc').onSnapshot(s=>{setSubmissions(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
     const u5=db.collection('assignments').orderBy('createdAt','desc').onSnapshot(s=>{setAssignments(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
     const u6=db.collection('assignmentSubmissions').orderBy('submittedAt','desc').onSnapshot(s=>{setAsnSubmissions(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
-    return()=>{u1();u2();u3();u4();u5();u6()};
+    const u7=db.collection('quizzes').orderBy('createdAt','desc').onSnapshot(s=>{setQuizzes(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    const u8=db.collection('events').orderBy('date','asc').onSnapshot(s=>{setEvents(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    const u9=db.collection('classes').orderBy('createdAt','desc').onSnapshot(s=>{setClasses(s.docs.map(d=>({id:d.id,...d.data()})))},()=>{});
+    return()=>{u1();u2();u3();u4();u5();u6();u7();u8();u9()};
   },[]);
 
   const addTask=async f=>{await db.collection('tasks').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Task published')};
@@ -1297,8 +1358,14 @@ function AdminPanel({onSignOut}){
   const delRM=async id=>{await db.collection('roadmaps').doc(id).delete();showNotif('🗑️ Roadmap deleted')};
   const addAsn=async f=>{await db.collection('assignments').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Assignment published')};
   const delAsn=async id=>{await db.collection('assignments').doc(id).delete();showNotif('🗑️ Assignment deleted')};
+  const addQuiz=async f=>{await db.collection('quizzes').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Quiz published')};
+  const delQuiz=async id=>{await db.collection('quizzes').doc(id).delete();showNotif('🗑️ Quiz deleted')};
+  const addEvent=async f=>{await db.collection('events').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Event published')};
+  const delEvent=async id=>{await db.collection('events').doc(id).delete();showNotif('🗑️ Event deleted')};
+  const addClass=async f=>{await db.collection('classes').add({...f,createdAt:firebase.firestore.FieldValue.serverTimestamp()});showNotif('✅ Class published')};
+  const delClass=async id=>{await db.collection('classes').doc(id).delete();showNotif('🗑️ Class deleted')};
 
-  const TABS=[['overview','📊','Overview'],['tasks','📋','Tasks'],['assignments','📝','Assignments'],['roadmaps','🗺️','Roadmaps'],['students','👥','Students'],['submissions','📥','Submissions'],['asn-submissions','📨','Asn. Responses'],['points','🏆','Points']];
+  const TABS=[['overview','📊','Overview'],['tasks','📋','Tasks'],['assignments','📝','Assignments'],['roadmaps','🗺️','Roadmaps'],['quizzes','🧠','Quizzes'],['events','📅','Events'],['classes','🎬','Classes'],['students','👥','Students'],['submissions','📥','Submissions'],['asn-submissions','📨','Asn. Responses'],['points','🏆','Points']];
 
   return(<>
     <nav>
@@ -1320,6 +1387,9 @@ function AdminPanel({onSignOut}){
         {tab==='tasks'&&<ATasks tasks={tasks} onAdd={addTask} onDel={delTask} students={students}/>}
         {tab==='assignments'&&<AAssignments assignments={assignments} onAdd={addAsn} onDel={delAsn} students={students}/>}
         {tab==='roadmaps'&&<ARMs roadmaps={roadmaps} onAdd={addRM} onDel={delRM}/>}
+        {tab==='quizzes'&&<AQuizzes quizzes={quizzes} onAdd={addQuiz} onDel={delQuiz}/>}
+        {tab==='events'&&<AEvents events={events} onAdd={addEvent} onDel={delEvent}/>}
+        {tab==='classes'&&<AClasses classes={classes} onAdd={addClass} onDel={delClass}/>}
         {tab==='students'&&<AStudents students={students}/>}
         {tab==='submissions'&&<ASubmissions submissions={submissions} students={students}/>}
         {tab==='asn-submissions'&&<AAsnSubmissions submissions={asnSubmissions} students={students}/>}
@@ -2091,6 +2161,593 @@ function APoints({students,showNotif}){
           onClick={()=>award(s,true)}>
           − Deduct
         </button>
+      </div>
+    ))}
+  </>);
+}
+
+
+/* ═══════════════════════════════════════════════
+   STUDENT: QUIZZES TAB
+═══════════════════════════════════════════════ */
+function SQuizzes({quizzes}){
+  const[filter,setFilter]=useState('all');
+  const now=new Date();
+
+  const getStatus=q=>{
+    if(!q.startDate&&!q.endDate)return'open';
+    const start=q.startDate?new Date(q.startDate):null;
+    const end=q.endDate?new Date(q.endDate):null;
+    if(start&&now<start)return'upcoming';
+    if(end&&now>end)return'closed';
+    return'open';
+  };
+
+  const shown=filter==='all'?quizzes:quizzes.filter(q=>getStatus(q)===filter);
+
+  return(<>
+    <div className="ptit">🧠 Quizzes</div>
+    <div className="psub">Attempt quizzes and test your knowledge across domains</div>
+
+    <div style={{display:'flex',gap:7,marginBottom:18,flexWrap:'wrap'}}>
+      {['all','open','upcoming','closed'].map(f=>(
+        <button key={f} className={`bs ${filter===f?'bacc':'bgh'}`} onClick={()=>setFilter(f)}>
+          {f==='all'?'All':f.charAt(0).toUpperCase()+f.slice(1)}
+        </button>
+      ))}
+    </div>
+
+    {shown.length===0&&<div className="empty">No quizzes available right now. Check back soon!</div>}
+
+    {shown.map(q=>{
+      const status=getStatus(q);
+      return(
+        <div key={q.id} className="quiz-card">
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12,marginBottom:10}}>
+            <div>
+              <div style={{display:'flex',gap:7,alignItems:'center',marginBottom:6,flexWrap:'wrap'}}>
+                <span className={`quiz-badge ${status}`}>
+                  {status==='open'?'🟢 Open':status==='upcoming'?'🔜 Upcoming':'🔴 Closed'}
+                </span>
+                <span className="quiz-domain">{q.domain||'General'}</span>
+                {q.duration&&<span className="badge bgr">⏱ {q.duration} min</span>}
+                {q.totalMarks&&<span className="badge" style={{background:'#FFF3CD',color:'#7A5800',border:'1px solid #F0C040'}}>🏆 {q.totalMarks} marks</span>}
+              </div>
+              <div style={{fontWeight:700,fontSize:16,marginBottom:4}}>{q.title}</div>
+              {q.description&&<div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.6,marginBottom:8}}>{q.description}</div>}
+            </div>
+          </div>
+
+          {/* Syllabus / Domains covered */}
+          {q.syllabus&&(
+            <div style={{background:'var(--sf2)',border:'1px solid var(--bd)',borderRadius:8,padding:'10px 14px',marginBottom:10}}>
+              <div style={{fontSize:11,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:.6,marginBottom:6}}>📚 Syllabus & Topics</div>
+              <div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.7,whiteSpace:'pre-line'}}>{q.syllabus}</div>
+            </div>
+          )}
+
+          {/* Date info */}
+          {(q.startDate||q.endDate)&&(
+            <div style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:10}}>
+              {q.startDate&&<div style={{fontSize:12,color:'var(--tx3)'}}>🗓 Starts: <strong style={{color:'var(--tx)'}}>{new Date(q.startDate).toLocaleString()}</strong></div>}
+              {q.endDate&&<div style={{fontSize:12,color:'var(--tx3)'}}>⌛ Ends: <strong style={{color:'var(--tx)'}}>{new Date(q.endDate).toLocaleString()}</strong></div>}
+            </div>
+          )}
+
+          {q.instructions&&(
+            <div style={{background:'#FFFBEA',border:'1px solid #F0C040',borderRadius:8,padding:'9px 12px',marginBottom:12,fontSize:12,color:'#78350F',lineHeight:1.6}}>
+              📌 <strong>Instructions:</strong> {q.instructions}
+            </div>
+          )}
+
+          {q.quizLink&&(
+            <a href={q.quizLink} target="_blank" rel="noreferrer" className="quiz-link-btn"
+              style={{pointerEvents:status==='open'?'auto':'none',opacity:status==='open'?1:.5}}>
+              {status==='open'?'🚀 Attempt Quiz ↗':status==='upcoming'?'🔜 Not started yet':'🔒 Quiz closed'}
+            </a>
+          )}
+          {!q.quizLink&&<div style={{fontSize:12,color:'var(--tx3)',fontStyle:'italic'}}>Quiz link will be shared when it opens.</div>}
+        </div>
+      );
+    })}
+  </>);
+}
+
+/* ═══════════════════════════════════════════════
+   STUDENT: EVENTS TAB
+═══════════════════════════════════════════════ */
+function SEvents({events}){
+  const now=new Date();
+  const[filter,setFilter]=useState('upcoming');
+
+  const isPast=e=>{
+    if(!e.date)return false;
+    return new Date(e.date)<now;
+  };
+
+  const shown=filter==='upcoming'
+    ?events.filter(e=>!isPast(e))
+    :filter==='past'
+    ?events.filter(e=>isPast(e))
+    :events;
+
+  const typeColors={workshop:'workshop',seminar:'seminar',hackathon:'hackathon',meetup:'meetup',other:'other'};
+
+  return(<>
+    <div className="ptit">📅 Events</div>
+    <div className="psub">Upcoming offline events, workshops, and meetups from your community</div>
+
+    <div style={{display:'flex',gap:7,marginBottom:18}}>
+      {[['upcoming','🔜 Upcoming'],['past','⏮ Past'],['all','All']].map(([f,lbl])=>(
+        <button key={f} className={`bs ${filter===f?'bacc':'bgh'}`} onClick={()=>setFilter(f)}>{lbl}</button>
+      ))}
+    </div>
+
+    {shown.length===0&&<div className="empty">{filter==='upcoming'?'No upcoming events right now. Stay tuned!':'No events found.'}</div>}
+
+    {shown.map(ev=>{
+      const d=ev.date?new Date(ev.date):null;
+      const past=isPast(ev);
+      return(
+        <div key={ev.id} className="event-card" style={{opacity:past?.75:1}}>
+          {d?(
+            <div className="event-date-box">
+              <div className="ed-day">{d.getDate()}</div>
+              <div className="ed-mon">{d.toLocaleString('default',{month:'short'})}</div>
+            </div>
+          ):(
+            <div className="event-date-box">
+              <div style={{fontSize:24,color:'#fff'}}>📅</div>
+            </div>
+          )}
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:6,alignItems:'center'}}>
+              <span className={`event-tag ${typeColors[ev.type]||'other'}`}>{ev.type||'Event'}</span>
+              {past&&<span className="badge bgr">Completed</span>}
+            </div>
+            <div style={{fontWeight:700,fontSize:15,marginBottom:4}}>{ev.title}</div>
+            {ev.description&&<div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.6,marginBottom:8}}>{ev.description}</div>}
+            <div style={{display:'flex',gap:16,flexWrap:'wrap',fontSize:12,color:'var(--tx3)'}}>
+              {ev.date&&<span>🗓 {new Date(ev.date).toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'long',year:'numeric'})}</span>}
+              {ev.time&&<span>🕐 {ev.time}</span>}
+              {ev.venue&&<span>📍 {ev.venue}</span>}
+              {ev.organizer&&<span>👤 {ev.organizer}</span>}
+            </div>
+            {ev.registrationLink&&!past&&(
+              <a href={ev.registrationLink} target="_blank" rel="noreferrer"
+                style={{display:'inline-flex',alignItems:'center',gap:6,marginTop:10,background:'var(--ac)',color:'#fff',borderRadius:8,padding:'7px 14px',fontSize:12,fontWeight:700,textDecoration:'none',transition:'.15s'}}>
+                ✍️ Register Now ↗
+              </a>
+            )}
+            {ev.notes&&<div style={{marginTop:8,fontSize:12,color:'var(--tx2)',background:'var(--sf2)',borderRadius:7,padding:'7px 10px'}}>{ev.notes}</div>}
+          </div>
+        </div>
+      );
+    })}
+  </>);
+}
+
+/* ═══════════════════════════════════════════════
+   STUDENT: CLASSES TAB
+═══════════════════════════════════════════════ */
+function getYouTubeId(url){
+  if(!url)return null;
+  const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([^&?/\s]{11})/);
+  return m?m[1]:null;
+}
+
+function SClasses({classes}){
+  const[filter,setFilter]=useState('all');
+  const domains=[...new Set(classes.map(c=>c.domain).filter(Boolean))];
+  const shown=filter==='all'?classes:classes.filter(c=>c.domain===filter);
+
+  return(<>
+    <div className="ptit">🎬 Classes</div>
+    <div className="psub">Pre-recorded lectures, notes, and study materials</div>
+
+    <div style={{display:'flex',gap:7,marginBottom:18,flexWrap:'wrap'}}>
+      <button className={`bs ${filter==='all'?'bacc':'bgh'}`} onClick={()=>setFilter('all')}>All</button>
+      {domains.map(d=><button key={d} className={`bs ${filter===d?'bacc':'bgh'}`} onClick={()=>setFilter(d)}>{d}</button>)}
+    </div>
+
+    {shown.length===0&&<div className="empty">No classes uploaded yet. Check back soon!</div>}
+
+    {shown.map(cls=>{
+      const ytId=getYouTubeId(cls.videoUrl);
+      const docs=cls.docs||[];
+      return(
+        <div key={cls.id} className="class-card">
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10,flexWrap:'wrap'}}>
+            {cls.domain&&<span className="class-domain-pill">📂 {cls.domain}</span>}
+            {cls.lectureNo&&<span className="badge bgr">Lecture #{cls.lectureNo}</span>}
+            {cls.duration&&<span className="badge bb">⏱ {cls.duration}</span>}
+          </div>
+          <div style={{fontWeight:700,fontSize:16,marginBottom:4}}>{cls.title}</div>
+          {cls.description&&<div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.6,marginBottom:12}}>{cls.description}</div>}
+
+          {/* Video player */}
+          {cls.videoUrl&&(
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:11,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:.6,marginBottom:7}}>🎥 Video Lecture</div>
+              {ytId?(
+                <div style={{position:'relative',paddingBottom:'56.25%',height:0,borderRadius:10,overflow:'hidden',background:'#000'}}>
+                  <iframe
+                    src={`https://www.youtube.com/embed/${ytId}`}
+                    title={cls.title}
+                    style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',border:'none'}}
+                    allowFullScreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  />
+                </div>
+              ):(
+                <a href={cls.videoUrl} target="_blank" rel="noreferrer"
+                  style={{display:'inline-flex',alignItems:'center',gap:7,background:'#EF4444',color:'#fff',borderRadius:8,padding:'9px 16px',fontWeight:700,fontSize:13,textDecoration:'none'}}>
+                  ▶️ Watch Video ↗
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Documents / Notes */}
+          {docs.length>0&&(
+            <div>
+              <div style={{fontSize:11,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:.6,marginBottom:8}}>📄 Notes & Documents</div>
+              {docs.map((doc,i)=>(
+                <a key={i} href={doc.url} target="_blank" rel="noreferrer" className="doc-item">
+                  <span className="doc-icon">{doc.url?.match(/\.pdf/i)?'📄':doc.url?.match(/\.(ppt|pptx)/i)?'📊':doc.url?.match(/\.(doc|docx)/i)?'📝':'📁'}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13,fontWeight:600}}>{doc.name||`Document ${i+1}`}</div>
+                    {doc.desc&&<div style={{fontSize:11,color:'var(--tx3)'}}>{doc.desc}</div>}
+                  </div>
+                  <span style={{fontSize:11,color:'var(--if)',fontWeight:700}}>Open ↗</span>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    })}
+  </>);
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN: QUIZZES PANEL
+═══════════════════════════════════════════════ */
+function AQuizzes({quizzes,onAdd,onDel}){
+  const blank={title:'',description:'',domain:'AI/ML',quizLink:'',startDate:'',endDate:'',duration:'',totalMarks:'',syllabus:'',instructions:''};
+  const[show,setShow]=useState(false);
+  const[form,setForm]=useState(blank);
+  const[saving,setSaving]=useState(false);
+  const[err,setErr]=useState('');
+  const set=k=>v=>setForm(p=>({...p,[k]:v}));
+
+  const submit=async()=>{
+    if(!form.title.trim()){setErr('Quiz title is required.');return}
+    setSaving(true);setErr('');
+    try{await onAdd(form);setForm(blank);setShow(false)}
+    catch(e){setErr(e.message)}
+    finally{setSaving(false)}
+  };
+
+  return(<>
+    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
+      <div><div className="ptit">🧠 Quizzes</div><div className="psub">Publish quizzes with links, syllabus and domain info</div></div>
+      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'✕ Cancel':'+ New quiz'}</button>
+    </div>
+
+    {show&&<div className="card" style={{marginBottom:20}}>
+      <div className="slbl">Create quiz</div>
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Title *</label>
+          <input className="fi" placeholder="e.g. AI/ML Mid-Term Quiz" value={form.title} onChange={e=>set('title')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Domain</label>
+          <select className="fi" value={form.domain} onChange={e=>set('domain')(e.target.value)}>
+            {DOMAINS.map(d=><option key={d}>{d}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Description</label>
+          <textarea className="fta" placeholder="Brief intro about this quiz…" value={form.description} onChange={e=>set('description')(e.target.value)}/>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>🔗 Quiz Link</label>
+          <input className="fi" placeholder="https://forms.google.com/… or any quiz platform" value={form.quizLink} onChange={e=>set('quizLink')(e.target.value)}/>
+        </div>
+      </div>
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr 1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Start Date/Time</label>
+          <input type="datetime-local" className="fi" value={form.startDate} onChange={e=>set('startDate')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>End Date/Time</label>
+          <input type="datetime-local" className="fi" value={form.endDate} onChange={e=>set('endDate')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Duration (min)</label>
+          <input type="number" className="fi" placeholder="60" min="1" value={form.duration} onChange={e=>set('duration')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Total Marks</label>
+          <input type="number" className="fi" placeholder="100" min="1" value={form.totalMarks} onChange={e=>set('totalMarks')(e.target.value)}/>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>📚 Syllabus & Domains Covered</label>
+          <textarea className="fta" style={{minHeight:100}} placeholder={"Unit 1: Introduction to ML\nUnit 2: Supervised Learning\nUnit 3: Neural Networks\n…"} value={form.syllabus} onChange={e=>set('syllabus')(e.target.value)}/>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>📌 Instructions</label>
+          <textarea className="fta" placeholder="No negative marking. 1 attempt only. Do not refresh the page." value={form.instructions} onChange={e=>set('instructions')(e.target.value)}/>
+        </div>
+      </div>
+      {err&&<div className="ebox" style={{marginBottom:10}}>{err}</div>}
+      <div style={{display:'flex',gap:8}}>
+        <button className="bs bacc" onClick={submit} disabled={saving}>{saving?'Publishing…':'Publish quiz'}</button>
+        <button className="bs bgh" onClick={()=>{setShow(false);setErr('');setForm(blank)}}>Cancel</button>
+      </div>
+    </div>}
+
+    {quizzes.length===0&&!show&&<div className="empty">No quizzes yet. Create one above!</div>}
+    {quizzes.map(q=>(
+      <div key={q.id} className="li" style={{alignItems:'flex-start'}}>
+        <div style={{flex:1}}>
+          <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4,flexWrap:'wrap'}}>
+            <div className="lit">{q.title}</div>
+            <span className="quiz-domain">{q.domain}</span>
+            {q.quizLink&&<span style={{fontSize:10,background:'var(--acl)',color:'var(--ac)',border:'1px solid var(--acm)',padding:'2px 7px',borderRadius:6,fontWeight:700}}>🔗 Link set</span>}
+          </div>
+          <div className="lis">{(q.description||'').slice(0,100)}{(q.description||'').length>100?'…':''}</div>
+          {(q.startDate||q.endDate)&&(
+            <div style={{fontSize:11,color:'var(--tx3)',marginTop:4}}>
+              {q.startDate&&`🗓 ${new Date(q.startDate).toLocaleString()}`} {q.endDate&&`→ ${new Date(q.endDate).toLocaleString()}`}
+            </div>
+          )}
+          {q.syllabus&&<div style={{fontSize:11,color:'var(--if)',marginTop:3}}>📚 Syllabus: {q.syllabus.split('\n')[0]}{q.syllabus.split('\n').length>1?'…':''}</div>}
+        </div>
+        <div className="la"><button className="bs bdg" onClick={()=>onDel(q.id)}>Delete</button></div>
+      </div>
+    ))}
+  </>);
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN: EVENTS PANEL
+═══════════════════════════════════════════════ */
+function AEvents({events,onAdd,onDel}){
+  const blank={title:'',description:'',type:'workshop',date:'',time:'',venue:'',organizer:'',registrationLink:'',notes:''};
+  const[show,setShow]=useState(false);
+  const[form,setForm]=useState(blank);
+  const[saving,setSaving]=useState(false);
+  const[err,setErr]=useState('');
+  const set=k=>v=>setForm(p=>({...p,[k]:v}));
+
+  const submit=async()=>{
+    if(!form.title.trim()){setErr('Event title is required.');return}
+    if(!form.date){setErr('Event date is required.');return}
+    setSaving(true);setErr('');
+    try{await onAdd(form);setForm(blank);setShow(false)}
+    catch(e){setErr(e.message)}
+    finally{setSaving(false)}
+  };
+
+  return(<>
+    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
+      <div><div className="ptit">📅 Events</div><div className="psub">Post offline events, workshops, hackathons and meetups</div></div>
+      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'✕ Cancel':'+ New event'}</button>
+    </div>
+
+    {show&&<div className="card" style={{marginBottom:20}}>
+      <div className="slbl">Create event</div>
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Event Title *</label>
+          <input className="fi" placeholder="e.g. AI Workshop — Session 3" value={form.title} onChange={e=>set('title')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Type</label>
+          <select className="fi" value={form.type} onChange={e=>set('type')(e.target.value)}>
+            {['workshop','seminar','hackathon','meetup','other'].map(t=><option key={t} value={t}>{t.charAt(0).toUpperCase()+t.slice(1)}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Description</label>
+          <textarea className="fta" placeholder="What's this event about?" value={form.description} onChange={e=>set('description')(e.target.value)}/>
+        </div>
+      </div>
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Date *</label>
+          <input type="date" className="fi" value={form.date} onChange={e=>set('date')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Time</label>
+          <input type="time" className="fi" value={form.time} onChange={e=>set('time')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Organizer</label>
+          <input className="fi" placeholder="e.g. Team HCE" value={form.organizer} onChange={e=>set('organizer')(e.target.value)}/>
+        </div>
+      </div>
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>📍 Venue</label>
+          <input className="fi" placeholder="Hall B, Main Campus / Google Meet link…" value={form.venue} onChange={e=>set('venue')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>✍️ Registration Link</label>
+          <input className="fi" placeholder="https://forms.google.com/…" value={form.registrationLink} onChange={e=>set('registrationLink')(e.target.value)}/>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Additional Notes</label>
+          <textarea className="fta" placeholder="Bring your laptop. Certificates will be provided." value={form.notes} onChange={e=>set('notes')(e.target.value)}/>
+        </div>
+      </div>
+      {err&&<div className="ebox" style={{marginBottom:10}}>{err}</div>}
+      <div style={{display:'flex',gap:8}}>
+        <button className="bs bacc" onClick={submit} disabled={saving}>{saving?'Publishing…':'Publish event'}</button>
+        <button className="bs bgh" onClick={()=>{setShow(false);setErr('');setForm(blank)}}>Cancel</button>
+      </div>
+    </div>}
+
+    {events.length===0&&!show&&<div className="empty">No events yet. Create one above!</div>}
+    {events.map(ev=>(
+      <div key={ev.id} className="li" style={{alignItems:'flex-start'}}>
+        <div style={{width:44,height:44,borderRadius:8,background:'var(--ac)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <div style={{fontSize:15,fontWeight:900,color:'#fff',lineHeight:1}}>{ev.date?new Date(ev.date).getDate():'?'}</div>
+          <div style={{fontSize:9,color:'rgba(255,255,255,.7)',fontWeight:700,letterSpacing:.5,textTransform:'uppercase'}}>{ev.date?new Date(ev.date).toLocaleString('default',{month:'short'}):''}</div>
+        </div>
+        <div style={{flex:1}}>
+          <div style={{display:'flex',gap:7,alignItems:'center',marginBottom:3,flexWrap:'wrap'}}>
+            <div className="lit">{ev.title}</div>
+            <span className={`event-tag ${ev.type||'other'}`}>{ev.type||'event'}</span>
+          </div>
+          <div className="lis">{ev.description?.slice(0,80)}{(ev.description||'').length>80?'…':''}</div>
+          <div style={{fontSize:11,color:'var(--tx3)',marginTop:3}}>
+            {ev.date&&`📅 ${new Date(ev.date).toLocaleDateString()}`} {ev.time&&`🕐 ${ev.time}`} {ev.venue&&`📍 ${ev.venue}`}
+          </div>
+        </div>
+        <div className="la"><button className="bs bdg" onClick={()=>onDel(ev.id)}>Delete</button></div>
+      </div>
+    ))}
+  </>);
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN: CLASSES PANEL
+═══════════════════════════════════════════════ */
+function AClasses({classes,onAdd,onDel}){
+  const blank={title:'',description:'',domain:'AI/ML',lectureNo:'',duration:'',videoUrl:'',docs:[]};
+  const[show,setShow]=useState(false);
+  const[form,setForm]=useState(blank);
+  const[saving,setSaving]=useState(false);
+  const[err,setErr]=useState('');
+  const[newDocName,setNewDocName]=useState('');
+  const[newDocUrl,setNewDocUrl]=useState('');
+  const[newDocDesc,setNewDocDesc]=useState('');
+  const set=k=>v=>setForm(p=>({...p,[k]:v}));
+
+  const addDoc=()=>{
+    if(!newDocUrl.trim()){setErr('Document URL is required.');return}
+    setErr('');
+    setForm(p=>({...p,docs:[...p.docs,{name:newDocName.trim()||'Document',url:newDocUrl.trim(),desc:newDocDesc.trim()}]}));
+    setNewDocName('');setNewDocUrl('');setNewDocDesc('');
+  };
+
+  const removeDoc=i=>setForm(p=>({...p,docs:p.docs.filter((_,j)=>j!==i)}));
+
+  const submit=async()=>{
+    if(!form.title.trim()){setErr('Class title is required.');return}
+    setSaving(true);setErr('');
+    try{await onAdd(form);setForm(blank);setShow(false)}
+    catch(e){setErr(e.message)}
+    finally{setSaving(false)}
+  };
+
+  return(<>
+    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
+      <div><div className="ptit">🎬 Classes</div><div className="psub">Upload pre-recorded lectures, notes and study materials</div></div>
+      <button className="bs bacc" onClick={()=>{setShow(p=>!p);setErr('')}}>{show?'✕ Cancel':'+ New class'}</button>
+    </div>
+
+    {show&&<div className="card" style={{marginBottom:20}}>
+      <div className="slbl">Add class / lecture</div>
+      <div className="fgr" style={{gridTemplateColumns:'1fr 1fr 1fr'}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Title *</label>
+          <input className="fi" placeholder="e.g. Intro to Neural Networks" value={form.title} onChange={e=>set('title')(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Domain</label>
+          <select className="fi" value={form.domain} onChange={e=>set('domain')(e.target.value)}>
+            {DOMAINS.map(d=><option key={d}>{d}</option>)}
+          </select>
+        </div>
+        <div style={{display:'flex',gap:8}}>
+          <div style={{flex:1}}>
+            <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Lecture #</label>
+            <input type="number" className="fi" placeholder="1" min="1" value={form.lectureNo} onChange={e=>set('lectureNo')(e.target.value)}/>
+          </div>
+          <div style={{flex:1}}>
+            <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Duration</label>
+            <input className="fi" placeholder="1h 20m" value={form.duration} onChange={e=>set('duration')(e.target.value)}/>
+          </div>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>Description</label>
+          <textarea className="fta" placeholder="What will students learn in this lecture?" value={form.description} onChange={e=>set('description')(e.target.value)}/>
+        </div>
+      </div>
+      <div className="fgr">
+        <div>
+          <label style={{fontSize:11,fontWeight:700,color:'var(--tx2)',display:'block',marginBottom:4,textTransform:'uppercase',letterSpacing:.4}}>🎥 Video URL <span style={{fontWeight:400,color:'var(--tx3)',textTransform:'none',fontSize:11}}>(YouTube link — will embed automatically)</span></label>
+          <input className="fi" placeholder="https://youtube.com/watch?v=… or any video link" value={form.videoUrl} onChange={e=>set('videoUrl')(e.target.value)}/>
+        </div>
+      </div>
+
+      {/* Documents section */}
+      <div style={{background:'var(--sf2)',border:'1.5px dashed var(--bd2)',borderRadius:10,padding:'14px 16px',marginBottom:14}}>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:.5,marginBottom:10}}>📄 Notes & Documents ({form.docs.length})</div>
+
+        {form.docs.map((d,i)=>(
+          <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:'var(--sf)',border:'1px solid var(--bd)',borderRadius:8,marginBottom:7}}>
+            <span style={{fontSize:16}}>📄</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:600}}>{d.name}</div>
+              <div style={{fontSize:11,color:'var(--tx3)'}}>{d.url.slice(0,50)}…</div>
+            </div>
+            <button style={{background:'none',border:'none',color:'var(--rr)',cursor:'pointer',fontSize:16}} onClick={()=>removeDoc(i)}>✕</button>
+          </div>
+        ))}
+
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+          <input className="fi" placeholder="Document name (e.g. Week 3 Notes)" value={newDocName} onChange={e=>setNewDocName(e.target.value)}/>
+          <input className="fi" placeholder="URL (Google Drive, Notion, PDF link…)" value={newDocUrl} onChange={e=>setNewDocUrl(e.target.value)}/>
+        </div>
+        <div style={{display:'flex',gap:8}}>
+          <input className="fi" style={{flex:1}} placeholder="Short description (optional)" value={newDocDesc} onChange={e=>setNewDocDesc(e.target.value)}/>
+          <button className="bs bacc" onClick={addDoc}>+ Add Doc</button>
+        </div>
+      </div>
+
+      {err&&<div className="ebox" style={{marginBottom:10}}>{err}</div>}
+      <div style={{display:'flex',gap:8}}>
+        <button className="bs bacc" onClick={submit} disabled={saving}>{saving?'Publishing…':'Publish class'}</button>
+        <button className="bs bgh" onClick={()=>{setShow(false);setErr('');setForm(blank)}}>Cancel</button>
+      </div>
+    </div>}
+
+    {classes.length===0&&!show&&<div className="empty">No classes yet. Add one above!</div>}
+    {classes.map(cls=>(
+      <div key={cls.id} className="li" style={{alignItems:'flex-start'}}>
+        <div style={{width:44,height:44,borderRadius:8,background:'linear-gradient(135deg,#0369A1,#38BDF8)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:20}}>🎬</div>
+        <div style={{flex:1}}>
+          <div style={{display:'flex',gap:7,alignItems:'center',marginBottom:3,flexWrap:'wrap'}}>
+            <div className="lit">{cls.lectureNo?`#${cls.lectureNo} — `:''}{cls.title}</div>
+            <span className="class-domain-pill">{cls.domain}</span>
+          </div>
+          <div className="lis">{(cls.description||'').slice(0,80)}{(cls.description||'').length>80?'…':''}</div>
+          <div style={{fontSize:11,color:'var(--tx3)',marginTop:3}}>
+            {cls.videoUrl&&'🎥 Video'} {(cls.docs||[]).length>0&&`📄 ${cls.docs.length} doc${cls.docs.length>1?'s':''}`} {cls.duration&&`⏱ ${cls.duration}`}
+          </div>
+        </div>
+        <div className="la"><button className="bs bdg" onClick={()=>onDel(cls.id)}>Delete</button></div>
       </div>
     ))}
   </>);
