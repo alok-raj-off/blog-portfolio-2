@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Premium Event Dice Roller</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,6 +21,7 @@
 
     body {
       min-height: 100vh;
+      min-height: -webkit-fill-available;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -28,17 +29,20 @@
       background: var(--bg-gradient);
       font-family: 'Plus Jakarta Sans', sans-serif;
       color: #ffffff;
-      overflow: hidden;
-      padding: 2rem 1rem;
+      overflow-x: hidden;
+      padding: 1.5rem 1rem;
     }
 
+    /* Ambient Background Glow */
     .glow-orb {
       position: absolute;
       top: 45%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 650px;
-      height: 650px;
+      width: 90vw;
+      max-width: 650px;
+      height: 90vw;
+      max-height: 650px;
       background: radial-gradient(circle, var(--accent-glow) 0%, rgba(0, 0, 0, 0) 70%);
       z-index: 0;
       pointer-events: none;
@@ -48,35 +52,40 @@
     header {
       z-index: 10;
       text-align: center;
-      color: transparent;
+      width: 100%;
     }
 
     header h1 {
-      font-size: 2.8rem;
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
       font-weight: 800;
       letter-spacing: 0.02em;
-
+      
+      text-shadow: 0 10px 30px rgba(192, 132, 252, 0.2);
       color: transparent;
     }
 
     header p {
       color: #94a3b8;
-      font-size: 1.1rem;
+      font-size: clamp(0.85rem, 2.5vw, 1.1rem);
       font-weight: 600;
-      margin-top: 0.5rem;
+      margin-top: 0.3rem;
       letter-spacing: 0.05em;
       color: transparent;
     }
 
+    /* Responsive 3D Canvas Stage */
     #canvas-container {
       position: relative;
       z-index: 10;
       width: 100%;
       max-width: 600px;
-      height: 380px;
+      height: 48vh;
+      min-height: 280px;
+      max-height: 420px;
       display: flex;
       justify-content: center;
       align-items: center;
+      margin: auto 0;
     }
 
     canvas {
@@ -85,17 +94,19 @@
       outline: none;
     }
 
+    /* Controls & Results */
     .controls {
       z-index: 10;
-      margin-bottom: 1rem;
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 1.2rem;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
     }
 
     .result-badge {
-      font-size: 1.3rem;
+      font-size: clamp(1.1rem, 3.5vw, 1.3rem);
       font-weight: 700;
       color: #e9d5ff;
       height: 32px;
@@ -114,8 +125,8 @@
       background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
       color: #ffffff;
       border: none;
-      padding: 1.2rem 4rem;
-      font-size: 1.25rem;
+      padding: clamp(0.9rem, 3vw, 1.2rem) clamp(2.5rem, 8vw, 4rem);
+      font-size: clamp(1rem, 3vw, 1.25rem);
       font-weight: 800;
       letter-spacing: 0.08em;
       border-radius: 50px;
@@ -124,6 +135,7 @@
       transition: all 0.25s ease;
       text-transform: uppercase;
       outline: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .spin-btn:hover {
@@ -140,6 +152,16 @@
       opacity: 0.5;
       cursor: not-allowed;
       transform: none;
+    }
+
+    @media (max-height: 600px) {
+      body {
+        padding: 0.8rem 1rem;
+      }
+      #canvas-container {
+        height: 40vh;
+        min-height: 220px;
+      }
     }
   </style>
 
@@ -166,8 +188,15 @@
     const scene = new THREE.Scene();
 
     const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
-    camera.position.set(0, 2.5, 7.5);
-    camera.lookAt(0, 0, 0);
+    
+    // Function to calculate camera distance depending on screen size
+    function updateCameraDistance() {
+      const isMobile = window.innerWidth < 600;
+      const cameraZ = isMobile ? 9.5 : 7.5;
+      camera.position.set(0, 2.5, cameraZ);
+      camera.lookAt(0, 0, 0);
+    }
+    updateCameraDistance();
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
@@ -311,7 +340,6 @@
     let startRotation = new THREE.Euler();
     let targetRotation = new THREE.Euler();
 
-    // FIXED: Mapped 3 and 4 correctly so the text matches the visual face
     const faceRotations = {
       1: { x: 0, y: 0, z: 0 },
       6: { x: 0, y: Math.PI, z: 0 },
@@ -387,8 +415,10 @@
 
     animate(performance.now());
 
+    // Responsive Resize Handler
     window.addEventListener('resize', () => {
       camera.aspect = container.clientWidth / container.clientHeight;
+      updateCameraDistance();
       camera.updateProjectionMatrix();
       renderer.setSize(container.clientWidth, container.clientHeight);
     });
