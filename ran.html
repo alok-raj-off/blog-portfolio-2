@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Random Item Picker</title>
+  <style>
+    :root {
+      --bg-color: #f1f5f9;
+      --card-bg: #ffffff;
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --winner-color: #2563eb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .container {
+      background-color: var(--card-bg);
+      width: 100%;
+      max-width: 420px;
+      padding: 32px 24px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+      text-align: center;
+    }
+
+    h1 {
+      font-size: clamp(1.3rem, 5vw, 1.6rem);
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+
+    /* Display Box */
+    .picker-box {
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 14px;
+      height: 110px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 12px;
+      overflow: hidden;
+      transition: border-color 0.3s ease;
+    }
+
+    .item-display {
+      font-size: clamp(1.2rem, 5vw, 1.5rem);
+      font-weight: 700;
+      color: var(--text-muted);
+      word-break: break-word;
+      transition: transform 0.1s ease, color 0.2s ease;
+    }
+
+    .item-display.shuffling {
+      animation: shuffleAnim 0.1s infinite alternate;
+      color: var(--text-muted);
+    }
+
+    .item-display.winner {
+      transform: scale(1.15);
+      color: var(--winner-color);
+    }
+
+    /* Button */
+    .btn-pick {
+      background-color: var(--accent);
+      color: #ffffff;
+      border: none;
+      padding: 16px 24px;
+      font-size: clamp(1rem, 4vw, 1.05rem);
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-pick:hover:not(:disabled) {
+      background-color: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(79, 70, 229, 0.4);
+    }
+
+    .btn-pick:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-pick:disabled {
+      background-color: #94a3b8;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    @keyframes shuffleAnim {
+      0% { transform: translateY(-3px); }
+      100% { transform: translateY(3px); }
+    }
+
+    @media (max-width: 360px) {
+      .container {
+        padding: 24px 16px;
+      }
+      .picker-box {
+        height: 95px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Random Picker</h1>
+
+    <div class="picker-box" id="pickerBox">
+      <div id="itemDisplay" class="item-display">Ready?</div>
+    </div>
+
+    <button id="pickBtn" class="btn-pick" onclick="startRandomizer()">Pick a Random Item!</button>
+  </div>
+
+  <script>
+    // Pool of custom items
+    const things = [
+      "Jhumka 🪞",
+      "Coca cola bottle 🥤",
+      "Lipstick 💄",
+      "Fevicol 🧪",
+      "Sunglasses 🕶️",
+      "Books 📚",
+      "Dupatta 🧣",
+      "Chocolate 🍫",
+      "Bottle 🍾",
+      "Hari mirchi 🌶️",
+      "Marigold flower 🌼",
+      "Bell 🔔",
+      "Bangles 💍",
+      "Lemon 🍋",
+      "Keys 🗝️",
+      "Water 🌊",
+      "Toy car 🚗",
+      "Paan 🍃",
+      "Perfume 🧴",
+      "Mobile phone 📱",
+      "Stone 🪨",
+      "Mehandi cone 🖋️",
+      "Flower 🌺",
+      "Tablet (paracetamol) 💊",
+      "Watch ⌚"
+    ];
+
+    const itemDisplay = document.getElementById('itemDisplay');
+    const pickBtn = document.getElementById('pickBtn');
+    const pickerBox = document.getElementById('pickerBox');
+
+    function startRandomizer() {
+      pickBtn.disabled = true;
+      pickerBox.style.borderColor = '#94a3b8';
+      itemDisplay.classList.remove('winner');
+      itemDisplay.classList.add('shuffling');
+
+      const totalDuration = 5000; // 5 seconds
+      const intervalTime = 70;    // Shuffle speed
+
+      // Rapidly switch through random items
+      const shuffleInterval = setInterval(() => {
+        const randomIndex = Math.floor(Math.random() * things.length);
+        itemDisplay.textContent = things[randomIndex];
+      }, intervalTime);
+
+      // Stop after 5 seconds and pick 1 item
+      setTimeout(() => {
+        clearInterval(shuffleInterval);
+
+        const winningIndex = Math.floor(Math.random() * things.length);
+        itemDisplay.textContent = things[winningIndex];
+
+        itemDisplay.classList.remove('shuffling');
+        itemDisplay.classList.add('winner');
+        pickerBox.style.borderColor = '#2563eb';
+
+        pickBtn.disabled = false;
+      }, totalDuration);
+    }
+  </script>
+</body>
+</html>
