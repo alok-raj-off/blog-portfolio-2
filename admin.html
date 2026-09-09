@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archive Access — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F3EEE0;
+    --card:#FBF8EF;
+    --ink:#20241F;
+    --ink-soft:#5B5D4E;
+    --navy:#1B2A2E;
+    --rule:#CBBF9C;
+    --verified:#2E5D46;
+    --verified-bg:#DFE9DE;
+    --pending:#9A5A22;
+    --pending-bg:#F0DFC4;
+    --link:#6E3524;
+    --danger:#8C3B2E;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Sans 3', sans-serif;
+    line-height:1.5;
+  }
+  header.site{
+    background:var(--navy);
+    color:#EFE9D6;
+    padding:22px 24px;
+    border-bottom:6px solid var(--rule);
+  }
+  .header-inner{ max-width:960px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;}
+  .site-title{ font-family:'Fraunces', serif; font-size:24px; font-weight:600; margin:0; }
+  .site-title span{ color:#C9A24A; }
+  .tag{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:#B9C4BE; }
+  a.back{ color:#D9C989; font-size:13px; font-family:'IBM Plex Mono', monospace; text-decoration:none; }
+
+  main{ max-width:960px; margin:0 auto; padding:32px 20px 80px; }
+
+  /* Login */
+  .lock-screen{
+    max-width:380px;
+    margin:60px auto;
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:4px;
+    padding:32px 28px;
+    text-align:center;
+  }
+  .lock-screen h2{ font-family:'Fraunces', serif; font-size:22px; margin:0 0 6px; }
+  .lock-screen p{ color:var(--ink-soft); font-size:14px; margin:0 0 20px; }
+  .lock-screen input{
+    width:100%;
+    padding:12px 14px;
+    font-size:15px;
+    border:1px solid var(--rule);
+    border-radius:3px;
+    background:#fff;
+    font-family:'IBM Plex Mono', monospace;
+    margin-bottom:12px;
+  }
+  .lock-screen button, .btn{
+    width:100%;
+    padding:12px 14px;
+    background:var(--navy);
+    color:#EFE9D6;
+    border:none;
+    border-radius:3px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:'Source Sans 3', sans-serif;
+  }
+  .lock-screen button:hover, .btn:hover{ background:#243639; }
+  .error-msg{ color:var(--danger); font-size:13px; margin-top:10px; display:none; }
+  .shake{ animation:shake .3s; }
+  @keyframes shake{
+    0%,100%{ transform:translateX(0); }
+    25%{ transform:translateX(-6px); }
+    75%{ transform:translateX(6px); }
+  }
+
+  /* Dashboard */
+  .panel{
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-radius:4px;
+    padding:22px;
+    margin-bottom:24px;
+  }
+  .panel h3{
+    font-family:'Fraunces', serif;
+    font-size:18px;
+    margin:0 0 4px;
+  }
+  .panel .hint{ color:var(--ink-soft); font-size:13px; margin:0 0 16px; }
+
+  label{ display:block; font-size:13px; font-weight:600; margin:14px 0 6px; }
+  input[type=text], input[type=url], textarea, input[type=file]{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--rule);
+    border-radius:3px;
+    background:#fff;
+    font-family:'Source Sans 3', sans-serif;
+    font-size:14px;
+  }
+  textarea{ min-height:110px; resize:vertical; }
+
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:16px;
+  }
+  .toggle-row input{ width:auto; }
+  .toggle-row .stamp-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    padding:5px 10px;
+    border-radius:2px;
+    border:1.5px solid;
+  }
+  .stamp-label.verified{ color:var(--verified); border-color:var(--verified); background:var(--verified-bg); }
+  .stamp-label.pending{ color:var(--pending); border-color:var(--pending); background:var(--pending-bg); }
+
+  .form-actions{ margin-top:20px; display:flex; gap:10px; flex-wrap:wrap; }
+  .form-actions .btn{ width:auto; padding:11px 18px; }
+  .btn.secondary{ background:transparent; color:var(--navy); border:1px solid var(--navy); }
+  .btn.secondary:hover{ background:#e6e0cd; }
+  .btn.danger{ background:transparent; color:var(--danger); border:1px solid var(--danger); }
+
+  .file-name{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft); margin-top:6px; }
+
+  /* Existing list */
+  .paper-row{
+    border:1px solid var(--rule);
+    border-radius:3px;
+    padding:14px 16px;
+    margin-bottom:10px;
+    background:#fff;
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .paper-row-title{ font-family:'Fraunces', serif; font-weight:600; font-size:15px; }
+  .paper-row-meta{ font-size:12px; color:var(--ink-soft); margin-top:3px; }
+  .paper-row-actions{ display:flex; gap:8px; flex-shrink:0; }
+  .paper-row-actions button{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    background:none;
+    border:1px solid var(--rule);
+    padding:6px 10px;
+    border-radius:3px;
+    cursor:pointer;
+  }
+  .paper-row-actions button.edit:hover{ background:#e6e0cd; }
+  .paper-row-actions button.delete{ color:var(--danger); border-color:var(--danger); }
+  .paper-row-actions button.delete:hover{ background:var(--pending-bg); }
+
+  .empty-note{ color:var(--ink-soft); font-size:13px; text-align:center; padding:20px 0; }
+
+  .export-box{
+    background:#efe9d6;
+    border:1px dashed var(--rule);
+    border-radius:4px;
+    padding:16px 18px;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .export-box code{
+    background:#fff;
+    padding:2px 5px;
+    border-radius:2px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+  }
+
+  #dashboard{ display:none; }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="header-inner">
+    <h1 class="site-title">Archive <span>Access</span></h1>
+    <a class="back" href="index.html">← Back to public catalog</a>
+  </div>
+</header>
+
+<main>
+
+  <div class="lock-screen" id="lockScreen">
+    <h2>Restricted</h2>
+    <p>Enter the archive password to manage the paper catalog.</p>
+    <input type="password" id="pwInput" placeholder="Password" autocomplete="current-password">
+    <button id="unlockBtn">Unlock</button>
+    <div class="error-msg" id="errorMsg">Incorrect password. Try again.</div>
+  </div>
+
+  <div id="dashboard">
+
+    <div class="panel">
+      <h3>Signed in <span id="whoami" style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--ink-soft);"></span></h3>
+      <p class="hint">Changes here save straight to Firestore and appear on the public catalog immediately — no export or upload needed.</p>
+      <button class="btn secondary" id="signOutBtn" style="width:auto; padding:9px 16px;">Sign out</button>
+    </div>
+
+    <div class="panel">
+      <h3 id="formTitle">Add a paper</h3>
+      <p class="hint">Fill in the details below, then click Save to add it to the catalog draft.</p>
+
+      <label for="fName">Paper name / title</label>
+      <input type="text" id="fName" placeholder="e.g. Efficient Transformers: A Survey">
+
+      <label for="fSourceName">Source name</label>
+      <input type="text" id="fSourceName" placeholder="e.g. arXiv, IEEE Xplore, Google Scholar">
+
+      <label for="fSourceLink">Source link</label>
+      <input type="url" id="fSourceLink" placeholder="https://...">
+
+      <label for="fPdfLink">Google Drive link (recommended)</label>
+      <input type="text" id="fPdfLink" placeholder="https://drive.google.com/file/d/.../view?usp=sharing">
+      <div class="file-name">Paste the "Anyone with the link" share URL — it's converted to an embeddable viewer automatically.</div>
+
+      <label for="fPdf" style="margin-top:18px;">Or upload a small PDF directly (under 700 KB)</label>
+      <input type="file" id="fPdf" accept="application/pdf">
+      <div class="file-name" id="fPdfName">No file chosen yet. Only used if no Drive link is given above.</div>
+
+      <label for="fSummary">Summary</label>
+      <textarea id="fSummary" placeholder="Write a short summary of the paper and why it's relevant..."></textarea>
+
+      <div class="toggle-row">
+        <input type="checkbox" id="fVerified">
+        <label for="fVerified" style="margin:0;">Mark as</label>
+        <span class="stamp-label pending" id="verifiedLabel">Unverified</span>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn" id="saveBtn">Save paper</button>
+        <button class="btn secondary" id="cancelEditBtn" style="display:none;">Cancel edit</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Current catalog (<span id="paperTotal">0</span>)</h3>
+      <p class="hint">This is your working draft, saved in this browser. It will not appear on the public site until you export and upload it.</p>
+      <div id="paperList"></div>
+      <div class="empty-note" id="listEmpty" style="display:none;">No papers in the draft yet — add one above.</div>
+    </div>
+
+    <div class="panel">
+      <h3>Backup</h3>
+      <div class="export-box">
+        Your data lives in Firestore now, so nothing here needs to be re-uploaded — the public page updates the moment you save. This button just downloads a JSON snapshot of the catalog in case you want an offline backup.
+      </div>
+      <div class="form-actions">
+        <button class="btn secondary" id="exportBtn">Download backup (JSON)</button>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<script type="module">
+  import { firebaseConfig, ADMIN_EMAIL } from './firebase-config.js';
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getFirestore, collection, query, orderBy, onSnapshot,
+    addDoc, updateDoc, deleteDoc, doc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import {
+    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  let draft = [];
+  let editingId = null;
+  let pendingPdfBase64 = null;
+
+  // ---------- Login ----------
+  const lockScreen = document.getElementById('lockScreen');
+  const dashboard = document.getElementById('dashboard');
+  const pwInput = document.getElementById('pwInput');
+  const unlockBtn = document.getElementById('unlockBtn');
+  const errorMsg = document.getElementById('errorMsg');
+
+  async function tryUnlock(){
+    unlockBtn.disabled = true;
+    unlockBtn.textContent = 'Checking...';
+    try{
+      await signInWithEmailAndPassword(auth, ADMIN_EMAIL, pwInput.value);
+      // onAuthStateChanged below handles showing the dashboard
+    } catch(e){
+      errorMsg.textContent = 'Incorrect password. Try again.';
+      errorMsg.style.display = 'block';
+      lockScreen.classList.add('shake');
+      setTimeout(()=>lockScreen.classList.remove('shake'), 300);
+    }
+    unlockBtn.disabled = false;
+    unlockBtn.textContent = 'Unlock';
+  }
+  unlockBtn.addEventListener('click', tryUnlock);
+  pwInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') tryUnlock(); });
+
+  document.getElementById('signOutBtn').addEventListener('click', () => signOut(auth));
+
+  onAuthStateChanged(auth, (user) => {
+    if(user){
+      lockScreen.style.display = 'none';
+      dashboard.style.display = 'block';
+      document.getElementById('whoami').textContent = '(' + user.email + ')';
+      subscribeToPapers();
+    } else {
+      lockScreen.style.display = 'block';
+      dashboard.style.display = 'none';
+      pwInput.value = '';
+    }
+  });
+
+  // ---------- Live catalog from Firestore ----------
+  function subscribeToPapers(){
+    const papersQuery = query(collection(db, 'papers'), orderBy('createdAt', 'desc'));
+    onSnapshot(papersQuery, (snapshot) => {
+      draft = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderList();
+    }, (err) => {
+      alert('Could not load the catalog from Firestore. Check your security rules. ' + err.message);
+    });
+  }
+
+  // ---------- Drive link helper ----------
+  function driveLinkToPreview(url){
+    if(!url) return '';
+    url = url.trim();
+    let m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if(m){
+      return `https://drive.google.com/file/d/${m[1]}/preview`;
+    }
+    return url; // fall back to whatever they pasted
+  }
+
+  // ---------- Form ----------
+  const fName = document.getElementById('fName');
+  const fSourceName = document.getElementById('fSourceName');
+  const fSourceLink = document.getElementById('fSourceLink');
+  const fPdf = document.getElementById('fPdf');
+  const fPdfName = document.getElementById('fPdfName');
+  const fSummary = document.getElementById('fSummary');
+  const fVerified = document.getElementById('fVerified');
+  const verifiedLabel = document.getElementById('verifiedLabel');
+  const formTitle = document.getElementById('formTitle');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+  fVerified.addEventListener('change', () => {
+    verifiedLabel.textContent = fVerified.checked ? 'Verified' : 'Unverified';
+    verifiedLabel.className = 'stamp-label ' + (fVerified.checked ? 'verified' : 'pending');
+  });
+
+  fPdf.addEventListener('change', () => {
+    const file = fPdf.files[0];
+    if(!file){ fPdfName.textContent = 'No file chosen yet.'; return; }
+    if(file.type !== 'application/pdf'){
+      alert('Please choose a PDF file.');
+      fPdf.value = '';
+      return;
+    }
+    if(file.size > 700 * 1024){
+      alert('That file is ' + Math.round(file.size/1024) + ' KB. Firestore documents must stay under ~1 MB total, so direct uploads need to be under 700 KB. Use the Google Drive link field instead for larger files.');
+      fPdf.value = '';
+      fPdfName.textContent = 'No file chosen yet. Only used if no Drive link is given above.';
+      return;
+    }
+    fPdfName.textContent = file.name + ' (' + Math.round(file.size/1024) + ' KB)';
+    const reader = new FileReader();
+    reader.onload = () => {
+      pendingPdfBase64 = reader.result.split(',')[1];
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function resetForm(){
+    fName.value = '';
+    fSourceName.value = '';
+    fSourceLink.value = '';
+    document.getElementById('fPdfLink').value = '';
+    fPdf.value = '';
+    fPdfName.textContent = 'No file chosen yet. Only used if no Drive link is given above.';
+    fSummary.value = '';
+    fVerified.checked = false;
+    verifiedLabel.textContent = 'Unverified';
+    verifiedLabel.className = 'stamp-label pending';
+    pendingPdfBase64 = null;
+    editingId = null;
+    formTitle.textContent = 'Add a paper';
+    cancelEditBtn.style.display = 'none';
+  }
+
+  document.getElementById('saveBtn').addEventListener('click', async () => {
+    if(!fName.value.trim()){
+      alert('Please give the paper a name.');
+      return;
+    }
+    const driveLink = document.getElementById('fPdfLink').value.trim();
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+
+    try{
+      if(editingId){
+        const existing = draft.find(p => p.id === editingId);
+        const updates = {
+          name: fName.value.trim(),
+          sourceName: fSourceName.value.trim(),
+          sourceLink: fSourceLink.value.trim(),
+          summary: fSummary.value.trim(),
+          verified: fVerified.checked
+        };
+        if(driveLink){
+          updates.pdfLink = driveLinkToPreview(driveLink);
+          updates.pdfData = null;
+        } else if(pendingPdfBase64){
+          updates.pdfData = pendingPdfBase64;
+          updates.pdfLink = null;
+        }
+        await updateDoc(doc(db, 'papers', editingId), updates);
+      } else {
+        await addDoc(collection(db, 'papers'), {
+          name: fName.value.trim(),
+          sourceName: fSourceName.value.trim(),
+          sourceLink: fSourceLink.value.trim(),
+          pdfLink: driveLink ? driveLinkToPreview(driveLink) : null,
+          pdfData: driveLink ? null : (pendingPdfBase64 || null),
+          summary: fSummary.value.trim(),
+          verified: fVerified.checked,
+          createdAt: serverTimestamp()
+        });
+      }
+      resetForm();
+    } catch(e){
+      alert('Could not save: ' + e.message);
+    }
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save paper';
+  });
+
+  cancelEditBtn.addEventListener('click', resetForm);
+
+  function editPaper(id){
+    const p = draft.find(x => x.id === id);
+    if(!p) return;
+    editingId = id;
+    fName.value = p.name || '';
+    fSourceName.value = p.sourceName || '';
+    fSourceLink.value = p.sourceLink || '';
+    document.getElementById('fPdfLink').value = (p.pdfLink && !p.pdfLink.includes('/preview')) ? p.pdfLink : (p.pdfLink || '');
+    fPdfName.textContent = p.pdfData ? 'Existing PDF attached (choose a file to replace it)' : 'No file chosen yet. Only used if no Drive link is given above.';
+    fSummary.value = p.summary || '';
+    fVerified.checked = !!p.verified;
+    verifiedLabel.textContent = p.verified ? 'Verified' : 'Unverified';
+    verifiedLabel.className = 'stamp-label ' + (p.verified ? 'verified' : 'pending');
+    pendingPdfBase64 = null;
+    formTitle.textContent = 'Edit paper';
+    cancelEditBtn.style.display = 'inline-block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function deletePaper(id){
+    if(!confirm('Remove this paper from the catalog? This is permanent.')) return;
+    try{
+      await deleteDoc(doc(db, 'papers', id));
+    } catch(e){
+      alert('Could not delete: ' + e.message);
+    }
+    if(editingId === id) resetForm();
+  }
+
+  function renderList(){
+    const list = document.getElementById('paperList');
+    const empty = document.getElementById('listEmpty');
+    document.getElementById('paperTotal').textContent = draft.length;
+
+    if(!draft.length){
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    list.innerHTML = draft.map(p => `
+      <div class="paper-row">
+        <div>
+          <div class="paper-row-title">${escapeHtml(p.name)}</div>
+          <div class="paper-row-meta">${p.verified ? 'Verified' : 'Unverified'} · ${escapeHtml(p.sourceName || 'No source')} · ${p.pdfLink ? 'Drive PDF linked' : (p.pdfData ? 'PDF attached' : 'No PDF')}</div>
+        </div>
+        <div class="paper-row-actions">
+          <button class="edit" data-id="${p.id}">Edit</button>
+          <button class="delete" data-id="${p.id}">Delete</button>
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('.edit').forEach(b => b.addEventListener('click', () => editPaper(b.dataset.id)));
+    list.querySelectorAll('.delete').forEach(b => b.addEventListener('click', () => deletePaper(b.dataset.id)));
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.innerText = str || '';
+    return d.innerHTML;
+  }
+
+  // ---------- Backup export ----------
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const content = JSON.stringify(draft, null, 2);
+    const blob = new Blob([content], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'papers-backup.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+</script>
+
+</body>
+</html>
