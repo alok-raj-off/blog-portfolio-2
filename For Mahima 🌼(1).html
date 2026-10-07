@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>For Mahima 🌼</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg1:#fffaf5; --bg2:#fdeef0; --bg3:#eef5ea; --ink:#4a2d49; --soft:#7d6479;
+  --petal:#ffffff; --pink:#f6b8c8; --sage:#b9d3b0; --gold:#f2c14e; --card:rgba(255,255,255,.78);
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg1:#2a1b2b;--bg2:#35202f;--bg3:#1f2b24;--ink:#fbeff3;--soft:#d5bccb;--card:rgba(255,255,255,.08)}
+}
+:root[data-theme="dark"]{--bg1:#2a1b2b;--bg2:#35202f;--bg3:#1f2b24;--ink:#fbeff3;--soft:#d5bccb;--card:rgba(255,255,255,.08)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Quicksand',system-ui,sans-serif;color:var(--ink);background:var(--bg1);line-height:1.7;font-size:17px;overflow-x:hidden}
+h1,h2,.hand{font-family:'Caveat','Segoe Script',cursive;font-weight:700;line-height:1.1;margin:0}
+h1{font-size:clamp(3.2rem,15vw,5.5rem)}
+h2{font-size:clamp(2.2rem,9vw,3rem);margin-bottom:.6rem}
+section{min-height:90vh;padding:72px 24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative}
+section:nth-of-type(odd){background:linear-gradient(180deg,var(--bg1),var(--bg2))}
+section:nth-of-type(even){background:linear-gradient(180deg,var(--bg2),var(--bg3))}
+.wrap{max-width:460px;width:100%;position:relative;z-index:2}
+p{margin:.6rem 0;color:var(--soft)}
+.big{font-size:1.15rem;color:var(--ink)}
+.bloom{width:84px;height:84px;display:block;margin:0 auto 12px}
+.hero .bloom{width:130px;height:130px;animation:sway 5s ease-in-out infinite}
+@keyframes sway{50%{transform:rotate(12deg) scale(1.05)}}
+.hint{position:absolute;bottom:28px;left:0;right:0;font-size:.95rem;color:var(--soft);animation:bob 2s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(8px)}}
+.card{background:var(--card);border:2px solid var(--pink);border-radius:26px 26px 26px 6px;padding:18px 20px;margin:12px 0;width:100%;text-align:left;font:inherit;color:var(--ink);cursor:pointer;display:block}
+.card .pl{display:none;margin-top:8px;color:var(--soft);font-weight:600}
+.card.open .pl{display:block}
+.card .tap{font-size:.85rem;color:var(--soft)}
+.card.open .tap{display:none}
+.card:focus-visible,button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.letter{background:var(--card);border-radius:28px;padding:26px 22px;border:2px dashed var(--sage);text-align:left}
+.letter p{color:var(--ink)}
+.garden{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;margin-top:14px}
+.seed{aspect-ratio:1;border-radius:50%;background:var(--card);border:2px dashed var(--sage);display:grid;place-items:center;cursor:pointer;font-size:1.6rem;padding:0;color:var(--soft)}
+.seed svg{width:84%;height:84%;animation:pop .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{from{transform:scale(0) rotate(-90deg)}}
+.btns{display:flex;flex-direction:column;gap:14px;align-items:center;margin-top:24px;min-height:150px;position:relative}
+button.yes{font:700 1.7rem 'Caveat',cursive;background:var(--pink);color:#4a2d49;border:0;border-radius:999px;padding:14px 34px;box-shadow:0 8px 0 #e48fa8;cursor:pointer;transition:transform .15s}
+button.yes:active{transform:translateY(5px);box-shadow:0 3px 0 #e48fa8}
+button.no{font:500 1rem 'Quicksand',sans-serif;background:transparent;color:var(--soft);border:1.5px solid var(--soft);border-radius:999px;padding:8px 20px;cursor:pointer;transition:transform .25s}
+#answer{display:none}
+#answer.show{display:block}
+a.share{display:inline-block;margin-top:16px;background:var(--sage);color:#2f4a2c;text-decoration:none;font-weight:700;border-radius:999px;padding:12px 24px}
+.petal{position:fixed;top:-40px;z-index:1;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translate3d(var(--dx),110vh,0) rotate(var(--rot))}}
+@media (prefers-reduced-motion:reduce){.petal{display:none}.hero .bloom,.hint{animation:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="jas" viewBox="-50 -50 100 100">
+      <g fill="#fff" stroke="#e7d7de" stroke-width="1.5">
+        <ellipse cx="0" cy="-26" rx="13" ry="24"/>
+        <ellipse cx="0" cy="-26" rx="13" ry="24" transform="rotate(72)"/>
+        <ellipse cx="0" cy="-26" rx="13" ry="24" transform="rotate(144)"/>
+        <ellipse cx="0" cy="-26" rx="13" ry="24" transform="rotate(216)"/>
+        <ellipse cx="0" cy="-26" rx="13" ry="24" transform="rotate(288)"/>
+      </g>
+      <circle r="7" fill="#f2c14e"/><circle r="3" fill="#e9a62b"/>
+    </symbol>
+  </defs>
+</svg>
+
+<section class="hero">
+  <div class="wrap">
+    <svg class="bloom"><use href="#jas"/></svg>
+    <p class="hand" style="font-size:1.8rem;color:var(--soft)">a little something for</p>
+    <h1>Mahima</h1>
+    <p class="big">Scroll slowly. It’s a tiny journey, made only for you.</p>
+  </div>
+  <div class="hint">scroll down ↓</div>
+</section>
+
+<section>
+  <div class="wrap">
+    <svg class="bloom"><use href="#jas"/></svg>
+    <h2>5th October, 2026</h2>
+    <p class="big">It was a heavy day. Everything felt quiet and lonely, and I really needed someone.</p>
+    <p class="big">And then, out of nowhere, a random hello. 🌼</p>
+    <p>You were someone who needed a little help yourself, and still, in your own innocent way, you helped me.</p>
+    <p>It felt like God sends people exactly when we need them the most. You became one of them.</p>
+    <p>The way I can talk to you right now, so openly, is something I really needed.</p>
+    <p class="hand" style="font-size:2rem;color:var(--ink)">Thank you, Mahima ji. 🤍</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>In just 2 days</h2>
+    <p class="big">You went from a new name to someone I can talk to about anything.</p>
+    <p>You’re pretty on the outside, yes. But the prettiest part is your soul: the way you listen, the way you stay.</p>
+    <p class="big">It feels like you were sent to me at exactly the right time.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Smile check 😄</h2>
+    <p>Tap each one. Smiling is mandatory.</p>
+    <button class="card" type="button"><b>My phone said “Storage full.” I said “Delete everything, but keep Mahima’s chats.”</b><div class="tap">tap for the punchline 🌼</div><div class="pl">Priorities. 😌</div></button>
+    <button class="card" type="button"><b>Why did the jasmine flower go to therapy?</b><div class="tap">tap for the punchline 🌼</div><div class="pl">Too many people kept saying “you smell nice” and it got emotional. 🌼</div></button>
+    <button class="card" type="button"><b>Me: “I’ll talk for just 5 minutes.” <br>Also me, 3 hours later:</b><div class="tap">tap for the punchline 🌼</div><div class="pl">“Wait, one more thing…” 🙈</div></button>
+    <button class="card" type="button"><b>What do you call a friend who listens to all your nonsense?</b><div class="tap">tap for the punchline 🌼</div><div class="pl">A legend. Also known as Mahima ji. 👑</div></button>
+    <button class="card" type="button"><b>Why don’t flowers ever ghost anyone?</b><div class="tap">tap for the punchline 🌼</div><div class="pl">They always come back in spring. Unlike my sleep schedule. 😴</div></button>
+    <button class="card" type="button"><b>Doctor: “You need rest.” <br>Me: “Doctor, I need Mahima’s reply first.”</b><div class="tap">tap for the punchline 🌼</div><div class="pl">Doctor: “…that’s not medicine.” 💊</div></button>
+    <button class="card" type="button"><b>Why is talking to you like chai?</b><div class="tap">tap for the punchline 🌼</div><div class="pl">Warm, comforting, and I want a refill every day. ☕</div></button>
+    <button class="card" type="button"><b>Mahima’s superpower?</b><div class="tap">tap for the punchline 🌼</div><div class="pl">Making a random Tuesday feel like a festival. 🎉</div></button>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Grow a garden</h2>
+    <p>Tap the circles to make white jasmine bloom. All of them are for you.</p>
+    <div class="garden" id="garden"></div>
+    <p id="gmsg" class="big" style="min-height:1.7em;margin-top:14px"></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="letter">
+      <h2>Thank you, Mahima</h2>
+      <p>Thank you for listening when I had nobody. Thank you for not making me feel like a burden, and for being kind in a time I really needed kindness.</p>
+      <p>Thank you for the laughs, the talks, and for simply being there. You turned one of my hardest weeks into the beginning of something beautiful.</p>
+      <p>This friendship means more to me than I can say.</p>
+      <p class="hand" style="font-size:1.8rem">With all my heart, your friend 🤍</p>
+    </div>
+  </div>
+</section>
+
+<section id="ask">
+  <div class="wrap">
+    <svg class="bloom"><use href="#jas"/></svg>
+    <h2>One last question…</h2>
+    <p class="big" style="font-size:1.5rem">Mahima, will you be my forever friend? 🌼</p>
+    <div class="btns" id="btns">
+      <button class="yes" id="yes" type="button">Yes, forever! 🤍</button>
+      <button class="no" id="no" type="button">Let me think…</button>
+    </div>
+    <div id="answer">
+      <h2>Yayyyy! 🎉</h2>
+      <p class="big">Forever friends it is. Best new beginning ever. 🌼</p>
+      <a class="share" id="share" target="_blank" rel="noopener" href="#">Tell him your answer 💬</a>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function petal(){
+    if(reduce) return;
+    var s = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    var size = 16 + Math.random()*22;
+    s.setAttribute('class','petal'); s.setAttribute('width',size); s.setAttribute('height',size);
+    s.style.left = Math.random()*100 + 'vw';
+    s.style.setProperty('--dx', (Math.random()*160-80)+'px');
+    s.style.setProperty('--rot', (Math.random()*720-360)+'deg');
+    s.style.animationDuration = (7+Math.random()*7)+'s';
+    s.innerHTML = '<use href="#jas"/>';
+    document.body.appendChild(s);
+    setTimeout(function(){s.remove()}, 15000);
+  }
+  setInterval(petal, 1100);
+  for(var i=0;i<6;i++) setTimeout(petal, i*250);
+
+  document.querySelectorAll('.card').forEach(function(c){
+    c.addEventListener('click', function(){ c.classList.toggle('open'); });
+  });
+
+  var g = document.getElementById('garden'), msg = document.getElementById('gmsg'), n = 0;
+  var lines = ['A little bud 🌱','Growing…','Look at that!','Smells so good','Almost a garden','Pretty, like you','So many!','Nearly there','Mahima’s garden 🤍'];
+  for(var i=0;i<9;i++){
+    var b = document.createElement('button');
+    b.className='seed'; b.type='button'; b.setAttribute('aria-label','Plant a flower'); b.textContent='🌱';
+    b.addEventListener('click', function(){
+      if(this.dataset.done) return;
+      this.dataset.done=1; this.innerHTML='<svg><use href="#jas"/></svg>'; this.style.border='0'; this.style.background='transparent';
+      msg.textContent = lines[n++];
+    });
+    g.appendChild(b);
+  }
+
+  var no = document.getElementById('no'), tries = 0;
+  var phrases = ['Are you sure? 🥺','Try again 🌼','Pretty please?','That button is broken 😅'];
+  function dodge(e){
+    if(e) e.preventDefault();
+    tries++;
+    no.textContent = phrases[tries % phrases.length];
+    var x = (Math.random()*160-80), y = (Math.random()*80-20);
+    no.style.transform = 'translate('+x+'px,'+y+'px)';
+  }
+  no.addEventListener('click', dodge);
+  no.addEventListener('pointerenter', function(e){ if(e.pointerType==='mouse') dodge(); });
+
+  document.getElementById('yes').addEventListener('click', function(){
+    document.getElementById('btns').style.display='none';
+    document.getElementById('answer').classList.add('show');
+    document.getElementById('share').href = 'https://wa.me/?text=' + encodeURIComponent('Yes! Forever friends 🤍🌼 — Mahima');
+    if(!reduce){ for(var i=0;i<45;i++) setTimeout(petal, i*60); }
+  });
+})();
+</script>
+</body>
+</html>
